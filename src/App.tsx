@@ -1,6 +1,6 @@
 // src/App.tsx
 import React from 'react';
-import './App.css'; // Assuming you're using CSS for styles
+import './styles/App.css'; // Assuming you're using CSS for styles
 import { MaterialProvider } from './contexts/MaterialContext';
 import MaterialEditor from './components/MaterialEditor';
 // Import other components as needed
