@@ -17,7 +17,7 @@ interface MaterialContextType {
 
 const MaterialContext = createContext<MaterialContextType | undefined>(undefined);
 
-export const MaterialProvider: React.FC = ({ children }) => {
+export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [materials, setMaterials] = useState<Material[]>([]);
 
   const addMaterial = (material: Material) => {
