@@ -1,29 +1,31 @@
-// src/components/MaterialEditor.tsx
-
 import React, { useState } from 'react';
-import MaterialPreview from './MaterialPreview'; // Import the MaterialPreview component
+import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
+import { useMaterials } from '../contexts/MaterialContext'; // Import the useMaterials hook
+import MaterialPreview from './MaterialPreview';
 
 const MaterialEditor: React.FC = () => {
-  // State for material properties
+  const { addMaterial } = useMaterials(); // Access the context's addMaterial function
+
   const [material, setMaterial] = useState({
-    id: null,
-    color: '#FFFFFF', // Default color
-    metalness: 0.5, // Default metalness
-    roughness: 0.5, // Default roughness
+    color: '#FFFFFF', // Initial default color
+    metalness: 0.5, // Initial default metalness
+    roughness: 0.5, // Initial default roughness
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setMaterial((prevMaterial) => ({
       ...prevMaterial,
-      [name]: name === 'color' ? value : parseFloat(value), // Parse number for metalness and roughness
+      [name]: name === 'color' ? value : parseFloat(value), // Update the material state
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('Material saved:', material);
-    // Here you would typically call a context method or prop callback to save the material
+    const newMaterial = { ...material, id: uuidv4() }; // Generate a unique ID for the new material
+    addMaterial(newMaterial); // Add the new material to the context
+    console.log('Material saved:', newMaterial);
+    // Reset the form or provide feedback to the user
   };
 
   return (
@@ -40,7 +42,6 @@ const MaterialEditor: React.FC = () => {
             className="w-full border-gray-300 rounded-md shadow-sm"
           />
         </div>
-
         <div className="mb-4">
           <label htmlFor="metalness" className="block mb-2">Metalness:</label>
           <input
@@ -50,12 +51,11 @@ const MaterialEditor: React.FC = () => {
             min="0"
             max="1"
             step="0.01"
-            value={material.metalness}
+            value={material.metalness.toString()}
             onChange={handleChange}
             className="w-full"
           />
         </div>
-
         <div className="mb-4">
           <label htmlFor="roughness" className="block mb-2">Roughness:</label>
           <input
@@ -65,18 +65,20 @@ const MaterialEditor: React.FC = () => {
             min="0"
             max="1"
             step="0.01"
-            value={material.roughness}
+            value={material.roughness.toString()}
             onChange={handleChange}
             className="w-full"
           />
         </div>
-
         <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Save Material</button>
       </form>
-
       <div className="flex-grow">
-        {/* MaterialPreview integration */}
-        <MaterialPreview color={material.color} metalness={material.metalness} roughness={material.roughness} />
+        <MaterialPreview
+          className="w-full h-full" // Apply responsive or specific styling as needed
+          color={material.color}
+          metalness={material.metalness}
+          roughness={material.roughness}
+        />
       </div>
     </div>
   );
