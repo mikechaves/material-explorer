@@ -1,5 +1,3 @@
-//export {};
-
 interface Material {
     id: string;
     color: string;
