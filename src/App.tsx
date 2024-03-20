@@ -2,26 +2,43 @@ import React, { useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
 import MaterialEditor from './components/MaterialEditor';
 import Sidebar from './components/Sidebar';
+import './styles/App.css'; 
+import logo from './logo.svg';
 
 function App() {
-  // State to manage the collapsed state of the sidebar
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
+
+    <div className="App">
+      {/* <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header> */}
     <MaterialProvider>
       <div className="flex">
-        {/* Sidebar takes up 1/5th of the space when expanded, hidden on small screens */}
+        {/* If the Sidebar contains navigation links, wrap them in a <nav> tag for accessibility */}
         <Sidebar 
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
         />
 
-        {/* Material Editor takes the remaining space */}
-        <main className={`flex-grow transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-0' : 'lg:pl-1/5'}`}>
+        <main id="maincontent" className={`flex-grow transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-0' : 'lg:pl-1/5'}`}>
           <MaterialEditor />
         </main>
       </div>
     </MaterialProvider>
+    </div>
   );
 }
 
