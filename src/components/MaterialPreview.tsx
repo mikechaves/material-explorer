@@ -1,5 +1,6 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
+import { motion } from 'framer-motion';
 
 interface MaterialPreviewProps {
   className?: string;
@@ -13,6 +14,12 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({ className = '', color
   const combinedClassNames = `flex justify-center items-center ${className}`;
 
   return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
     <div className={combinedClassNames}>
       <div className="w-full h-64 sm:h-96 lg:h-full"> {/* Adjust height for responsiveness */}
         <Canvas>
@@ -25,6 +32,7 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({ className = '', color
         </Canvas>
       </div>
     </div>
+    </motion.div>
   );
 };
 
