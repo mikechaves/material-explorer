@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* My additional styles */
 
 body {
   margin: 0;
@@ -16,4 +16,18 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: white;
+  padding: 8px;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
 }
