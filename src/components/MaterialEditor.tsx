@@ -4,33 +4,39 @@ import { useMaterials } from '../contexts/MaterialContext'; // Import the useMat
 import MaterialPreview from './MaterialPreview';
 
 const MaterialEditor: React.FC = () => {
-  const { addMaterial } = useMaterials(); // Access the context's addMaterial function
+  const { addMaterial, selectedMaterial, updateMaterial } = useMaterials(); // Assume updateMaterial is implemented
 
   const [material, setMaterial] = useState({
-    color: '#FFFFFF', // Initial default color
-    metalness: 0.5, // Initial default metalness
-    roughness: 0.5, // Initial default roughness
+    id: selectedMaterial?.id || '', // Use selectedMaterial's ID if available
+    color: selectedMaterial?.color || '#FFFFFF', // Initial default color
+    metalness: selectedMaterial?.metalness || 0.5, // Initial default metalness
+    roughness: selectedMaterial?.roughness || 0.5, // Initial default roughness
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setMaterial((prevMaterial) => ({
       ...prevMaterial,
-      [name]: name === 'color' ? value : parseFloat(value), // Update the material state
+      [name]: name === 'color' ? value : parseFloat(value), // Correctly parse numbers for metalness and roughness
     }));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newMaterial = { ...material, id: uuidv4() }; // Generate a unique ID for the new material
-    addMaterial(newMaterial); // Add the new material to the context
-    console.log('Material saved:', newMaterial);
-    // Reset the form or provide feedback to the user
+    const materialToSave = { ...material, id: material.id || uuidv4() }; // Generate a new ID only if necessary
+    if (material.id) {
+      updateMaterial(materialToSave);
+    } else {
+      addMaterial(materialToSave);
+    }
+    console.log('Material saved:', materialToSave);
+    setMaterial({ id: '', color: '#FFFFFF', metalness: 0.5, roughness: 0.5 }); // Reset the form after submission
   };
 
   return (
     <div className="flex flex-col md:flex-row">
       <form onSubmit={handleSubmit} className="p-4">
+        {/* Color Picker */}
         <div className="mb-4">
           <label htmlFor="color" className="block mb-2">Color:</label>
           <input
@@ -42,6 +48,7 @@ const MaterialEditor: React.FC = () => {
             className="w-full border-gray-300 rounded-md shadow-sm"
           />
         </div>
+        {/* Metalness Slider */}
         <div className="mb-4">
           <label htmlFor="metalness" className="block mb-2">Metalness:</label>
           <input
@@ -56,6 +63,7 @@ const MaterialEditor: React.FC = () => {
             className="w-full"
           />
         </div>
+        {/* Roughness Slider */}
         <div className="mb-4">
           <label htmlFor="roughness" className="block mb-2">Roughness:</label>
           <input
