@@ -1,9 +1,8 @@
-// src/App.tsx
 import React from 'react';
-import './styles/App.css'; // Assuming you're using CSS for styles
+import './styles/App.css';
 import { MaterialProvider } from './contexts/MaterialContext';
 import MaterialEditor from './components/MaterialEditor';
-// Import other components as needed
+import Sidebar from './components/Sidebar'; // Make sure to import the Sidebar component
 
 function App() {
   return (
@@ -13,6 +12,7 @@ function App() {
           {/* Your app header here */}
         </header>
         <main>
+          <Sidebar /> {/* Add the Sidebar component here */}
           {/* Wrap the entire component tree that needs access to the MaterialContext */}
           <MaterialEditor />
           {/* You can add other components here that should have access to the MaterialContext */}
