@@ -1,44 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
 import MaterialEditor from './components/MaterialEditor';
 import Sidebar from './components/Sidebar';
-import './styles/App.css'; 
-import logo from './logo.svg';
+import './styles/App.css';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(200); // Initial sidebar width
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Adjust sidebar width here if necessary
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-
-    <div className="App">
-      {/* <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header> */}
     <MaterialProvider>
-      <div className="flex">
-        {/* If the Sidebar contains navigation links, wrap them in a <nav> tag for accessibility */}
-        <Sidebar 
+      <div className="App flex">
+        <Sidebar
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
+          sidebarWidth={sidebarWidth}
+          setSidebarWidth={setSidebarWidth} // Passing setSidebarWidth to Sidebar
         />
-
-        <main id="maincontent" className={`flex-grow transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-0' : 'lg:pl-1/5'}`}>
+        <main
+          id="maincontent"
+          style={{ marginLeft: `${sidebarWidth}px` }} // Dynamically set marginLeft to match the sidebarWidth
+          className="material-editor transition-all duration-300 ease-in-out flex-grow"
+        >
           <MaterialEditor />
         </main>
       </div>
     </MaterialProvider>
-    </div>
   );
 }
 
