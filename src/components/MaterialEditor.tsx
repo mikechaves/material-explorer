@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { useMaterials } from '../contexts/MaterialContext';
+import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
+import { useMaterials } from '../contexts/MaterialContext'; // Import the useMaterials hook
 import MaterialPreview from './MaterialPreview';
 import { motion } from 'framer-motion';
 
-const MaterialEditor: React.FC = () => {
+// Add a new interface for props to include the width
+interface MaterialEditorProps {
+  width?: number; // Making width optional so it doesn't break existing implementations
+}
+
+const MaterialEditor: React.FC<MaterialEditorProps> = ({ width }) => {
   const { addMaterial, selectedMaterial, updateMaterial } = useMaterials();
 
   const [material, setMaterial] = useState({
@@ -41,7 +46,8 @@ const MaterialEditor: React.FC = () => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-    <div className="container mx-auto my-4 p-4 bg-white shadow-lg rounded-lg">
+    {/* Use the width prop to dynamically adjust the width of the container */}
+    <div style={{ width: width || '100%' }} className="container mx-auto my-4 p-4 bg-white shadow-lg rounded-lg">
       <div className="flex flex-wrap md:flex-nowrap">
         <div className="w-full md:w-1/2 p-4">
           <form onSubmit={handleSubmit}>
