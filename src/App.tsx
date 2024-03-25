@@ -6,8 +6,9 @@ import './styles/App.css';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(200); // Initial sidebar width
-
+  //const [sidebarWidth, setSidebarWidth] = useState(200); // Initial sidebar width
+  const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.2);
+  
   useEffect(() => {
     const handleResize = () => {
       // Adjust sidebar width here if necessary
@@ -28,10 +29,10 @@ function App() {
         />
         <main
           id="maincontent"
-          style={{ marginLeft: `${sidebarWidth}px` }} // Dynamically set marginLeft to match the sidebarWidth
-          className="material-editor transition-all duration-300 ease-in-out flex-grow"
+          style={{ marginLeft: `${sidebarWidth}px` }} // Adjust marginLeft to create space for the sidebar
+          className="material-editor transition-all duration-300 ease-in-out flex-grow bg-black w-[100dvw] h-[100dvh] overflow-hidden"
         >
-          <MaterialEditor />
+          <MaterialEditor width={window.innerWidth - sidebarWidth} />
         </main>
       </div>
     </MaterialProvider>
