@@ -1,46 +1,72 @@
-# Getting Started with Create React App
+# Material Explorer
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to the Material Explorer app documentation. This document provides detailed instructions on how to install, run, and use the app effectively, as well as an overview of its features.
 
-## Available Scripts
+## Overview
 
-In the project directory, you can run:
+Material Explorer is a React-based application that allows users to interactively create, customize, and visualize materials in 3D. Leveraging the power of React Three Fiber, it offers real-time feedback on changes to material properties such as color, metalness, and roughness. The app is designed to be responsive and user-friendly, ensuring a seamless experience across various devices and screen sizes.
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **Dynamic Material Customization**: Create, edit, and delete materials with immediate visual feedback.
+- **Live 3D Preview**: Utilize WebGL through React Three Fiber for a live 3D preview of the materials.
+- **Responsive Design**: Experience a fully responsive UI that adapts to different screen sizes and devices.
+- **State Persistence**: Your material configurations are saved in local storage, so you can pick up where you left off.
+- **Interactive UI**: Manage screen real estate efficiently with a collapsible sidebar.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Installaion
 
-### `npm test`
+To run Material Explorer locally, follow these steps:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. **Clone the repository**: First, clone the repository to your local machine using Git.
 
-### `npm run build`
+git clone https://github.com/yourusername/material-explorer.git
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. **Navigate to the project directory**:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+cd material-explorer
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. **Install dependencies**: Use npm to install the project's dependencies.
 
-### `npm run eject`
+npm install
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Running the App
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+To run the app in development mode, execute:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+npm start
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+This command starts a development server and opens the app in your default web browser. The app will reload if you make edits, and you will see any lint errors in the console.
 
-## Learn More
+## Building for Production
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+To build the app for production, run:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+npm run build
+
+This command builds the app for production to the 'build' folder. It correctly bundles React in production mode and optimizes the build for the best performance.
+
+## Usage
+
+**Creating a Material**
+- Use the controls in the sidebar to set the material's color, metalness, and roughness.
+- Click "Save Material" to add the material to your collection.
+
+**Editing a Material**
+- Click "Edit" next to any material in the sidebar to load it into the editor.
+- Adjust the material's properties as desired and click "Save Material" to update it.
+
+**Deleting a Material**
+- Click "Delete" next to any material in the sidebar to remove it from your collection.
+
+**Viewing Materials**
+- The 3D preview in the center of the screen will update in real-time as you adjust the material properties.
+- Collapse or expand the sidebar to toggle between a wider view of the 3D preview and the material list.
+
+## Contributing
+
+Contributions to Material Explorer are welcome! Please follow the standard GitHub pull request process to propose changes.
+
+## License
+
+Material Explorer is released under the MIT License. See the LICENSE file for more information.
