@@ -20,12 +20,13 @@ function App() {
 
   return (
     <MaterialProvider>
-      <div className="App flex">
+      {/* <div className = "App flex"> */}
+      <div className="w-full h-screen grid grid-cols-[max-content_auto] grid-rows-[5fr_1fr] gap-y-2 p-2 bg-black">
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
-          sidebarWidth={sidebarWidth}
-          setSidebarWidth={setSidebarWidth} // Passing setSidebarWidth to Sidebar
+          //sidebarWidth={sidebarWidth}
+          //setSidebarWidth={setSidebarWidth} // Passing setSidebarWidth to Sidebar
         />
         <main
           id="maincontent"
