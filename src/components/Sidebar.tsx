@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import React from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
@@ -7,12 +8,16 @@ import 'react-resizable/css/styles.css';
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-  sidebarWidth: number; // Passed from parent to control sidebar width
-  setSidebarWidth: React.Dispatch<React.SetStateAction<number>>; // Function to update sidebar width from parent
+  //sidebarWidth: number; // Passed from parent to control sidebar width
+  //setSidebarWidth: React.Dispatch<React.SetStateAction<number>>; // Function to update sidebar width from parent
 }
+const [minWidth, maxWidth, defaultWidth] = [200, 500, 350];
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, sidebarWidth, setSidebarWidth }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed,  }) => {
   const { materials, selectMaterial, deleteMaterial } = useMaterials();
+  const [width, setWidth] = useState(
+  parseInt(localStorage.getItem("sidebarWidth") ?? '') || defaultWidth
+  );
 
   const handleSelectMaterial = (id: string) => {
     console.log(`Selecting material with ID: ${id}`);
@@ -24,19 +29,46 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, sidebarW
     deleteMaterial(id);
   };
 
-  const onResize = (event: React.SyntheticEvent<Element, Event>, { size }: { size: { width: number } }) => {
-    setSidebarWidth(size.width);
-  };
+  // const onResize = (event: React.SyntheticEvent<Element, Event>, { size }: { size: { width: number } }) => {
+  //   setSidebarWidth(size.width);
+  // };
 
   // Function to toggle the sidebar collapse state
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  let isDragged = useRef(false);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragged.current) {
+        return;
+      }
+
+      document.body.style.userSelect = "none";
+
+      setWidth((previousWidth) => {
+        const newWidth = previousWidth + e.movementX / 2;
+        const isWidthInRange = newWidth >= minWidth && newWidth <= maxWidth;
+
+        return isWidthInRange ? newWidth : previousWidth;
+      });
+    });
+
+    window.addEventListener("mouseup", () => {
+      document.body.style.userSelect = "auto";
+      isDragged.current = false;
+    });
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("sidebarWidth", width.toString());
+  }, [width]);
 
   return (
-    <div className={`fixed top-0 left-0 h-full bg-[#1f1e1d] text-white z-10 flex transition-all duration-300 ease-in-out`} style={{ width: isCollapsed ? '0px' : `${sidebarWidth}px` }}>
-      <div className={`p-4 overflow-auto ${isCollapsed ? 'hidden' : 'block'}`}>
+    <div className={`fixed top-0 left-0 h-full bg-[#1f1e1d] text-white z-10 flex transition-all duration-300 ease-in-out`}>
+      <div style={{ width: `${width / 16}rem` }} className={`p-4 overflow-auto ${isCollapsed ? 'hidden' : 'block'}`}>
       {/* Flex container for the header */}
         <div className="flex justify-between items-center">
           <div className="flex-grow flex justify-start items-center">
@@ -76,16 +108,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, sidebarW
           </div>
         </nav>
       </div>
-      <Resizable
+      {/* Handle */}
+      {/* Handle */}
+      <div
+        className="w-2 bg-transparent cursor-col-resize"
+        onMouseDown={() => {
+          isDragged.current = true;
+        }}
+      />
+      {/* <Resizable
         width={sidebarWidth}
         height={Infinity}
         onResize={onResize}
         handle={<span className="react-resizable-handle" />}
         resizeHandles={['e']}
-      >
+      > */}
         {/* Invisible Resizable handle */}
-        <span />
-      </Resizable>
+        {/* <span />
+      </Resizable> */}
     </div>
   );
 };
