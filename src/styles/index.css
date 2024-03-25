@@ -31,3 +31,42 @@ code {
 .skip-link:focus {
   top: 0;
 }
+
+.react-resizable-handle {
+  background-color: white;
+}
+
+/* Responsive Styles */
+
+/* Smaller than 640px */
+@media (max-width: 639px) {
+  .react-resizable-handle {
+    display: none; /* Example to hide resizable handles on small devices */
+  }
+
+  body {
+    font-size: 14px; /* Smaller font size on small devices */
+  }
+}
+
+/* Tablets and small desktops - between 640px and 1023px */
+@media (min-width: 640px) and (max-width: 1023px) {
+  body {
+    font-size: 16px; /* Slightly larger font size on tablets */
+  }
+
+  .skip-link {
+    padding: 10px; /* Larger touch target on tablets */
+  }
+}
+
+/* Large screens - 1024px and above */
+@media (min-width: 1024px) {
+  body {
+    font-size: 18px; /* Larger font size for desktops */
+  }
+
+  .react-resizable-handle {
+    background-color: #ccc; /* Different handle color for larger screens */
+  }
+}
