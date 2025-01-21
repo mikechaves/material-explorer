@@ -14,15 +14,6 @@ interface Material {
   roughness: number;
 }
 
-interface SliderProps {
-  name: string;
-  value: number;
-  label: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onMouseDown: () => void;
-  onMouseUp: () => void;
-}
-
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const { addMaterial, updateMaterial, selectedMaterial } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
@@ -40,58 +31,62 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   useEffect(() => {
     if (selectedMaterial) {
       setMaterial(selectedMaterial);
-    } else {
-      setMaterial({
-        id: '',
-        color: '#FFFFFF',
-        metalness: 0.5,
-        roughness: 0.5,
-      });
     }
   }, [selectedMaterial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setMaterial((prev) => ({
+    const newValue = name === 'color' ? value : parseFloat(value);
+    setMaterial(prev => ({
       ...prev,
-      [name]: name === 'color' ? value : parseFloat(value),
+      [name]: newValue
     }));
-    setShowFeedback(true);
-    setTimeout(() => setShowFeedback(false), 1000);
   };
 
-  const Slider: React.FC<SliderProps> = ({ name, value, label, onChange, onMouseDown, onMouseUp }) => (
+  const Control = ({ name, value, label }: { name: string; value: number; label: string }) => (
     <div className="space-y-2">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-2">
         <label className="text-sm text-white/90 font-medium">{label}</label>
-        <div 
-          className="px-2 py-0.5 bg-purple-500/30 backdrop-blur-sm rounded text-xs text-white/90 font-medium"
-        >
-          {value.toFixed(2)}
-        </div>
-      </div>
-      
-      <div className="relative h-2">
-        <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden">
-          <motion.div
-            className="absolute inset-y-0 left-0 bg-purple-500"
-            style={{ width: `${value * 100}%` }}
-            layoutId={`slider-${name}`}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            name={name}
+            value={value}
+            onChange={handleChange}
+            min="0"
+            max="1"
+            step="0.01"
+            className="w-32 h-2 bg-white/5 rounded-full appearance-none cursor-pointer
+                     [&::-webkit-slider-thumb]:appearance-none 
+                     [&::-webkit-slider-thumb]:w-3 
+                     [&::-webkit-slider-thumb]:h-3 
+                     [&::-webkit-slider-thumb]:rounded-full 
+                     [&::-webkit-slider-thumb]:bg-purple-500 
+                     [&::-webkit-slider-thumb]:cursor-pointer
+                     [&::-webkit-slider-runnable-track]:bg-transparent"
+          />
+          <input
+            type="number"
+            name={name}
+            value={value}
+            onChange={handleChange}
+            min="0"
+            max="1"
+            step="0.01"
+            className="w-16 px-2 py-0.5 bg-purple-500/20 backdrop-blur-sm rounded text-sm text-white/90 
+                     font-medium appearance-none outline-none focus:bg-purple-500/30"
+            onBlur={(e) => {
+              let val = parseFloat(e.target.value);
+              if (isNaN(val)) val = 0;
+              if (val < 0) val = 0;
+              if (val > 1) val = 1;
+              setMaterial(prev => ({
+                ...prev,
+                [name]: val
+              }));
+            }}
           />
         </div>
-        <input
-          type="range"
-          name={name}
-          value={value}
-          onChange={onChange}
-          min="0"
-          max="1"
-          step="0.001"
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-        />
       </div>
     </div>
   );
@@ -125,33 +120,15 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           </div>
 
           <div className="space-y-4">
-            <Slider 
+            <Control 
               name="metalness" 
               value={material.metalness} 
               label="Metalness" 
-              onChange={handleChange}
-              onMouseDown={() => {
-                setIsDragging(true);
-                setActiveControl("metalness");
-              }}
-              onMouseUp={() => {
-                setIsDragging(false);
-                setActiveControl(null);
-              }}
             />
-            <Slider 
+            <Control 
               name="roughness" 
               value={material.roughness} 
-              label="Roughness"
-              onChange={handleChange}
-              onMouseDown={() => {
-                setIsDragging(true);
-                setActiveControl("roughness");
-              }}
-              onMouseUp={() => {
-                setIsDragging(false);
-                setActiveControl(null);
-              }}
+              label="Roughness" 
             />
           </div>
 
