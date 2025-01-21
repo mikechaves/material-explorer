@@ -2,131 +2,189 @@ import { useEffect, useRef, useState } from 'react';
 import React from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
-import { Resizable } from 'react-resizable';
-import 'react-resizable/css/styles.css';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-  //sidebarWidth: number; // Passed from parent to control sidebar width
-  //setSidebarWidth: React.Dispatch<React.SetStateAction<number>>; // Function to update sidebar width from parent
 }
-const [minWidth, maxWidth, defaultWidth] = [200, 500, 350];
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed,  }) => {
+const [minWidth, maxWidth] = [200, 500];
+
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const { materials, selectMaterial, deleteMaterial } = useMaterials();
   const [width, setWidth] = useState(
-  parseInt(localStorage.getItem("sidebarWidth") ?? '') || defaultWidth
+    parseInt(localStorage.getItem("sidebarWidth") ?? '350')
   );
+  const [isDragging, setIsDragging] = useState(false);
+  const [hoveredMaterial, setHoveredMaterial] = useState<string | null>(null);
 
   const handleSelectMaterial = (id: string) => {
-    console.log(`Selecting material with ID: ${id}`);
     selectMaterial(id);
   };
 
   const handleDeleteMaterial = (id: string) => {
-    console.log(`Deleting material with ID: ${id}`);
     deleteMaterial(id);
   };
 
-  // const onResize = (event: React.SyntheticEvent<Element, Event>, { size }: { size: { width: number } }) => {
-  //   setSidebarWidth(size.width);
-  // };
-
-  // Function to toggle the sidebar collapse state
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  let isDragged = useRef(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isDragged = useRef(false);
 
   useEffect(() => {
-    window.addEventListener("mousemove", (e) => {
-      if (!isDragged.current) {
-        return;
-      }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragged.current) return;
 
-      document.body.style.userSelect = "none";
+      const newWidth = Math.min(Math.max(e.clientX, minWidth), maxWidth);
+      setWidth(newWidth);
+      document.body.style.cursor = 'ew-resize';
+    };
 
-      setWidth((previousWidth) => {
-        const newWidth = previousWidth + e.movementX / 2;
-        const isWidthInRange = newWidth >= minWidth && newWidth <= maxWidth;
-
-        return isWidthInRange ? newWidth : previousWidth;
-      });
-    });
-
-    window.addEventListener("mouseup", () => {
-      document.body.style.userSelect = "auto";
+    const handleMouseUp = () => {
       isDragged.current = false;
-    });
+      document.body.style.cursor = 'default';
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
   }, []);
 
   useEffect(() => {
     localStorage.setItem("sidebarWidth", width.toString());
   }, [width]);
 
+  const variants = {
+    open: { width: width, x: 0 },
+    closed: { width: 0, x: -width },
+  };
+
   return (
-    <div className={`fixed top-0 left-0 h-full bg-[#1f1e1d] text-white z-10 flex transition-all duration-300 ease-in-out`}>
-      <div style={{ width: `${width / 16}rem` }} className={`p-4 overflow-auto ${isCollapsed ? 'hidden' : 'block'}`}>
-      {/* Flex container for the header */}
-        <div className="flex justify-between items-center">
-          <div className="flex-grow flex justify-start items-center">
-            <a href="https://lumalabs.ai/">
-              <img alt="Luma Logo" width="56" height="56" src="https://cdn-luma.com/public/lumalabs.ai/images/logo.png"/>
-            </a>
-            <h1 className="text-lg ml-4 font-bold">MATERIALS</h1>
+    <motion.div 
+      ref={sidebarRef}
+      className="fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md text-white z-10 flex shadow-xl"
+      animate={isCollapsed ? "closed" : "open"}
+      variants={variants}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={false}
+    >
+      <div className="p-4 overflow-auto w-full">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <motion.a 
+              href="https://lumalabs.ai/"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <img 
+                alt="Luma Logo" 
+                width="40" 
+                height="40" 
+                src="https://cdn-luma.com/public/lumalabs.ai/images/logo.png"
+                className="rounded-lg"
+              />
+            </motion.a>
+            <motion.h1 
+              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent"
+              animate={{ opacity: 1 }}
+              initial={{ opacity: 0 }}
+            >
+              MATERIALS
+            </motion.h1>
           </div>
-          <button onClick={toggleCollapse} className="px-2 py-0 text-xs font-bold rounded-full bg-gray-700 hover:bg-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
-          {isCollapsed ? '>>' : '<<'}
-          </button>
+          
+          <motion.button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 
+                     transition-colors duration-200 border border-white/10"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {isCollapsed ? '→' : '←'}
+          </motion.button>
         </div>
-        <nav id="sidebarContent" className="mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+        <motion.div 
+          layout
+          className="grid grid-cols-2 gap-4"
+        >
+          <AnimatePresence>
             {materials.map((material) => (
-              <div key={material.id} className="flex flex-col items-center mb-4 p-2">
-                <MaterialPreview className="w-20 h-20" color={material.color} metalness={material.metalness} roughness={material.roughness} />
-                <div className="mt-2 text-center">
-                  <button
-                    onClick={() => handleSelectMaterial(material.id)}
-                    className="px-4 py-0 text-xs font-bold bg-gray-700 hover:bg-gray-600 border border-white/10 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mx-1 transition-colors duration-150 ease-in-out"
-                    aria-label={`Edit ${material.color} material`}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteMaterial(material.id)}
-                    className="px-2 py-0 text-xs font-bold bg-red-500 hover:bg-red-600 border border-white/10 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 mx-1 transition-colors duration-150 ease-in-out"
-                    aria-label={`Delete ${material.color} material`}
-                  >
-                    Delete
-                  </button>
+              <motion.div
+                key={material.id}
+                layout
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="relative group"
+                onMouseEnter={() => setHoveredMaterial(material.id)}
+                onMouseLeave={() => setHoveredMaterial(null)}
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-black/30 backdrop-blur-sm
+                              border border-white/5 group-hover:border-purple-500/30 transition-all duration-300">
+                  <MaterialPreview
+                    className="w-full h-full"
+                    color={material.color}
+                    metalness={material.metalness}
+                    roughness={material.roughness}
+                  />
                 </div>
 
-              </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: hoveredMaterial === material.id ? 1 : 0,
+                    y: hoveredMaterial === material.id ? 0 : 10
+                  }}
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-10"
+                >
+                  <motion.button
+                    onClick={() => handleSelectMaterial(material.id)}
+                    className="px-3 py-1 text-xs font-medium bg-purple-600/90 hover:bg-purple-500/90 
+                             rounded-full text-white shadow-lg backdrop-blur-sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Edit
+                  </motion.button>
+                  <motion.button
+                    onClick={() => handleDeleteMaterial(material.id)}
+                    className="px-3 py-1 text-xs font-medium bg-red-600/90 hover:bg-red-500/90 
+                             rounded-full text-white shadow-lg backdrop-blur-sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Delete
+                  </motion.button>
+                </motion.div>
+              </motion.div>
             ))}
-          </div>
-        </nav>
+          </AnimatePresence>
+        </motion.div>
       </div>
-      {/* Handle */}
-      {/* Handle */}
-      <div
-        className="w-2 bg-transparent cursor-col-resize"
+
+      {/* Resizer handle */}
+      <motion.div
+        className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
+                   transition-colors duration-200 relative"
         onMouseDown={() => {
           isDragged.current = true;
+          setIsDragging(true);
         }}
-      />
-      {/* <Resizable
-        width={sidebarWidth}
-        height={Infinity}
-        onResize={onResize}
-        handle={<span className="react-resizable-handle" />}
-        resizeHandles={['e']}
-      > */}
-        {/* Invisible Resizable handle */}
-        {/* <span />
-      </Resizable> */}
-    </div>
+      >
+        {/* Active resize indicator */}
+        <motion.div
+          className="absolute inset-y-0 -right-0.5 w-1 bg-purple-500/50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isDragging ? 1 : 0 }}
+        />
+      </motion.div>
+    </motion.div>
   );
 };
 
