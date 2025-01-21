@@ -14,6 +14,70 @@ interface Material {
   roughness: number;
 }
 
+const Control = ({ name, value, label, onChange }: { 
+  name: string; 
+  value: number; 
+  label: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
+  <div className="space-y-2">
+    <div className="flex justify-between items-center gap-2">
+      <label className="text-sm text-white/90 font-medium">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          name={name}
+          value={value}
+          onChange={onChange}
+          min="0"
+          max="1"
+          step="0.01"
+          className="w-32 h-2 appearance-none bg-white/5 rounded-full cursor-pointer
+                   [&::-webkit-slider-thumb]:appearance-none 
+                   [&::-webkit-slider-thumb]:w-3 
+                   [&::-webkit-slider-thumb]:h-3 
+                   [&::-webkit-slider-thumb]:rounded-full 
+                   [&::-webkit-slider-thumb]:bg-purple-500 
+                   [&::-webkit-slider-thumb]:hover:bg-purple-400
+                   [&::-webkit-slider-thumb]:transition-colors
+                   [&::-webkit-slider-thumb]:cursor-grab
+                   [&:active::-webkit-slider-thumb]:cursor-grabbing
+                   [&::-moz-range-thumb]:w-3
+                   [&::-moz-range-thumb]:h-3
+                   [&::-moz-range-thumb]:rounded-full
+                   [&::-moz-range-thumb]:bg-purple-500
+                   [&::-moz-range-thumb]:hover:bg-purple-400
+                   [&::-moz-range-thumb]:border-0
+                   [&::-moz-range-thumb]:cursor-grab
+                   [&:active::-moz-range-thumb]:cursor-grabbing
+                   [&::-moz-range-progress]:bg-purple-500/50
+                   [&::-moz-range-track]:bg-transparent"
+        />
+        <input
+          type="number"
+          name={name}
+          value={value}
+          onChange={onChange}
+          min="0"
+          max="1"
+          step="0.01"
+          className="w-16 px-2 py-0.5 bg-purple-500/20 backdrop-blur-sm rounded text-sm text-white/90 
+                   font-medium appearance-none outline-none focus:bg-purple-500/30"
+          onBlur={(e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val)) val = 0;
+            if (val < 0) val = 0;
+            if (val > 1) val = 1;
+            e.target.value = val.toString();
+            const event = new Event('change', { bubbles: true });
+            e.target.dispatchEvent(event);
+          }}
+        />
+      </div>
+    </div>
+  </div>
+);
+
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const { addMaterial, updateMaterial, selectedMaterial } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
@@ -27,7 +91,6 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     roughness: 0.5,
   });
 
-  // Watch for selected material changes
   useEffect(() => {
     if (selectedMaterial) {
       setMaterial(selectedMaterial);
@@ -43,58 +106,9 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     }));
   };
 
-  const Control = ({ name, value, label }: { name: string; value: number; label: string }) => (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center gap-2">
-        <label className="text-sm text-white/90 font-medium">{label}</label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            name={name}
-            value={value}
-            onChange={handleChange}
-            min="0"
-            max="1"
-            step="0.01"
-            className="w-32 h-2 bg-white/5 rounded-full appearance-none cursor-pointer
-                     [&::-webkit-slider-thumb]:appearance-none 
-                     [&::-webkit-slider-thumb]:w-3 
-                     [&::-webkit-slider-thumb]:h-3 
-                     [&::-webkit-slider-thumb]:rounded-full 
-                     [&::-webkit-slider-thumb]:bg-purple-500 
-                     [&::-webkit-slider-thumb]:cursor-pointer
-                     [&::-webkit-slider-runnable-track]:bg-transparent"
-          />
-          <input
-            type="number"
-            name={name}
-            value={value}
-            onChange={handleChange}
-            min="0"
-            max="1"
-            step="0.01"
-            className="w-16 px-2 py-0.5 bg-purple-500/20 backdrop-blur-sm rounded text-sm text-white/90 
-                     font-medium appearance-none outline-none focus:bg-purple-500/30"
-            onBlur={(e) => {
-              let val = parseFloat(e.target.value);
-              if (isNaN(val)) val = 0;
-              if (val < 0) val = 0;
-              if (val > 1) val = 1;
-              setMaterial(prev => ({
-                ...prev,
-                [name]: val
-              }));
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex items-center justify-center w-full h-full">
       <div className="flex items-start gap-8 max-w-4xl p-6">
-        {/* Controls */}
         <motion.div 
           className="w-80 space-y-6 bg-black/60 backdrop-blur-sm rounded-xl p-4"
           initial={{ opacity: 0 }}
@@ -124,11 +138,13 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
               name="metalness" 
               value={material.metalness} 
               label="Metalness" 
+              onChange={handleChange}
             />
             <Control 
               name="roughness" 
               value={material.roughness} 
               label="Roughness" 
+              onChange={handleChange}
             />
           </div>
 
@@ -151,7 +167,6 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           </motion.button>
         </motion.div>
 
-        {/* Preview */}
         <div className="w-[400px] h-[400px]">
           <MaterialPreview
             className="w-full h-full"
