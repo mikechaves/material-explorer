@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,18 +8,47 @@ interface SidebarProps {
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+const [minWidth, maxWidth] = [200, 500];
+
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const { materials, selectMaterial, deleteMaterial } = useMaterials();
-  const [width] = useState(parseInt(localStorage.getItem("sidebarWidth") ?? '350'));
-  const [hoveredMaterial, setHoveredMaterial] = useState<string | null>(null);
+  const [width, setWidth] = useState(parseInt(localStorage.getItem("sidebarWidth") ?? '350'));
+  const [isDragging, setIsDragging] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isDragged = useRef(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragged.current) return;
+      const newWidth = Math.min(Math.max(e.clientX, minWidth), maxWidth);
+      setWidth(newWidth);
+      localStorage.setItem("sidebarWidth", newWidth.toString());
+      document.body.style.cursor = 'ew-resize';
+    };
+
+    const handleMouseUp = () => {
+      isDragged.current = false;
+      document.body.style.cursor = 'default';
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   return (
     <motion.div 
+      ref={sidebarRef}
       className="fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md text-white z-10 flex shadow-xl"
       animate={{ width: isCollapsed ? 64 : width }}
       transition={{ type: "spring", bounce: 0, duration: 0.3 }}
     >
-      <div className={`p-4 w-full overflow-hidden ${isCollapsed ? 'w-16' : ''}`}>
+      <div className="p-4 w-full overflow-hidden">
         <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center mb-6`}>
           <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-4'}`}>
             <motion.button 
@@ -61,8 +89,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   className="relative group"
-                  onMouseEnter={() => setHoveredMaterial(material.id)}
-                  onMouseLeave={() => setHoveredMaterial(null)}
                 >
                   <div className="aspect-square rounded-xl overflow-hidden bg-black/30 border border-white/5 
                                 hover:border-purple-500/30 transition-all duration-300">
@@ -107,6 +133,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
           </motion.div>
         )}
       </div>
+
+      {/* Resize Handle */}
+      {!isCollapsed && (
+        <div
+          className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
+                     transition-colors duration-200 relative"
+          onMouseDown={() => {
+            isDragged.current = true;
+            setIsDragging(true);
+          }}
+        >
+          <motion.div
+            className="absolute inset-y-0 -right-0.5 w-1 bg-purple-500/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isDragging ? 1 : 0 }}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };
