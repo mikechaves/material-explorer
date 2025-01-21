@@ -6,12 +6,11 @@ import './styles/App.css';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  //const [sidebarWidth, setSidebarWidth] = useState(200); // Initial sidebar width
-  const [sidebarWidth, setSidebarWidth] = useState(window.innerWidth * 0.2);
-  
+  const [sidebarWidth] = useState(window.innerWidth * 0.2);
+
   useEffect(() => {
     const handleResize = () => {
-      // Adjust sidebar width here if necessary
+      // Future resize handling if needed
     };
 
     window.addEventListener('resize', handleResize);
@@ -20,20 +19,19 @@ function App() {
 
   return (
     <MaterialProvider>
-      {/* <div className = "App flex"> */}
-      <div className="w-full h-screen grid grid-cols-[max-content_auto] grid-rows-[5fr_1fr] gap-y-2 p-2 bg-black">
+      <div className="relative w-screen h-screen overflow-hidden bg-black">
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
-          //sidebarWidth={sidebarWidth}
-          //setSidebarWidth={setSidebarWidth} // Passing setSidebarWidth to Sidebar
         />
         <main
-          id="maincontent"
-          style={{ marginLeft: `${sidebarWidth}px` }} // Adjust marginLeft to create space for the sidebar
-          className="material-editor transition-all duration-300 ease-in-out flex-grow bg-black w-[100dvw] h-[100dvh] overflow-hidden"
+          style={{ 
+            marginLeft: isSidebarCollapsed ? '64px' : `${sidebarWidth}px`,
+            width: isSidebarCollapsed ? 'calc(100% - 64px)' : `calc(100% - ${sidebarWidth}px)`
+          }}
+          className="h-full transition-all duration-300 ease-in-out"
         >
-          <MaterialEditor width={window.innerWidth - sidebarWidth} />
+          <MaterialEditor />
         </main>
       </div>
     </MaterialProvider>
