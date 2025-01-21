@@ -33,7 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragged.current) return;
-
       const newWidth = Math.min(Math.max(e.clientX, minWidth), maxWidth);
       setWidth(newWidth);
       document.body.style.cursor = 'ew-resize';
@@ -59,8 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   }, [width]);
 
   const variants = {
-    open: { width: width, x: 0 },
-    closed: { width: 0, x: -width },
+    open: { width: width },
+    closed: { width: 64 }, // Collapsed width to show just the logo and toggle
   };
 
   return (
@@ -72,11 +71,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       initial={false}
     >
-      <div className="p-4 overflow-auto w-full">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <motion.a 
-              href="https://lumalabs.ai/"
+      <div className={`p-4 overflow-auto ${isCollapsed ? 'w-16' : 'w-full'}`}>
+        <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center mb-6`}>
+          <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-4'}`}>
+            <motion.button 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-2 rounded-lg bg-transparent hover:bg-gray-800/50 
+                       transition-colors duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -87,103 +88,108 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                 src="https://cdn-luma.com/public/lumalabs.ai/images/logo.png"
                 className="rounded-lg"
               />
-            </motion.a>
-            <motion.h1 
-              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent"
-              animate={{ opacity: 1 }}
-              initial={{ opacity: 0 }}
-            >
-              MATERIALS
-            </motion.h1>
+            </motion.button>
+            
+            {!isCollapsed && (
+              <motion.h1 
+                className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent"
+                animate={{ opacity: 1 }}
+                initial={{ opacity: 0 }}
+              >
+                MATERIALS
+              </motion.h1>
+            )}
           </div>
           
-          <motion.button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 
-                     transition-colors duration-200 border border-white/10"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            {isCollapsed ? '→' : '←'}
-          </motion.button>
+          {!isCollapsed && (
+            <motion.button
+              onClick={() => setIsCollapsed(true)}
+              className="p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/50 
+                       transition-colors duration-200 border border-white/10"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ←
+            </motion.button>
+          )}
         </div>
 
-        <motion.div 
-          layout
-          className="grid grid-cols-2 gap-4"
-        >
-          <AnimatePresence>
-            {materials.map((material) => (
-              <motion.div
-                key={material.id}
-                layout
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="relative group"
-                onMouseEnter={() => setHoveredMaterial(material.id)}
-                onMouseLeave={() => setHoveredMaterial(null)}
-              >
-                <div className="aspect-square rounded-lg overflow-hidden bg-black/30 backdrop-blur-sm
-                              border border-white/5 group-hover:border-purple-500/30 transition-all duration-300">
-                  <MaterialPreview
-                    className="w-full h-full"
-                    color={material.color}
-                    metalness={material.metalness}
-                    roughness={material.roughness}
-                  />
-                </div>
-
+        {!isCollapsed && (
+          <motion.div 
+            layout
+            className="grid grid-cols-2 gap-4"
+          >
+            <AnimatePresence>
+              {materials.map((material) => (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ 
-                    opacity: hoveredMaterial === material.id ? 1 : 0,
-                    y: hoveredMaterial === material.id ? 0 : 10
-                  }}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-10"
+                  key={material.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="relative group"
+                  onMouseEnter={() => setHoveredMaterial(material.id)}
+                  onMouseLeave={() => setHoveredMaterial(null)}
                 >
-                  <motion.button
-                    onClick={() => handleSelectMaterial(material.id)}
-                    className="px-3 py-1 text-xs font-medium bg-purple-600/90 hover:bg-purple-500/90 
-                             rounded-full text-white shadow-lg backdrop-blur-sm"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Edit
-                  </motion.button>
-                  <motion.button
-                    onClick={() => handleDeleteMaterial(material.id)}
-                    className="px-3 py-1 text-xs font-medium bg-red-600/90 hover:bg-red-500/90 
-                             rounded-full text-white shadow-lg backdrop-blur-sm"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Delete
-                  </motion.button>
+                  <div className="aspect-square rounded-lg overflow-hidden bg-black/30 backdrop-blur-sm
+                                border border-white/5 hover:border-purple-500/30 transition-all duration-300">
+                    <MaterialPreview
+                      className="w-full h-full"
+                      color={material.color}
+                      metalness={material.metalness}
+                      roughness={material.roughness}
+                    />
+                    
+                    {/* Control buttons inside the card */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="flex justify-center gap-2">
+                        <motion.button
+                          onClick={() => handleSelectMaterial(material.id)}
+                          className="px-3 py-1 text-xs font-medium bg-purple-600/90 hover:bg-purple-500/90 
+                                   rounded-full text-white shadow-lg backdrop-blur-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Edit
+                        </motion.button>
+                        <motion.button
+                          onClick={() => handleDeleteMaterial(material.id)}
+                          className="px-3 py-1 text-xs font-medium bg-red-600/90 hover:bg-red-500/90 
+                                   rounded-full text-white shadow-lg backdrop-blur-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Delete
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
       </div>
 
       {/* Resizer handle */}
-      <motion.div
-        className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
-                   transition-colors duration-200 relative"
-        onMouseDown={() => {
-          isDragged.current = true;
-          setIsDragging(true);
-        }}
-      >
-        {/* Active resize indicator */}
+      {!isCollapsed && (
         <motion.div
-          className="absolute inset-y-0 -right-0.5 w-1 bg-purple-500/50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isDragging ? 1 : 0 }}
-        />
-      </motion.div>
+          className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
+                     transition-colors duration-200 relative"
+          onMouseDown={() => {
+            isDragged.current = true;
+            setIsDragging(true);
+          }}
+        >
+          <motion.div
+            className="absolute inset-y-0 -right-0.5 w-1 bg-purple-500/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isDragging ? 1 : 0 }}
+          />
+        </motion.div>
+      )}
     </motion.div>
   );
 };
