@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
@@ -24,7 +24,7 @@ interface SliderProps {
 }
 
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
-  const { addMaterial, updateMaterial } = useMaterials();
+  const { addMaterial, updateMaterial, selectedMaterial } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
   const [activeControl, setActiveControl] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -35,6 +35,20 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     metalness: 0.5,
     roughness: 0.5,
   });
+
+  // Watch for selected material changes
+  useEffect(() => {
+    if (selectedMaterial) {
+      setMaterial(selectedMaterial);
+    } else {
+      setMaterial({
+        id: '',
+        color: '#FFFFFF',
+        metalness: 0.5,
+        roughness: 0.5,
+      });
+    }
+  }, [selectedMaterial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,22 +63,23 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const Slider: React.FC<SliderProps> = ({ name, value, label, onChange, onMouseDown, onMouseUp }) => (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-sm text-white/90">{label}</label>
-        <motion.div 
-          className="px-2 py-1 bg-purple-500/20 rounded-md"
-          initial={false}
-          animate={{ opacity: isDragging && activeControl === name ? 1 : 0.7 }}
+        <label className="text-sm text-white/90 font-medium">{label}</label>
+        <div 
+          className="px-2 py-0.5 bg-purple-500/30 backdrop-blur-sm rounded text-xs text-white/90 font-medium"
         >
           {value.toFixed(2)}
-        </motion.div>
+        </div>
       </div>
       
-      <div className="relative h-8">
-        <div className="absolute inset-0 bg-black/40 rounded-lg" />
-        <motion.div
-          className="absolute inset-y-0 left-0 bg-purple-500/50 rounded-lg"
-          style={{ width: `${value * 100}%` }}
-        />
+      <div className="relative h-2">
+        <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 bg-purple-500"
+            style={{ width: `${value * 100}%` }}
+            layoutId={`slider-${name}`}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+          />
+        </div>
         <input
           type="range"
           name={name}
@@ -72,8 +87,8 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           onChange={onChange}
           min="0"
           max="1"
-          step="0.01"
-          className="relative w-full h-full opacity-0 cursor-pointer"
+          step="0.001"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
         />
