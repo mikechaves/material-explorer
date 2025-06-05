@@ -6,13 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  width: number;
+  setWidth: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const [minWidth, maxWidth] = [200, 500];
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth }) => {
   const { materials, selectMaterial, deleteMaterial } = useMaterials();
-  const [width, setWidth] = useState(parseInt(localStorage.getItem("sidebarWidth") ?? '350'));
   const [isDragging, setIsDragging] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isDragged = useRef(false);

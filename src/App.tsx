@@ -6,7 +6,10 @@ import './styles/App.css';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [sidebarWidth] = useState(window.innerWidth * 0.2);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 350;
+    return parseInt(localStorage.getItem('sidebarWidth') ?? '350');
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -23,6 +26,8 @@ function App() {
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
+          width={sidebarWidth}
+          setWidth={setSidebarWidth}
         />
         <main
           style={{ 
