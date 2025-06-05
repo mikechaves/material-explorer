@@ -13,7 +13,6 @@ root.render(
   </React.StrictMode>
 );
 
-reportWebVitals(console.log);
 // Or for more advanced analytics integration
 reportWebVitals((metrics) => {
   console.log(metrics);
