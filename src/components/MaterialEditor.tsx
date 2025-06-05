@@ -80,9 +80,6 @@ const Control = ({ name, value, label, onChange }: {
 
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const { addMaterial, updateMaterial, selectedMaterial } = useMaterials();
-  const [isDragging, setIsDragging] = useState(false);
-  const [activeControl, setActiveControl] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
 
   const [material, setMaterial] = useState<Material>({
     id: '',
@@ -159,8 +156,6 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
               } else {
                 addMaterial({ ...material, id: Date.now().toString() });
               }
-              setShowFeedback(true);
-              setTimeout(() => setShowFeedback(false), 1000);
             }}
           >
             Save Material
