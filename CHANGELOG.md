@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - Added **texture maps**: base color, normal (+ scale), roughness, metalness, ambient occlusion (+ strength), emissive, and alpha (+ cutoff), plus **tiling (U/V)**.
 - Major **preview workflow** improvements: model picker, environment/HDRI picker, auto-rotate, **PNG snapshot**, and **shareable links** (settings encoded in URL).
 - Export options: **JSON presets**, **GLB export per material**, and **GLB export of the full library** (grid of preview spheres).
+- Library UX: **favorites**, **tags**, **search**, **sorting**, tag filter chips, **bulk actions** (delete/export/favorite), and **manual drag-to-reorder**.
+- Viewer tools: zoom toggle, grid/background toggles, **reset view**, and **A/B compare** mode.
 
 ### Fixes
 - Security: pinned vulnerable transitive deps via npm overrides:
