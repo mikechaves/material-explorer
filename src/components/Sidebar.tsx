@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../logo.svg';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -54,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-4'}`}>
             <motion.button 
               onClick={() => setIsCollapsed(!isCollapsed)}
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -62,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 alt="Material Explorer" 
                 width="40" 
                 height="40" 
-                src="https://cdn-luma.com/public/lumalabs.ai/images/logo.png"
+                src={logo}
                 className="rounded-lg"
               />
             </motion.button>
@@ -101,14 +103,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                     />
                     
                     {/* Control overlay */}
-                    <motion.div 
-                      className="absolute inset-0 flex items-end justify-center pb-3 bg-gradient-to-t from-black/60 via-black/30 to-transparent"
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
+                    <div
+                      className="absolute inset-0 flex items-end justify-center pb-3 bg-gradient-to-t from-black/60 via-black/30 to-transparent
+                                 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
                     >
                       <div className="flex gap-2">
                         <motion.button
                           onClick={() => selectMaterial(material.id)}
+                          aria-label="Edit material"
                           className="px-4 py-1 text-xs font-medium bg-purple-500/90 hover:bg-purple-400 
                                    rounded-full text-white shadow-lg backdrop-blur-sm"
                           whileHover={{ scale: 1.05 }}
@@ -117,7 +119,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                           Edit
                         </motion.button>
                         <motion.button
-                          onClick={() => deleteMaterial(material.id)}
+                          onClick={() => {
+                            const ok = window.confirm('Delete this material?');
+                            if (ok) deleteMaterial(material.id);
+                          }}
+                          aria-label="Delete material"
                           className="px-4 py-1 text-xs font-medium bg-red-500/90 hover:bg-red-400 
                                    rounded-full text-white shadow-lg backdrop-blur-sm"
                           whileHover={{ scale: 1.05 }}
@@ -126,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                           Delete
                         </motion.button>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -140,6 +146,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         <div
           className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
                      transition-colors duration-200 relative"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
           onMouseDown={() => {
             isDragged.current = true;
             setIsDragging(true);

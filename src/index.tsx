@@ -13,9 +13,7 @@ root.render(
   </React.StrictMode>
 );
 
-// Or for more advanced analytics integration
-reportWebVitals((metrics) => {
-  console.log(metrics);
-  // Send to an analytics endpoint
-  // fetch('your-analytics-endpoint', { body: JSON.stringify(metrics), ... });
-});
+// Keep web-vitals quiet by default (it can spam the console in production).
+// If you want to measure performance locally, uncomment:
+// if (process.env.NODE_ENV === 'development') reportWebVitals(console.log);
+reportWebVitals();

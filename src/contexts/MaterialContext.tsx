@@ -1,12 +1,6 @@
 import React, { createContext, useState, useContext } from 'react';
 import { saveMaterials, loadMaterials } from '../utils/storage';
-
-interface Material {
-  id: string;
-  color: string;
-  metalness: number;
-  roughness: number;
-}
+import type { Material } from '../types/material';
 
 interface MaterialContextType {
   materials: Material[];
@@ -40,17 +34,16 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       saveMaterials(updatedMaterials); // Persist the updated materials array
       return updatedMaterials;
     });
+    setSelectedMaterial((prev) => (prev?.id === materialToUpdate.id ? materialToUpdate : prev));
   };
 
   const removeMaterial = (id: string) => {
     setMaterials((prevMaterials) => {
       const updatedMaterials = prevMaterials.filter((material) => material.id !== id);
       saveMaterials(updatedMaterials);
-      if (selectedMaterial?.id === id) {
-        setSelectedMaterial(null);
-      }
       return updatedMaterials;
     });
+    setSelectedMaterial((prev) => (prev?.id === id ? null : prev));
   };
 
   const selectMaterial = (id: string) => {

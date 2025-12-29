@@ -2,16 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
+import type { Material } from '../types/material';
+import { v4 as uuidv4 } from 'uuid';
 
 interface MaterialEditorProps {
   width?: number;
-}
-
-interface Material {
-  id: string;
-  color: string;
-  metalness: number;
-  roughness: number;
 }
 
 const Control = ({ name, value, label, onChange }: { 
@@ -63,15 +58,6 @@ const Control = ({ name, value, label, onChange }: {
           step="0.01"
           className="w-16 px-2 py-0.5 bg-purple-500/20 backdrop-blur-sm rounded text-sm text-white/90 
                    font-medium appearance-none outline-none focus:bg-purple-500/30"
-          onBlur={(e) => {
-            let val = parseFloat(e.target.value);
-            if (isNaN(val)) val = 0;
-            if (val < 0) val = 0;
-            if (val > 1) val = 1;
-            e.target.value = val.toString();
-            const event = new Event('change', { bubbles: true });
-            e.target.dispatchEvent(event);
-          }}
         />
       </div>
     </div>
@@ -94,9 +80,20 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     }
   }, [selectedMaterial]);
 
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const newValue = name === 'color' ? value : parseFloat(value);
+    const newValue =
+      name === 'color'
+        ? value
+        : (() => {
+            const parsed = Number.parseFloat(value);
+            if (!Number.isFinite(parsed)) return null;
+            return clamp01(parsed);
+          })();
+
+    if (newValue === null) return;
     setMaterial(prev => ({
       ...prev,
       [name]: newValue
@@ -154,7 +151,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
               if (material.id) {
                 updateMaterial(material);
               } else {
-                addMaterial({ ...material, id: Date.now().toString() });
+                addMaterial({ ...material, id: uuidv4() });
               }
             }}
           >

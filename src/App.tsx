@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
 import MaterialEditor from './components/MaterialEditor';
 import Sidebar from './components/Sidebar';
@@ -8,17 +8,10 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return 350;
-    return parseInt(localStorage.getItem('sidebarWidth') ?? '350');
+    const raw = window.localStorage.getItem('sidebarWidth');
+    const parsed = raw ? Number.parseInt(raw, 10) : 350;
+    return Number.isFinite(parsed) ? parsed : 350;
   });
-
-  useEffect(() => {
-    const handleResize = () => {
-      // Future resize handling if needed
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
     <MaterialProvider>
