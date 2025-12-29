@@ -9,15 +9,40 @@ interface MaterialPreviewProps {
   color: string;
   metalness: number;
   roughness: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+  clearcoat?: number;
+  clearcoatRoughness?: number;
+  transmission?: number;
+  ior?: number;
+  opacity?: number;
 }
 
 interface SphereProps {
   color: string;
   metalness: number;
   roughness: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+  clearcoat?: number;
+  clearcoatRoughness?: number;
+  transmission?: number;
+  ior?: number;
+  opacity?: number;
 }
 
-const Sphere: React.FC<SphereProps> = ({ color, metalness, roughness }) => {
+const Sphere: React.FC<SphereProps> = ({
+  color,
+  metalness,
+  roughness,
+  emissive = '#000000',
+  emissiveIntensity = 0,
+  clearcoat = 0,
+  clearcoatRoughness = 0.03,
+  transmission = 0,
+  ior = 1.5,
+  opacity = 1,
+}) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -39,10 +64,18 @@ const Sphere: React.FC<SphereProps> = ({ color, metalness, roughness }) => {
       onPointerOut={() => setHovered(false)}
     >
       <sphereGeometry args={[1, 64, 64]} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={color}
         metalness={metalness}
         roughness={roughness}
+        emissive={emissive}
+        emissiveIntensity={emissiveIntensity}
+        clearcoat={clearcoat}
+        clearcoatRoughness={clearcoatRoughness}
+        transmission={transmission}
+        ior={ior}
+        opacity={opacity}
+        transparent={opacity < 1 || transmission > 0}
         envMapIntensity={1}
       />
     </mesh>

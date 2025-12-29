@@ -2,18 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
-import type { Material } from '../types/material';
-import { v4 as uuidv4 } from 'uuid';
+import type { MaterialDraft } from '../types/material';
+import { createMaterialFromDraft, clamp01 } from '../utils/material';
 
 interface MaterialEditorProps {
   width?: number;
 }
 
-const Control = ({ name, value, label, onChange }: { 
+const Control = ({
+  name,
+  value,
+  label,
+  onChange,
+  min = 0,
+  max = 1,
+  step = 0.01,
+}: {
   name: string; 
   value: number; 
   label: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  min?: number;
+  max?: number;
+  step?: number;
 }) => (
   <div className="space-y-2">
     <div className="flex justify-between items-center gap-2">
@@ -24,9 +35,9 @@ const Control = ({ name, value, label, onChange }: {
           name={name}
           value={value}
           onChange={onChange}
-          min="0"
-          max="1"
-          step="0.01"
+          min={min}
+          max={max}
+          step={step}
           className="w-32 h-2 appearance-none bg-white/5 rounded-full cursor-pointer
                    [&::-webkit-slider-thumb]:appearance-none 
                    [&::-webkit-slider-thumb]:w-3 
@@ -53,9 +64,9 @@ const Control = ({ name, value, label, onChange }: {
           name={name}
           value={value}
           onChange={onChange}
-          min="0"
-          max="1"
-          step="0.01"
+          min={min}
+          max={max}
+          step={step}
           className="w-16 px-2 py-0.5 bg-purple-500/20 backdrop-blur-sm rounded text-sm text-white/90 
                    font-medium appearance-none outline-none focus:bg-purple-500/30"
         />
@@ -65,33 +76,43 @@ const Control = ({ name, value, label, onChange }: {
 );
 
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
-  const { addMaterial, updateMaterial, selectedMaterial } = useMaterials();
+  const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
 
-  const [material, setMaterial] = useState<Material>({
-    id: '',
-    color: '#FFFFFF',
-    metalness: 0.5,
-    roughness: 0.5,
-  });
+  const emptyDraft: MaterialDraft = React.useMemo(
+    () => ({
+      name: 'Untitled',
+      color: '#FFFFFF',
+      metalness: 0.5,
+      roughness: 0.5,
+      emissive: '#000000',
+      emissiveIntensity: 0,
+      clearcoat: 0,
+      clearcoatRoughness: 0.03,
+      transmission: 0,
+      ior: 1.5,
+      opacity: 1,
+    }),
+    []
+  );
+
+  const [material, setMaterial] = useState<MaterialDraft>(emptyDraft);
 
   useEffect(() => {
-    if (selectedMaterial) {
-      setMaterial(selectedMaterial);
-    }
-  }, [selectedMaterial]);
-
-  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+    if (selectedMaterial) setMaterial(selectedMaterial);
+    else setMaterial(emptyDraft);
+  }, [selectedMaterial, emptyDraft]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const newValue =
-      name === 'color'
-        ? value
-        : (() => {
-            const parsed = Number.parseFloat(value);
-            if (!Number.isFinite(parsed)) return null;
-            return clamp01(parsed);
-          })();
+    const newValue = (() => {
+      if (name === 'name') return value;
+      if (name === 'color') return value;
+      if (name === 'emissive') return value;
+      const parsed = Number.parseFloat(value);
+      if (!Number.isFinite(parsed)) return null;
+      if (name === 'ior') return Math.max(1, Math.min(2.5, parsed));
+      return clamp01(parsed);
+    })();
 
     if (newValue === null) return;
     setMaterial(prev => ({
@@ -108,6 +129,19 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
+          <div className="space-y-2">
+            <label className="text-sm text-white/90">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={material.name ?? ''}
+              onChange={handleChange}
+              placeholder="Untitled"
+              className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
+                         focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+            />
+          </div>
+
           <div className="space-y-4">
             <label className="text-sm text-white/90">Material Color</label>
             <div className="flex items-center gap-4">
@@ -142,21 +176,97 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             />
           </div>
 
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm text-white/90 font-medium">Emissive</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="emissive"
+                  value={material.emissive ?? '#000000'}
+                  onChange={handleChange}
+                  className="w-10 h-10 cursor-pointer border-0 bg-transparent"
+                />
+                <Control
+                  name="emissiveIntensity"
+                  value={material.emissiveIntensity}
+                  label="Intensity"
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Control
+              name="clearcoat"
+              value={material.clearcoat}
+              label="Clearcoat"
+              onChange={handleChange}
+            />
+            <Control
+              name="clearcoatRoughness"
+              value={material.clearcoatRoughness}
+              label="Clearcoat Roughness"
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <Control
+              name="transmission"
+              value={material.transmission}
+              label="Transmission"
+              onChange={handleChange}
+            />
+            <Control
+              name="ior"
+              value={material.ior}
+              label="IOR"
+              min={1}
+              max={2.5}
+              step={0.01}
+              onChange={handleChange}
+            />
+            <Control
+              name="opacity"
+              value={material.opacity}
+              label="Opacity"
+              onChange={handleChange}
+            />
+          </div>
+
           <motion.button
             className="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-lg
                      text-white text-sm font-medium transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              if (material.id) {
-                updateMaterial(material);
-              } else {
-                addMaterial({ ...material, id: uuidv4() });
-              }
+              const now = Date.now();
+              const full = createMaterialFromDraft({
+                ...material,
+                updatedAt: now,
+                ...(material.id ? {} : { createdAt: now }),
+              });
+
+              if (material.id) updateMaterial(full);
+              else addMaterial(full);
             }}
           >
-            Save Material
+            {material.id ? 'Update Material' : 'Save Material'}
           </motion.button>
+
+          {material.id && (
+            <motion.button
+              className="w-full py-2 bg-white/10 hover:bg-white/15 rounded-lg
+                       text-white text-sm font-medium transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => startNewMaterial()}
+            >
+              New Material
+            </motion.button>
+          )}
         </motion.div>
 
         <div className="w-[400px] h-[400px]">
@@ -165,6 +275,13 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             color={material.color}
             metalness={material.metalness}
             roughness={material.roughness}
+            emissive={material.emissive}
+            emissiveIntensity={material.emissiveIntensity}
+            clearcoat={material.clearcoat}
+            clearcoatRoughness={material.clearcoatRoughness}
+            transmission={material.transmission}
+            ior={material.ior}
+            opacity={material.opacity}
           />
         </div>
       </div>

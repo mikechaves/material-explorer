@@ -3,6 +3,8 @@ import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview from './MaterialPreview';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../logo.svg';
+import type { Material } from '../types/material';
+import { createMaterialFromDraft, downloadJson, normalizeMaterial } from '../utils/material';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -14,10 +16,11 @@ interface SidebarProps {
 const [minWidth, maxWidth] = [200, 500];
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth }) => {
-  const { materials, selectMaterial, deleteMaterial } = useMaterials();
+  const { materials, selectMaterial, deleteMaterial, addMaterial, startNewMaterial } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isDragged = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -42,6 +45,70 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [setWidth]);
+
+  const exportAll = () => {
+    downloadJson('materials.json', { version: 1, exportedAt: Date.now(), materials });
+  };
+
+  const exportOne = (material: Material) => {
+    downloadJson(`${material.name || 'material'}.json`, { version: 1, exportedAt: Date.now(), material });
+  };
+
+  const duplicateOne = (material: Material) => {
+    const copyName = `${material.name || 'Untitled'} Copy`;
+    addMaterial(
+      createMaterialFromDraft({
+        name: copyName,
+        color: material.color,
+        metalness: material.metalness,
+        roughness: material.roughness,
+        emissive: material.emissive,
+        emissiveIntensity: material.emissiveIntensity,
+        clearcoat: material.clearcoat,
+        clearcoatRoughness: material.clearcoatRoughness,
+        transmission: material.transmission,
+        ior: material.ior,
+        opacity: material.opacity,
+      })
+    );
+  };
+
+  const onImportFile = async (file: File) => {
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as unknown;
+
+      const now = Date.now();
+      const incoming: unknown[] = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === 'object' && Array.isArray((parsed as any).materials)
+          ? (parsed as any).materials
+          : parsed && typeof parsed === 'object' && (parsed as any).material
+            ? [(parsed as any).material]
+            : [parsed];
+
+      const normalized = incoming
+        .map((m) => normalizeMaterial(m, now))
+        .filter((m): m is Material => m !== null);
+
+      if (normalized.length === 0) {
+        window.alert('No valid materials found in that file.');
+        return;
+      }
+
+      // Ensure imported ids don’t collide; if they do, assign a new id.
+      const existingIds = new Set(materials.map((m) => m.id));
+      normalized.forEach((m) => {
+        const draft = existingIds.has(m.id) ? { ...m, id: undefined } : m;
+        addMaterial(createMaterialFromDraft(draft));
+      });
+    } catch (e) {
+      console.error(e);
+      window.alert('Failed to import materials. Make sure it is valid JSON.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <motion.div 
@@ -79,6 +146,45 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               </motion.h1>
             )}
           </div>
+
+          {!isCollapsed && (
+            <div className="flex items-center gap-2">
+              <motion.button
+                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => startNewMaterial()}
+              >
+                New
+              </motion.button>
+              <motion.button
+                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Import
+              </motion.button>
+              <motion.button
+                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={exportAll}
+              >
+                Export
+              </motion.button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void onImportFile(file);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {!isCollapsed && (
@@ -100,6 +206,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       color={material.color}
                       metalness={material.metalness}
                       roughness={material.roughness}
+                      emissive={material.emissive}
+                      emissiveIntensity={material.emissiveIntensity}
+                      clearcoat={material.clearcoat}
+                      clearcoatRoughness={material.clearcoatRoughness}
+                      transmission={material.transmission}
+                      ior={material.ior}
+                      opacity={material.opacity}
                     />
                     
                     {/* Control overlay */}
@@ -107,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       className="absolute inset-0 flex items-end justify-center pb-3 bg-gradient-to-t from-black/60 via-black/30 to-transparent
                                  opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
                     >
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-center px-2">
                         <motion.button
                           onClick={() => selectMaterial(material.id)}
                           aria-label="Edit material"
@@ -117,6 +230,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                           whileTap={{ scale: 0.95 }}
                         >
                           Edit
+                        </motion.button>
+                        <motion.button
+                          onClick={() => duplicateOne(material)}
+                          aria-label="Duplicate material"
+                          className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 
+                                   rounded-full text-white shadow-lg backdrop-blur-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Duplicate
+                        </motion.button>
+                        <motion.button
+                          onClick={() => exportOne(material)}
+                          aria-label="Export material"
+                          className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 
+                                   rounded-full text-white shadow-lg backdrop-blur-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Export
                         </motion.button>
                         <motion.button
                           onClick={() => {
@@ -131,6 +264,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                         >
                           Delete
                         </motion.button>
+                      </div>
+                    </div>
+
+                    {/* Name badge */}
+                    <div className="absolute top-2 left-2 right-2 pointer-events-none">
+                      <div className="inline-flex max-w-full px-2 py-0.5 rounded-full bg-black/40 text-[11px] text-white/90 truncate">
+                        {material.name || 'Untitled'}
                       </div>
                     </div>
                   </div>

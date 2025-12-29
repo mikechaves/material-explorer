@@ -10,6 +10,7 @@ interface MaterialContextType {
   // removeMaterial: (id: string) => void;
   deleteMaterial: (id: string) => void;
   selectMaterial: (id: string) => void;
+  startNewMaterial: () => void;
 }
 
 const MaterialContext = createContext<MaterialContextType | undefined>(undefined);
@@ -52,10 +53,13 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteMaterial = removeMaterial;
+  const startNewMaterial = () => setSelectedMaterial(null);
 
   return (
     // <MaterialContext.Provider value={{ materials, selectedMaterial, addMaterial, updateMaterial, removeMaterial, selectMaterial, deleteMaterial }}>
-    <MaterialContext.Provider value={{ materials, selectedMaterial, addMaterial, updateMaterial, deleteMaterial, selectMaterial }}>
+    <MaterialContext.Provider
+      value={{ materials, selectedMaterial, addMaterial, updateMaterial, deleteMaterial, selectMaterial, startNewMaterial }}
+    >
       {children}
     </MaterialContext.Provider>
   );
