@@ -222,7 +222,11 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
     >
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true, physicallyCorrectLights: true }}
+        gl={{ antialias: true }}
+        onCreated={({ gl }) => {
+          // three.js r152+ uses `useLegacyLights` (physical lighting is the default).
+          gl.useLegacyLights = false;
+        }}
         camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
         className="bg-gradient-to-b from-gray-900/50 to-black/50"
       >

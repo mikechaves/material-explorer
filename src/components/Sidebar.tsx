@@ -4,7 +4,8 @@ import MaterialPreview from './MaterialPreview';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../logo.svg';
 import type { Material } from '../types/material';
-import { createMaterialFromDraft, downloadJson, normalizeMaterial } from '../utils/material';
+import { createMaterialFromDraft, downloadBlob, downloadJson, normalizeMaterial } from '../utils/material';
+import { exportMaterialAsGlb } from '../utils/gltfExport';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -52,6 +53,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const exportOne = (material: Material) => {
     downloadJson(`${material.name || 'material'}.json`, { version: 1, exportedAt: Date.now(), material });
+  };
+
+  const exportOneGlb = async (material: Material) => {
+    try {
+      const { filename, blob } = await exportMaterialAsGlb(material);
+      downloadBlob(filename, blob);
+    } catch (e) {
+      console.error(e);
+      window.alert('Failed to export GLB.');
+    }
   };
 
   const duplicateOne = (material: Material) => {
@@ -255,7 +266,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          Export
+                          JSON
+                        </motion.button>
+                        <motion.button
+                          onClick={() => void exportOneGlb(material)}
+                          aria-label="Export material as GLB"
+                          className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 
+                                   rounded-full text-white shadow-lg backdrop-blur-sm"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          GLB
                         </motion.button>
                         <motion.button
                           onClick={() => {
