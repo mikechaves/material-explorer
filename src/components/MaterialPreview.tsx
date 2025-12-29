@@ -31,6 +31,9 @@ interface MaterialPreviewProps {
   environment?: 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
   model?: 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
   autoRotate?: boolean;
+  enableZoom?: boolean;
+  showGrid?: boolean;
+  showBackground?: boolean;
 }
 
 interface SphereProps {
@@ -222,7 +225,12 @@ const Sphere: React.FC<SphereProps> = ({
   );
 };
 
-const Scene: React.FC<SphereProps & { autoRotate?: boolean }> = ({ autoRotate, ...props }) => {
+const Scene: React.FC<SphereProps & { autoRotate?: boolean; enableZoom?: boolean; showGrid?: boolean }> = ({
+  autoRotate,
+  enableZoom,
+  showGrid,
+  ...props
+}) => {
   return (
     <>
       {/* Main sphere */}
@@ -236,9 +244,11 @@ const Scene: React.FC<SphereProps & { autoRotate?: boolean }> = ({ autoRotate, .
         blur={2}
       />
 
+      {showGrid && <gridHelper args={[12, 12, '#444444', '#222222']} position={[0, -1.4, 0]} />}
+
       {/* Camera controls */}
       <OrbitControls
-        enableZoom={false}
+        enableZoom={!!enableZoom}
         enablePan={false}
         autoRotate={!!autoRotate}
         autoRotateSpeed={1.25}
@@ -251,6 +261,7 @@ const Scene: React.FC<SphereProps & { autoRotate?: boolean }> = ({ autoRotate, .
 
 export type MaterialPreviewHandle = {
   snapshotPng: () => Promise<Blob | null>;
+  resetView: () => void;
 };
 
 const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewProps>((props, ref) => {
@@ -281,8 +292,12 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
     environment = 'warehouse',
     model = 'sphere',
     autoRotate = true,
+    enableZoom = false,
+    showGrid = false,
+    showBackground = true,
   } = props;
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  const [frameNonce, setFrameNonce] = useState(0);
 
   useImperativeHandle(
     ref,
@@ -293,6 +308,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
           if (!canvas) return resolve(null);
           canvas.toBlob((b) => resolve(b), 'image/png');
         }),
+      resetView: () => setFrameNonce((n) => n + 1),
     }),
     []
   );
@@ -307,17 +323,17 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
     >
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        gl={{ antialias: true, preserveDrawingBuffer: true, alpha: !showBackground }}
         onCreated={({ gl }) => {
           glRef.current = gl;
         }}
         camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
         className="bg-gradient-to-b from-gray-900/50 to-black/50"
       >
-        <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 10, 20]} />
+        {showBackground && <color attach="background" args={['#000000']} />}
+        {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
         
-        <Stage intensity={1} environment={environment} adjustCamera={0.55}>
+        <Stage key={frameNonce} intensity={1} environment={environment} adjustCamera={0.55}>
           <Scene
             color={color}
             metalness={metalness}
@@ -343,6 +359,8 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
             repeatY={repeatY}
             model={model}
             autoRotate={autoRotate}
+            enableZoom={enableZoom}
+            showGrid={showGrid}
           />
         </Stage>
       </Canvas>

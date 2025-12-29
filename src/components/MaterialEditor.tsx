@@ -169,6 +169,11 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     return 'warehouse';
   });
   const [autoRotate, setAutoRotate] = useState<boolean>(() => window.localStorage.getItem('previewAutoRotate') !== 'false');
+  const [enableZoom, setEnableZoom] = useState<boolean>(() => window.localStorage.getItem('previewEnableZoom') === 'true');
+  const [showGrid, setShowGrid] = useState<boolean>(() => window.localStorage.getItem('previewShowGrid') === 'true');
+  const [showBackground, setShowBackground] = useState<boolean>(() => window.localStorage.getItem('previewShowBackground') !== 'false');
+  const [compareOn, setCompareOn] = useState(false);
+  const [compareA, setCompareA] = useState<MaterialDraft | null>(null);
 
   useEffect(() => {
     if (selectedMaterial) setMaterial(selectedMaterial);
@@ -198,6 +203,15 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   useEffect(() => {
     window.localStorage.setItem('previewAutoRotate', autoRotate ? 'true' : 'false');
   }, [autoRotate]);
+  useEffect(() => {
+    window.localStorage.setItem('previewEnableZoom', enableZoom ? 'true' : 'false');
+  }, [enableZoom]);
+  useEffect(() => {
+    window.localStorage.setItem('previewShowGrid', showGrid ? 'true' : 'false');
+  }, [showGrid]);
+  useEffect(() => {
+    window.localStorage.setItem('previewShowBackground', showBackground ? 'true' : 'false');
+  }, [showBackground]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -283,7 +297,41 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
               Auto-rotate
             </label>
 
+            <div className="flex flex-wrap items-center gap-4 text-xs text-white/80 select-none">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={enableZoom}
+                  onChange={(e) => setEnableZoom(e.target.checked)}
+                />
+                Zoom
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showGrid}
+                  onChange={(e) => setShowGrid(e.target.checked)}
+                />
+                Grid
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showBackground}
+                  onChange={(e) => setShowBackground(e.target.checked)}
+                />
+                Background
+              </label>
+            </div>
+
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={() => previewRef.current?.resetView()}
+              >
+                Reset view
+              </button>
               <button
                 type="button"
                 className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
@@ -294,6 +342,30 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                 }}
               >
                 Snapshot (PNG)
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={() => {
+                  setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
+                  setCompareOn(true);
+                }}
+                disabled={compareOn && !!compareA}
+                title="Capture current settings as A"
+              >
+                Set A
+              </button>
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={() => setCompareOn((v) => !v)}
+                disabled={!compareA}
+                title="Toggle A/B comparison"
+              >
+                {compareOn ? 'Hide Compare' : 'Compare'}
               </button>
               <button
                 type="button"
@@ -720,36 +792,85 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           )}
         </motion.div>
 
-        <div className="w-[400px] h-[400px]">
-          <MaterialPreview
-            ref={previewRef}
-            className="w-full h-full"
-            color={material.color}
-            metalness={material.metalness}
-            roughness={material.roughness}
-            emissive={material.emissive}
-            emissiveIntensity={material.emissiveIntensity}
-            clearcoat={material.clearcoat}
-            clearcoatRoughness={material.clearcoatRoughness}
-            transmission={material.transmission}
-            ior={material.ior}
-            opacity={material.opacity}
-            baseColorMap={material.baseColorMap}
-            normalMap={material.normalMap}
-            normalScale={material.normalScale}
-            roughnessMap={material.roughnessMap}
-            metalnessMap={material.metalnessMap}
-            aoMap={material.aoMap}
-            emissiveMap={material.emissiveMap}
-            alphaMap={material.alphaMap}
-            aoIntensity={material.aoIntensity}
-            alphaTest={material.alphaTest}
-            repeatX={material.repeatX}
-            repeatY={material.repeatY}
-            environment={previewEnv}
-            model={previewModel}
-            autoRotate={autoRotate}
-          />
+        <div className={compareOn && compareA ? 'flex gap-4' : ''}>
+          {compareOn && compareA && (
+            <div className="w-[400px] h-[400px] relative">
+              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+                A
+              </div>
+              <MaterialPreview
+                className="w-full h-full"
+                color={compareA.color}
+                metalness={compareA.metalness}
+                roughness={compareA.roughness}
+                emissive={compareA.emissive}
+                emissiveIntensity={compareA.emissiveIntensity}
+                clearcoat={compareA.clearcoat}
+                clearcoatRoughness={compareA.clearcoatRoughness}
+                transmission={compareA.transmission}
+                ior={compareA.ior}
+                opacity={compareA.opacity}
+                baseColorMap={compareA.baseColorMap}
+                normalMap={compareA.normalMap}
+                normalScale={compareA.normalScale}
+                roughnessMap={compareA.roughnessMap}
+                metalnessMap={compareA.metalnessMap}
+                aoMap={compareA.aoMap}
+                emissiveMap={compareA.emissiveMap}
+                alphaMap={compareA.alphaMap}
+                aoIntensity={compareA.aoIntensity}
+                alphaTest={compareA.alphaTest}
+                repeatX={compareA.repeatX}
+                repeatY={compareA.repeatY}
+                environment={previewEnv}
+                model={previewModel}
+                autoRotate={autoRotate}
+                enableZoom={enableZoom}
+                showGrid={showGrid}
+                showBackground={showBackground}
+              />
+            </div>
+          )}
+
+          <div className="w-[400px] h-[400px] relative">
+            {compareOn && compareA && (
+              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+                B
+              </div>
+            )}
+            <MaterialPreview
+              ref={previewRef}
+              className="w-full h-full"
+              color={material.color}
+              metalness={material.metalness}
+              roughness={material.roughness}
+              emissive={material.emissive}
+              emissiveIntensity={material.emissiveIntensity}
+              clearcoat={material.clearcoat}
+              clearcoatRoughness={material.clearcoatRoughness}
+              transmission={material.transmission}
+              ior={material.ior}
+              opacity={material.opacity}
+              baseColorMap={material.baseColorMap}
+              normalMap={material.normalMap}
+              normalScale={material.normalScale}
+              roughnessMap={material.roughnessMap}
+              metalnessMap={material.metalnessMap}
+              aoMap={material.aoMap}
+              emissiveMap={material.emissiveMap}
+              alphaMap={material.alphaMap}
+              aoIntensity={material.aoIntensity}
+              alphaTest={material.alphaTest}
+              repeatX={material.repeatX}
+              repeatY={material.repeatY}
+              environment={previewEnv}
+              model={previewModel}
+              autoRotate={autoRotate}
+              enableZoom={enableZoom}
+              showGrid={showGrid}
+              showBackground={showBackground}
+            />
+          </div>
         </div>
       </div>
     </div>
