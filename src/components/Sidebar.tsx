@@ -274,15 +274,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               />
             </motion.button>
             
-            {!isCollapsed && (
-              <motion.h1 
-                className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                MATERIALS
-              </motion.h1>
-            )}
+            {/* Title removed for cleaner header; logo + controls are sufficient */}
           </div>
 
           {!isCollapsed && (

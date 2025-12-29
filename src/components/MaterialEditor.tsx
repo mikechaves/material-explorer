@@ -251,14 +251,15 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   };
 
   return (
-    <div className="flex items-center justify-center w-full h-full">
-      <div className="flex items-start gap-8 max-w-4xl p-6">
-        <motion.div 
-          className="w-80 space-y-6 bg-black/60 backdrop-blur-sm rounded-xl p-4"
+    <div className="flex items-start justify-center w-full h-full overflow-hidden">
+      <div className="flex items-start gap-8 max-w-5xl p-6 w-full">
+        <motion.div
+          className="w-96 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3 max-h-[calc(100vh-48px)] overflow-y-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="space-y-3">
+          <div className="sticky top-0 z-20 bg-black/60 backdrop-blur-sm pt-1 pb-3">
+            <div className="space-y-3">
             <div className="text-sm text-white/90 font-medium">Preview</div>
             <div className="flex items-center gap-2">
               <Dropdown
@@ -382,6 +383,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                 Share link
               </button>
             </div>
+          </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm text-white/90">Name</label>
