@@ -267,8 +267,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
             >
               <img 
                 alt="Material Explorer" 
-                width="40" 
-                height="40" 
+                width="48" 
+                height="48" 
                 src={logoUrl}
                 className="rounded-lg"
               />
