@@ -91,6 +91,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       transmission: 0,
       ior: 1.5,
       opacity: 1,
+      normalScale: 1,
     }),
     []
   );
@@ -111,6 +112,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       const parsed = Number.parseFloat(value);
       if (!Number.isFinite(parsed)) return null;
       if (name === 'ior') return Math.max(1, Math.min(2.5, parsed));
+      if (name === 'normalScale') return Math.max(0, Math.min(2, parsed));
       return clamp01(parsed);
     })();
 
@@ -120,6 +122,14 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       [name]: newValue
     }));
   };
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
 
   return (
     <div className="flex items-center justify-center w-full h-full">
@@ -236,6 +246,83 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             />
           </div>
 
+          <div className="space-y-3">
+            <div className="text-sm text-white/90 font-medium">Textures</div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Base color map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const dataUrl = await readFileAsDataUrl(file);
+                      setMaterial((prev) => ({ ...prev, baseColorMap: dataUrl }));
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.baseColorMap && (
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                    onClick={() => setMaterial((prev) => ({ ...prev, baseColorMap: undefined }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Normal map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const dataUrl = await readFileAsDataUrl(file);
+                      setMaterial((prev) => ({ ...prev, normalMap: dataUrl }));
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.normalMap && (
+                  <>
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                      onClick={() => setMaterial((prev) => ({ ...prev, normalMap: undefined }))}
+                    >
+                      Remove
+                    </button>
+                    <div className="w-44">
+                      <Control
+                        name="normalScale"
+                        value={material.normalScale ?? 1}
+                        label="Scale"
+                        min={0}
+                        max={2}
+                        step={0.01}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
           <motion.button
             className="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-lg
                      text-white text-sm font-medium transition-colors"
@@ -282,6 +369,9 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             transmission={material.transmission}
             ior={material.ior}
             opacity={material.opacity}
+            baseColorMap={material.baseColorMap}
+            normalMap={material.normalMap}
+            normalScale={material.normalScale}
           />
         </div>
       </div>

@@ -69,6 +69,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         transmission: material.transmission,
         ior: material.ior,
         opacity: material.opacity,
+        baseColorMap: material.baseColorMap,
+        normalMap: material.normalMap,
+        normalScale: material.normalScale,
       })
     );
   };
@@ -213,6 +216,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       transmission={material.transmission}
                       ior={material.ior}
                       opacity={material.opacity}
+                      baseColorMap={material.baseColorMap}
+                      normalMap={material.normalMap}
+                      normalScale={material.normalScale}
                     />
                     
                     {/* Control overlay */}

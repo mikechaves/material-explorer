@@ -35,6 +35,10 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   const iorRaw = typeof m.ior === 'number' ? m.ior : Number(m.ior);
   const ior = Number.isFinite(iorRaw) ? Math.max(1, Math.min(2.5, iorRaw)) : 1.5;
   const opacity = clamp01(typeof m.opacity === 'number' ? m.opacity : Number(m.opacity));
+  const baseColorMap = typeof m.baseColorMap === 'string' && m.baseColorMap ? m.baseColorMap : undefined;
+  const normalMap = typeof m.normalMap === 'string' && m.normalMap ? m.normalMap : undefined;
+  const normalScaleRaw = typeof m.normalScale === 'number' ? m.normalScale : Number(m.normalScale);
+  const normalScale = Number.isFinite(normalScaleRaw) ? Math.max(0, Math.min(2, normalScaleRaw)) : 1;
 
   const createdAt =
     typeof m.createdAt === 'number' && Number.isFinite(m.createdAt) ? (m.createdAt as number) : now;
@@ -54,6 +58,9 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
     transmission,
     ior,
     opacity,
+    ...(baseColorMap ? { baseColorMap } : {}),
+    ...(normalMap ? { normalMap } : {}),
+    ...(Number.isFinite(normalScaleRaw) ? { normalScale } : {}),
     createdAt,
     ...(updatedAt ? { updatedAt } : {}),
   };
@@ -71,6 +78,10 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
   const transmission = clamp01(draft.transmission);
   const ior = Number.isFinite(draft.ior) ? Math.max(1, Math.min(2.5, draft.ior)) : 1.5;
   const opacity = clamp01(draft.opacity);
+  const baseColorMap = typeof draft.baseColorMap === 'string' && draft.baseColorMap ? draft.baseColorMap : undefined;
+  const normalMap = typeof draft.normalMap === 'string' && draft.normalMap ? draft.normalMap : undefined;
+  const normalScaleRaw = draft.normalScale ?? 1;
+  const normalScale = Number.isFinite(normalScaleRaw) ? Math.max(0, Math.min(2, normalScaleRaw)) : 1;
 
   return {
     id: draft.id ?? uuidv4(),
@@ -85,6 +96,9 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
     transmission,
     ior,
     opacity,
+    ...(baseColorMap ? { baseColorMap } : {}),
+    ...(normalMap ? { normalMap } : {}),
+    ...(Number.isFinite(draft.normalScale ?? NaN) ? { normalScale } : {}),
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
   };

@@ -16,6 +16,9 @@ interface MaterialPreviewProps {
   transmission?: number;
   ior?: number;
   opacity?: number;
+  baseColorMap?: string;
+  normalMap?: string;
+  normalScale?: number;
 }
 
 interface SphereProps {
@@ -29,6 +32,9 @@ interface SphereProps {
   transmission?: number;
   ior?: number;
   opacity?: number;
+  baseColorMap?: string;
+  normalMap?: string;
+  normalScale?: number;
 }
 
 const Sphere: React.FC<SphereProps> = ({
@@ -42,9 +48,76 @@ const Sphere: React.FC<SphereProps> = ({
   transmission = 0,
   ior = 1.5,
   opacity = 1,
+  baseColorMap,
+  normalMap,
+  normalScale = 1,
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const [map, setMap] = useState<THREE.Texture | null>(null);
+  const [nMap, setNMap] = useState<THREE.Texture | null>(null);
+
+  React.useEffect(() => {
+    let disposed = false;
+
+    if (!baseColorMap) {
+      setMap((old) => {
+        if (old) old.dispose();
+        return null;
+      });
+      return;
+    }
+
+    const loader = new THREE.TextureLoader();
+    loader.load(baseColorMap, (tex) => {
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      setMap((old) => {
+        if (old) old.dispose();
+        return tex;
+      });
+    });
+
+    return () => {
+      disposed = true;
+    };
+  }, [baseColorMap]);
+
+  React.useEffect(() => {
+    let disposed = false;
+
+    if (!normalMap) {
+      setNMap((old) => {
+        if (old) old.dispose();
+        return null;
+      });
+      return;
+    }
+
+    const loader = new THREE.TextureLoader();
+    loader.load(normalMap, (tex) => {
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.colorSpace = THREE.NoColorSpace;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      setNMap((old) => {
+        if (old) old.dispose();
+        return tex;
+      });
+    });
+
+    return () => {
+      disposed = true;
+    };
+  }, [normalMap]);
 
   useFrame((state) => {
     if (meshRef.current) {
@@ -74,9 +147,15 @@ const Sphere: React.FC<SphereProps> = ({
         clearcoatRoughness={clearcoatRoughness}
         transmission={transmission}
         ior={ior}
+        thickness={transmission > 0 ? 1 : 0}
+        attenuationDistance={transmission > 0 ? 0.8 : 0}
+        attenuationColor={'#ffffff'}
         opacity={opacity}
         transparent={opacity < 1 || transmission > 0}
-        envMapIntensity={1}
+        envMapIntensity={1.75}
+        map={map ?? undefined}
+        normalMap={nMap ?? undefined}
+        normalScale={new THREE.Vector2(normalScale, normalScale)}
       />
     </mesh>
   );
@@ -122,6 +201,16 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
   color,
   metalness,
   roughness,
+  emissive,
+  emissiveIntensity,
+  clearcoat,
+  clearcoatRoughness,
+  transmission,
+  ior,
+  opacity,
+  baseColorMap,
+  normalMap,
+  normalScale,
 }) => {
   return (
     <motion.div
@@ -133,7 +222,7 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
     >
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true }}
+        gl={{ antialias: true, physicallyCorrectLights: true }}
         camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
         className="bg-gradient-to-b from-gray-900/50 to-black/50"
       >
@@ -141,14 +230,24 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
         <fog attach="fog" args={['#000000', 10, 20]} />
         
         <Stage
-          intensity={0.5}
-          environment="city"
+          intensity={1}
+          environment="warehouse"
           adjustCamera={false}
         >
           <Scene
             color={color}
             metalness={metalness}
             roughness={roughness}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            clearcoat={clearcoat}
+            clearcoatRoughness={clearcoatRoughness}
+            transmission={transmission}
+            ior={ior}
+            opacity={opacity}
+            baseColorMap={baseColorMap}
+            normalMap={normalMap}
+            normalScale={normalScale}
           />
         </Stage>
       </Canvas>

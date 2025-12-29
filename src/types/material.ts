@@ -11,6 +11,9 @@ export interface Material {
   transmission: number;
   ior: number;
   opacity: number;
+  baseColorMap?: string; // data URL
+  normalMap?: string; // data URL
+  normalScale?: number; // 0..2
   createdAt: number;
   updatedAt?: number;
 }
