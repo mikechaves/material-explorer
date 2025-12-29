@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../logo.svg';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson, normalizeMaterial } from '../utils/material';
-import { exportMaterialAsGlb } from '../utils/gltfExport';
+import { exportLibraryAsGlb, exportMaterialAsGlb } from '../utils/gltfExport';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -49,6 +49,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const exportAll = () => {
     downloadJson('materials.json', { version: 1, exportedAt: Date.now(), materials });
+  };
+
+  const exportAllGlb = async () => {
+    try {
+      const result = await exportLibraryAsGlb(materials);
+      if (!result) return;
+      downloadBlob(result.filename, result.blob);
+    } catch (e) {
+      console.error(e);
+      window.alert('Failed to export library GLB.');
+    }
   };
 
   const exportOne = (material: Material) => {
@@ -185,7 +196,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 whileTap={{ scale: 0.97 }}
                 onClick={exportAll}
               >
-                Export
+                Export JSON
+              </motion.button>
+              <motion.button
+                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => void exportAllGlb()}
+              >
+                Export GLB
               </motion.button>
               <input
                 ref={fileInputRef}

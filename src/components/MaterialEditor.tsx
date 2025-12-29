@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
+import { Listbox, Transition } from '@headlessui/react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview, { type MaterialPreviewHandle } from './MaterialPreview';
@@ -8,6 +9,55 @@ import { decodeSharePayload, encodeSharePayload } from '../utils/share';
 
 interface MaterialEditorProps {
   width?: number;
+}
+
+function classNames(...xs: Array<string | false | null | undefined>) {
+  return xs.filter(Boolean).join(' ');
+}
+
+function Dropdown<T extends { value: string; label: string }>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T['value'];
+  onChange: (value: T['value']) => void;
+  options: T[];
+}) {
+  const selected = options.find((o) => o.value === value) ?? options[0];
+  return (
+    <Listbox value={value} onChange={onChange}>
+      <div className="relative flex-1">
+        <Listbox.Button
+          className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
+                     focus:bg-white/10 border border-white/5 focus:border-purple-500/30 text-left"
+        >
+          {selected?.label}
+        </Listbox.Button>
+        <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <Listbox.Options
+            className="absolute z-50 mt-2 w-full max-h-60 overflow-auto rounded-lg bg-gray-950/95 backdrop-blur
+                       border border-white/10 shadow-xl p-1 text-sm text-white"
+          >
+            {options.map((opt) => (
+              <Listbox.Option
+                key={opt.value}
+                value={opt.value}
+                className={({ active }) =>
+                  classNames(
+                    'cursor-pointer select-none rounded-md px-3 py-2',
+                    active && 'bg-white/10'
+                  )
+                }
+              >
+                {opt.label}
+              </Listbox.Option>
+            ))}
+          </Listbox.Options>
+        </Transition>
+      </div>
+    </Listbox>
+  );
 }
 
 const Control = ({
@@ -182,34 +232,32 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           <div className="space-y-3">
             <div className="text-sm text-white/90 font-medium">Preview</div>
             <div className="flex items-center gap-2">
-              <select
+              <Dropdown
                 value={previewModel}
-                onChange={(e) => setPreviewModel(e.target.value as any)}
-                className="flex-1 px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                           focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
-              >
-                <option value="sphere">Sphere</option>
-                <option value="box">Box</option>
-                <option value="torusKnot">Torus knot</option>
-                <option value="icosahedron">Icosahedron</option>
-              </select>
-              <select
+                onChange={(v) => setPreviewModel(v as any)}
+                options={[
+                  { value: 'sphere', label: 'Sphere' },
+                  { value: 'box', label: 'Box' },
+                  { value: 'torusKnot', label: 'Torus knot' },
+                  { value: 'icosahedron', label: 'Icosahedron' },
+                ]}
+              />
+              <Dropdown
                 value={previewEnv}
-                onChange={(e) => setPreviewEnv(e.target.value as any)}
-                className="flex-1 px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                           focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
-              >
-                <option value="warehouse">Warehouse</option>
-                <option value="studio">Studio</option>
-                <option value="city">City</option>
-                <option value="sunset">Sunset</option>
-                <option value="dawn">Dawn</option>
-                <option value="night">Night</option>
-                <option value="forest">Forest</option>
-                <option value="apartment">Apartment</option>
-                <option value="park">Park</option>
-                <option value="lobby">Lobby</option>
-              </select>
+                onChange={(v) => setPreviewEnv(v as any)}
+                options={[
+                  { value: 'warehouse', label: 'Warehouse' },
+                  { value: 'studio', label: 'Studio' },
+                  { value: 'city', label: 'City' },
+                  { value: 'sunset', label: 'Sunset' },
+                  { value: 'dawn', label: 'Dawn' },
+                  { value: 'night', label: 'Night' },
+                  { value: 'forest', label: 'Forest' },
+                  { value: 'apartment', label: 'Apartment' },
+                  { value: 'park', label: 'Park' },
+                  { value: 'lobby', label: 'Lobby' },
+                ]}
+              />
             </div>
             <label className="flex items-center gap-2 text-xs text-white/80 select-none">
               <input

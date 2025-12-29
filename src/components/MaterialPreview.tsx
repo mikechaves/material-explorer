@@ -1,5 +1,5 @@
 import React, { useImperativeHandle, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import { OrbitControls, Stage, ContactShadows } from '@react-three/drei';
@@ -181,13 +181,6 @@ const Sphere: React.FC<SphereProps> = ({
 };
 
 const Scene: React.FC<SphereProps & { autoRotate?: boolean }> = ({ autoRotate, ...props }) => {
-  const { camera } = useThree();
-  
-  // Set initial camera position
-  React.useEffect(() => {
-    camera.position.set(2.5, 1.5, 2.5);
-  }, [camera]);
-
   return (
     <>
       {/* Main sphere */}
@@ -273,11 +266,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
         <color attach="background" args={['#000000']} />
         <fog attach="fog" args={['#000000', 10, 20]} />
         
-        <Stage
-          intensity={1}
-          environment={environment}
-          adjustCamera={false}
-        >
+        <Stage intensity={1} environment={environment} adjustCamera>
           <Scene
             color={color}
             metalness={metalness}
