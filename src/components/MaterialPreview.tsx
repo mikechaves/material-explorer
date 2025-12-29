@@ -266,7 +266,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
         <color attach="background" args={['#000000']} />
         <fog attach="fog" args={['#000000', 10, 20]} />
         
-        <Stage intensity={1} environment={environment} adjustCamera>
+        <Stage intensity={1} environment={environment} adjustCamera={0.55}>
           <Scene
             color={color}
             metalness={metalness}
