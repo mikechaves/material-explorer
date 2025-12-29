@@ -254,14 +254,99 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   };
 
   return (
-    <div className="flex items-start justify-center w-full h-full overflow-hidden">
-      <div className="flex items-start gap-8 max-w-5xl p-6 w-full">
+    <div className="w-full h-full overflow-y-auto">
+      <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8 max-w-6xl mx-auto p-4 sm:p-6">
+        {/* Preview first on mobile, right on desktop */}
+        <div className="order-1 lg:order-2">
+          <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
+            {compareOn && compareA && (
+              <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+                <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+                  A
+                </div>
+                <MaterialPreview
+                  className="w-full h-full"
+                  color={compareA.color}
+                  metalness={compareA.metalness}
+                  roughness={compareA.roughness}
+                  emissive={compareA.emissive}
+                  emissiveIntensity={compareA.emissiveIntensity}
+                  clearcoat={compareA.clearcoat}
+                  clearcoatRoughness={compareA.clearcoatRoughness}
+                  transmission={compareA.transmission}
+                  ior={compareA.ior}
+                  opacity={compareA.opacity}
+                  baseColorMap={compareA.baseColorMap}
+                  normalMap={compareA.normalMap}
+                  normalScale={compareA.normalScale}
+                  roughnessMap={compareA.roughnessMap}
+                  metalnessMap={compareA.metalnessMap}
+                  aoMap={compareA.aoMap}
+                  emissiveMap={compareA.emissiveMap}
+                  alphaMap={compareA.alphaMap}
+                  aoIntensity={compareA.aoIntensity}
+                  alphaTest={compareA.alphaTest}
+                  repeatX={compareA.repeatX}
+                  repeatY={compareA.repeatY}
+                  environment={previewEnv}
+                  model={previewModel}
+                  autoRotate={autoRotate}
+                  enableZoom={enableZoom}
+                  showGrid={showGrid}
+                  showBackground={showBackground}
+                />
+              </div>
+            )}
+
+            <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+              {compareOn && compareA && (
+                <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+                  B
+                </div>
+              )}
+              <MaterialPreview
+                ref={previewRef}
+                className="w-full h-full"
+                color={material.color}
+                metalness={material.metalness}
+                roughness={material.roughness}
+                emissive={material.emissive}
+                emissiveIntensity={material.emissiveIntensity}
+                clearcoat={material.clearcoat}
+                clearcoatRoughness={material.clearcoatRoughness}
+                transmission={material.transmission}
+                ior={material.ior}
+                opacity={material.opacity}
+                baseColorMap={material.baseColorMap}
+                normalMap={material.normalMap}
+                normalScale={material.normalScale}
+                roughnessMap={material.roughnessMap}
+                metalnessMap={material.metalnessMap}
+                aoMap={material.aoMap}
+                emissiveMap={material.emissiveMap}
+                alphaMap={material.alphaMap}
+                aoIntensity={material.aoIntensity}
+                alphaTest={material.alphaTest}
+                repeatX={material.repeatX}
+                repeatY={material.repeatY}
+                environment={previewEnv}
+                model={previewModel}
+                autoRotate={autoRotate}
+                enableZoom={enableZoom}
+                showGrid={showGrid}
+                showBackground={showBackground}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
         <motion.div
-          className="w-96 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3 max-h-[calc(100vh-48px)] overflow-y-auto"
+          className="order-2 lg:order-1 w-full lg:w-[420px] bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3 lg:max-h-[calc(100vh-48px)] lg:overflow-y-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="sticky top-0 z-20 bg-black/60 backdrop-blur-sm pt-1 pb-3">
+          <div className="lg:sticky lg:top-0 z-20 bg-black/60 backdrop-blur-sm pt-1 pb-3">
             <div className="space-y-3">
             <div className="text-sm text-white/90 font-medium">Preview</div>
             <div className="flex items-center gap-2">
@@ -819,87 +904,6 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             </motion.button>
           )}
         </motion.div>
-
-        <div className={compareOn && compareA ? 'flex gap-4' : ''}>
-          {compareOn && compareA && (
-            <div className="w-[400px] h-[400px] relative">
-              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
-                A
-              </div>
-              <MaterialPreview
-                className="w-full h-full"
-                color={compareA.color}
-                metalness={compareA.metalness}
-                roughness={compareA.roughness}
-                emissive={compareA.emissive}
-                emissiveIntensity={compareA.emissiveIntensity}
-                clearcoat={compareA.clearcoat}
-                clearcoatRoughness={compareA.clearcoatRoughness}
-                transmission={compareA.transmission}
-                ior={compareA.ior}
-                opacity={compareA.opacity}
-                baseColorMap={compareA.baseColorMap}
-                normalMap={compareA.normalMap}
-                normalScale={compareA.normalScale}
-                roughnessMap={compareA.roughnessMap}
-                metalnessMap={compareA.metalnessMap}
-                aoMap={compareA.aoMap}
-                emissiveMap={compareA.emissiveMap}
-                alphaMap={compareA.alphaMap}
-                aoIntensity={compareA.aoIntensity}
-                alphaTest={compareA.alphaTest}
-                repeatX={compareA.repeatX}
-                repeatY={compareA.repeatY}
-                environment={previewEnv}
-                model={previewModel}
-                autoRotate={autoRotate}
-                enableZoom={enableZoom}
-                showGrid={showGrid}
-                showBackground={showBackground}
-              />
-            </div>
-          )}
-
-          <div className="w-[400px] h-[400px] relative">
-            {compareOn && compareA && (
-              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
-                B
-              </div>
-            )}
-            <MaterialPreview
-              ref={previewRef}
-              className="w-full h-full"
-              color={material.color}
-              metalness={material.metalness}
-              roughness={material.roughness}
-              emissive={material.emissive}
-              emissiveIntensity={material.emissiveIntensity}
-              clearcoat={material.clearcoat}
-              clearcoatRoughness={material.clearcoatRoughness}
-              transmission={material.transmission}
-              ior={material.ior}
-              opacity={material.opacity}
-              baseColorMap={material.baseColorMap}
-              normalMap={material.normalMap}
-              normalScale={material.normalScale}
-              roughnessMap={material.roughnessMap}
-              metalnessMap={material.metalnessMap}
-              aoMap={material.aoMap}
-              emissiveMap={material.emissiveMap}
-              alphaMap={material.alphaMap}
-              aoIntensity={material.aoIntensity}
-              alphaTest={material.alphaTest}
-              repeatX={material.repeatX}
-              repeatY={material.repeatY}
-              environment={previewEnv}
-              model={previewModel}
-              autoRotate={autoRotate}
-              enableZoom={enableZoom}
-              showGrid={showGrid}
-              showBackground={showBackground}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );

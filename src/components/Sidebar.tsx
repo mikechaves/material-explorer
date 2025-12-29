@@ -12,6 +12,7 @@ interface SidebarProps {
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   width: number;
   setWidth: React.Dispatch<React.SetStateAction<number>>;
+  isMobile?: boolean;
 }
 
 const [minWidth, maxWidth] = [200, 500];
@@ -22,7 +23,7 @@ function classNames(...xs: Array<string | false | null | undefined>) {
 
 const logoUrl = `${process.env.PUBLIC_URL}/logo.png`;
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const { materials, selectMaterial, deleteMaterial, addMaterial, updateMaterial, startNewMaterial } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -249,12 +250,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   }, [materials, onlyFavorites, query, sort, selectedTags, manualOrder]);
 
   return (
-    <motion.div 
-      ref={sidebarRef}
-      className="fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md text-white z-10 flex shadow-xl"
-      animate={{ width: isCollapsed ? 64 : width }}
-      transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-    >
+    <>
+      {isMobile && !isCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-10"
+          onClick={() => setIsCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
+      <motion.div 
+        ref={sidebarRef}
+        className="fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md text-white z-20 flex shadow-xl"
+        animate={
+          isMobile
+            ? { x: isCollapsed ? '-100%' : 0, width: 'min(85vw, 360px)' }
+            : { x: 0, width: isCollapsed ? 64 : width }
+        }
+        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+      >
       <div className="p-4 w-full overflow-hidden">
         <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center mb-6`}>
           <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-4'}`}>
@@ -278,7 +291,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           </div>
 
           {!isCollapsed && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <motion.button
                 className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
                 whileHover={{ scale: 1.03 }}
@@ -482,7 +495,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 setManualOrder(v);
                 window.localStorage.setItem('materialsOrder', JSON.stringify(v));
               }}
-              className="grid grid-cols-2 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
               {filtered.map((material) => (
                 <MaterialCard
@@ -506,7 +519,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               ))}
             </Reorder.Group>
           ) : (
-            <motion.div layout className="grid grid-cols-2 gap-4">
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <AnimatePresence>
                 {filtered.map((material) => (
                   <MaterialCard
@@ -535,7 +548,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       </div>
 
       {/* Resize Handle */}
-      {!isCollapsed && (
+      {!isMobile && !isCollapsed && (
         <div
           className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
                      transition-colors duration-200 relative"
@@ -554,7 +567,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           />
         </div>
       )}
-    </motion.div>
+      </motion.div>
+    </>
   );
 };
 
