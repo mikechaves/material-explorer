@@ -4,11 +4,14 @@ Welcome to Material Explorer! This application allows you to interactively creat
 
 ## Features
 
-* **Dynamic Material Customization**: Create, edit, and delete materials with immediate visual feedback
-* **Live 3D Preview**: Utilize WebGL through React Three Fiber for a live 3D preview of the materials
-* **Responsive Design**: Experience a fully responsive UI that adapts to different screen sizes and devices
-* **State Persistence**: Your material configurations are saved in local storage, so you can pick up where you left off
-* **Interactive UI**: Manage screen real estate efficiently with a collapsible sidebar
+- **PBR / Physical materials**: color, metalness, roughness, emissive, clearcoat, transmission/IOR, opacity
+- **Texture maps**: base color, normal (+ scale), roughness, metalness, AO (+ strength), emissive, alpha (+ cutoff), plus tiling (U/V)
+- **Live 3D preview**: model picker, HDRI/environment picker, zoom/grid/background toggles, reset view, PNG snapshot, A/B compare
+- **Library UX**: favorites, tags, search/sort, tag filter chips, bulk actions, manual drag-to-reorder
+- **Import/Export**:
+  - JSON presets (single + whole library)
+  - GLB export per material and GLB export of the library (grid of preview spheres)
+- **Responsive layout**: mobile drawer sidebar + editor stacks preview above controls
 
 ## Prerequisites
 
@@ -57,19 +60,26 @@ This command builds the app for production to the `build` folder. The build is m
 ## Usage
 
 ### Creating a Material
-- Use the controls in the sidebar to set the material's color, metalness, and roughness
-- Click "Save Material" to add the material to your collection
+- Use the editor controls to set PBR parameters and textures.
+- Click **Save Material** to add it to your library.
 
 ### Editing a Material
-- Click "Edit" next to any material in the sidebar to load it into the editor
-- Adjust the material's properties as desired and click "Save Material" to update it
+- Click **Edit** on a card in the sidebar to load it into the editor.
+- Adjust properties and click **Update Material**.
 
 ### Deleting a Material
-- Click "Delete" next to any material in the sidebar to remove it from your collection
+- Click **Delete** on a card in the sidebar to remove it from your collection.
 
-### Viewing Materials
-- The 3D preview in the center of the screen will update in real-time as you adjust the material properties
-- Collapse or expand the sidebar to toggle between a wider view of the 3D preview and the material list
+### Sharing & exporting
+- **Share link**: copies a URL that encodes the material settings.
+  - “Share link” excludes textures.
+  - “Share + tex” attempts to include textures, but will refuse if the URL is too large.
+- **Export JSON**: best for sharing materials **with textures** reliably.
+- **Export GLB**: exports preview geometry with the material applied (portable glTF 2.0 binary).
+
+### Notes / limitations
+- **LocalStorage quota**: textures are stored as data URLs inside saved material JSON; large images can exceed browser storage limits.
+- **GLB exports are previews**: GLB contains preview geometry (sphere/grid), not an imported user mesh.
 
 ## Technologies Used
 
