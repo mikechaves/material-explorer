@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useImperativeHandle, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
-import { Environment, OrbitControls, Stage, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Stage, ContactShadows } from '@react-three/drei';
 
 interface MaterialPreviewProps {
   className?: string;
@@ -19,6 +19,9 @@ interface MaterialPreviewProps {
   baseColorMap?: string;
   normalMap?: string;
   normalScale?: number;
+  environment?: 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
+  model?: 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
+  autoRotate?: boolean;
 }
 
 interface SphereProps {
@@ -35,7 +38,22 @@ interface SphereProps {
   baseColorMap?: string;
   normalMap?: string;
   normalScale?: number;
+  model?: MaterialPreviewProps['model'];
 }
+
+const PreviewMesh: React.FC<{ model: MaterialPreviewProps['model'] }> = ({ model }) => {
+  switch (model) {
+    case 'box':
+      return <boxGeometry args={[1.6, 1.6, 1.6]} />;
+    case 'torusKnot':
+      return <torusKnotGeometry args={[0.85, 0.28, 220, 24]} />;
+    case 'icosahedron':
+      return <icosahedronGeometry args={[1.1, 2]} />;
+    case 'sphere':
+    default:
+      return <sphereGeometry args={[1, 64, 64]} />;
+  }
+};
 
 const Sphere: React.FC<SphereProps> = ({
   color,
@@ -51,6 +69,7 @@ const Sphere: React.FC<SphereProps> = ({
   baseColorMap,
   normalMap,
   normalScale = 1,
+  model = 'sphere',
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -136,7 +155,7 @@ const Sphere: React.FC<SphereProps> = ({
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <sphereGeometry args={[1, 64, 64]} />
+      <PreviewMesh model={model} />
       <meshPhysicalMaterial
         color={color}
         metalness={metalness}
@@ -161,7 +180,7 @@ const Sphere: React.FC<SphereProps> = ({
   );
 };
 
-const Scene: React.FC<SphereProps> = (props) => {
+const Scene: React.FC<SphereProps & { autoRotate?: boolean }> = ({ autoRotate, ...props }) => {
   const { camera } = useThree();
   
   // Set initial camera position
@@ -171,9 +190,6 @@ const Scene: React.FC<SphereProps> = (props) => {
 
   return (
     <>
-      {/* Improved lighting setup */}
-      <Environment preset="studio" background={false} />
-      
       {/* Main sphere */}
       <Sphere {...props} />
       
@@ -189,6 +205,8 @@ const Scene: React.FC<SphereProps> = (props) => {
       <OrbitControls
         enableZoom={false}
         enablePan={false}
+        autoRotate={!!autoRotate}
+        autoRotateSpeed={1.25}
         minPolarAngle={Math.PI / 3}
         maxPolarAngle={Math.PI / 1.5}
       />
@@ -196,22 +214,45 @@ const Scene: React.FC<SphereProps> = (props) => {
   );
 };
 
-const MaterialPreview: React.FC<MaterialPreviewProps> = ({
-  className = '',
-  color,
-  metalness,
-  roughness,
-  emissive,
-  emissiveIntensity,
-  clearcoat,
-  clearcoatRoughness,
-  transmission,
-  ior,
-  opacity,
-  baseColorMap,
-  normalMap,
-  normalScale,
-}) => {
+export type MaterialPreviewHandle = {
+  snapshotPng: () => Promise<Blob | null>;
+};
+
+const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewProps>((props, ref) => {
+  const {
+    className = '',
+    color,
+    metalness,
+    roughness,
+    emissive,
+    emissiveIntensity,
+    clearcoat,
+    clearcoatRoughness,
+    transmission,
+    ior,
+    opacity,
+    baseColorMap,
+    normalMap,
+    normalScale,
+    environment = 'warehouse',
+    model = 'sphere',
+    autoRotate = true,
+  } = props;
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      snapshotPng: () =>
+        new Promise((resolve) => {
+          const canvas = glRef.current?.domElement;
+          if (!canvas) return resolve(null);
+          canvas.toBlob((b) => resolve(b), 'image/png');
+        }),
+    }),
+    []
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -222,7 +263,10 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
     >
       <Canvas
         dpr={[1, 2]}
-        gl={{ antialias: true }}
+        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        onCreated={({ gl }) => {
+          glRef.current = gl;
+        }}
         camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
         className="bg-gradient-to-b from-gray-900/50 to-black/50"
       >
@@ -231,7 +275,7 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
         
         <Stage
           intensity={1}
-          environment="warehouse"
+          environment={environment}
           adjustCamera={false}
         >
           <Scene
@@ -248,6 +292,8 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
             baseColorMap={baseColorMap}
             normalMap={normalMap}
             normalScale={normalScale}
+            model={model}
+            autoRotate={autoRotate}
           />
         </Stage>
       </Canvas>
@@ -256,6 +302,6 @@ const MaterialPreview: React.FC<MaterialPreviewProps> = ({
       <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-t from-black/20 to-transparent" />
     </motion.div>
   );
-};
+});
 
 export default MaterialPreview;

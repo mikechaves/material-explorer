@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
-import MaterialPreview from './MaterialPreview';
+import MaterialPreview, { type MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
-import { createMaterialFromDraft, clamp01 } from '../utils/material';
+import { createMaterialFromDraft, clamp01, downloadBlob } from '../utils/material';
+import { decodeSharePayload, encodeSharePayload } from '../utils/share';
 
 interface MaterialEditorProps {
   width?: number;
@@ -77,6 +78,7 @@ const Control = ({
 
 const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
+  const previewRef = useRef<MaterialPreviewHandle | null>(null);
 
   const emptyDraft: MaterialDraft = React.useMemo(
     () => ({
@@ -97,11 +99,49 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   );
 
   const [material, setMaterial] = useState<MaterialDraft>(emptyDraft);
+  const [previewModel, setPreviewModel] = useState<'sphere' | 'box' | 'torusKnot' | 'icosahedron'>(() => {
+    const v = window.localStorage.getItem('previewModel');
+    if (v === 'sphere' || v === 'box' || v === 'torusKnot' || v === 'icosahedron') return v;
+    return 'sphere';
+  });
+  const [previewEnv, setPreviewEnv] = useState<
+    'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby'
+  >(() => {
+    const v = window.localStorage.getItem('previewEnv');
+    if (v === 'warehouse' || v === 'studio' || v === 'city' || v === 'sunset' || v === 'dawn' || v === 'night' || v === 'forest' || v === 'apartment' || v === 'park' || v === 'lobby')
+      return v;
+    return 'warehouse';
+  });
+  const [autoRotate, setAutoRotate] = useState<boolean>(() => window.localStorage.getItem('previewAutoRotate') !== 'false');
 
   useEffect(() => {
     if (selectedMaterial) setMaterial(selectedMaterial);
     else setMaterial(emptyDraft);
   }, [selectedMaterial, emptyDraft]);
+
+  // Load from share URL (?m=...)
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const m = url.searchParams.get('m');
+    if (!m) return;
+    const payload = decodeSharePayload(m);
+    if (!payload) return;
+    startNewMaterial();
+    setMaterial((prev) => ({ ...prev, ...payload.material }));
+    // keep URL clean after applying
+    url.searchParams.delete('m');
+    window.history.replaceState({}, '', url.toString());
+  }, [startNewMaterial]);
+
+  useEffect(() => {
+    window.localStorage.setItem('previewModel', previewModel);
+  }, [previewModel]);
+  useEffect(() => {
+    window.localStorage.setItem('previewEnv', previewEnv);
+  }, [previewEnv]);
+  useEffect(() => {
+    window.localStorage.setItem('previewAutoRotate', autoRotate ? 'true' : 'false');
+  }, [autoRotate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -139,6 +179,75 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
+          <div className="space-y-3">
+            <div className="text-sm text-white/90 font-medium">Preview</div>
+            <div className="flex items-center gap-2">
+              <select
+                value={previewModel}
+                onChange={(e) => setPreviewModel(e.target.value as any)}
+                className="flex-1 px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
+                           focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+              >
+                <option value="sphere">Sphere</option>
+                <option value="box">Box</option>
+                <option value="torusKnot">Torus knot</option>
+                <option value="icosahedron">Icosahedron</option>
+              </select>
+              <select
+                value={previewEnv}
+                onChange={(e) => setPreviewEnv(e.target.value as any)}
+                className="flex-1 px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
+                           focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+              >
+                <option value="warehouse">Warehouse</option>
+                <option value="studio">Studio</option>
+                <option value="city">City</option>
+                <option value="sunset">Sunset</option>
+                <option value="dawn">Dawn</option>
+                <option value="night">Night</option>
+                <option value="forest">Forest</option>
+                <option value="apartment">Apartment</option>
+                <option value="park">Park</option>
+                <option value="lobby">Lobby</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-white/80 select-none">
+              <input
+                type="checkbox"
+                checked={autoRotate}
+                onChange={(e) => setAutoRotate(e.target.checked)}
+              />
+              Auto-rotate
+            </label>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={async () => {
+                  const blob = await previewRef.current?.snapshotPng();
+                  if (!blob) return;
+                  downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
+                }}
+              >
+                Snapshot (PNG)
+              </button>
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={async () => {
+                  const { baseColorMap, normalMap, ...shareable } = material;
+                  const payload = encodeSharePayload({ v: 1, material: shareable as any });
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('m', payload);
+                  await navigator.clipboard.writeText(url.toString());
+                  window.alert('Share link copied to clipboard.');
+                }}
+              >
+                Share link
+              </button>
+            </div>
+          </div>
           <div className="space-y-2">
             <label className="text-sm text-white/90">Name</label>
             <input
@@ -358,6 +467,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
 
         <div className="w-[400px] h-[400px]">
           <MaterialPreview
+            ref={previewRef}
             className="w-full h-full"
             color={material.color}
             metalness={material.metalness}
@@ -372,6 +482,9 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             baseColorMap={material.baseColorMap}
             normalMap={material.normalMap}
             normalScale={material.normalScale}
+            environment={previewEnv}
+            model={previewModel}
+            autoRotate={autoRotate}
           />
         </div>
       </div>
