@@ -19,6 +19,15 @@ interface MaterialPreviewProps {
   baseColorMap?: string;
   normalMap?: string;
   normalScale?: number;
+  roughnessMap?: string;
+  metalnessMap?: string;
+  aoMap?: string;
+  emissiveMap?: string;
+  alphaMap?: string;
+  aoIntensity?: number;
+  alphaTest?: number;
+  repeatX?: number;
+  repeatY?: number;
   environment?: 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
   model?: 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
   autoRotate?: boolean;
@@ -38,22 +47,93 @@ interface SphereProps {
   baseColorMap?: string;
   normalMap?: string;
   normalScale?: number;
+  roughnessMap?: string;
+  metalnessMap?: string;
+  aoMap?: string;
+  emissiveMap?: string;
+  alphaMap?: string;
+  aoIntensity?: number;
+  alphaTest?: number;
+  repeatX?: number;
+  repeatY?: number;
   model?: MaterialPreviewProps['model'];
 }
 
-const PreviewMesh: React.FC<{ model: MaterialPreviewProps['model'] }> = ({ model }) => {
+function buildGeometry(model: MaterialPreviewProps['model']) {
+  let g: THREE.BufferGeometry;
   switch (model) {
     case 'box':
-      return <boxGeometry args={[1.6, 1.6, 1.6]} />;
+      g = new THREE.BoxGeometry(1.6, 1.6, 1.6, 1, 1, 1);
+      break;
     case 'torusKnot':
-      return <torusKnotGeometry args={[0.85, 0.28, 220, 24]} />;
+      g = new THREE.TorusKnotGeometry(0.85, 0.28, 220, 24);
+      break;
     case 'icosahedron':
-      return <icosahedronGeometry args={[1.1, 2]} />;
+      g = new THREE.IcosahedronGeometry(1.1, 2);
+      break;
     case 'sphere':
     default:
-      return <sphereGeometry args={[1, 64, 64]} />;
+      g = new THREE.SphereGeometry(1, 64, 64);
+      break;
   }
-};
+  // AO maps require uv2; reuse uv.
+  const uv = (g as any).attributes?.uv;
+  if (uv && !(g as any).attributes?.uv2) {
+    g.setAttribute('uv2', uv);
+  }
+  return g;
+}
+
+function applyTextureParams(tex: THREE.Texture, repeatX: number, repeatY: number) {
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  tex.needsUpdate = true;
+}
+
+function useLoadedTexture(
+  url: string | undefined,
+  colorSpace: THREE.ColorSpace,
+  repeatX: number,
+  repeatY: number
+) {
+  const [tex, setTex] = useState<THREE.Texture | null>(null);
+  React.useEffect(() => {
+    let disposed = false;
+    if (!url) {
+      setTex((old) => {
+        if (old) old.dispose();
+        return null;
+      });
+      return;
+    }
+    const loader = new THREE.TextureLoader();
+    loader.load(url, (t) => {
+      if (disposed) {
+        t.dispose();
+        return;
+      }
+      t.colorSpace = colorSpace;
+      // Apply default repeat; the separate effect below will apply current repeatX/repeatY
+      // without forcing a reload when only tiling changes.
+      applyTextureParams(t, 1, 1);
+      setTex((old) => {
+        if (old) old.dispose();
+        return t;
+      });
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [url, colorSpace]);
+
+  React.useEffect(() => {
+    if (!tex) return;
+    applyTextureParams(tex, repeatX, repeatY);
+  }, [tex, repeatX, repeatY]);
+
+  return tex;
+}
 
 const Sphere: React.FC<SphereProps> = ({
   color,
@@ -69,74 +149,29 @@ const Sphere: React.FC<SphereProps> = ({
   baseColorMap,
   normalMap,
   normalScale = 1,
+  roughnessMap,
+  metalnessMap,
+  aoMap,
+  emissiveMap,
+  alphaMap,
+  aoIntensity = 1,
+  alphaTest = 0,
+  repeatX = 1,
+  repeatY = 1,
   model = 'sphere',
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const [map, setMap] = useState<THREE.Texture | null>(null);
-  const [nMap, setNMap] = useState<THREE.Texture | null>(null);
+  const geometry = React.useMemo(() => buildGeometry(model), [model]);
+  React.useEffect(() => () => geometry.dispose(), [geometry]);
 
-  React.useEffect(() => {
-    let disposed = false;
-
-    if (!baseColorMap) {
-      setMap((old) => {
-        if (old) old.dispose();
-        return null;
-      });
-      return;
-    }
-
-    const loader = new THREE.TextureLoader();
-    loader.load(baseColorMap, (tex) => {
-      if (disposed) {
-        tex.dispose();
-        return;
-      }
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      setMap((old) => {
-        if (old) old.dispose();
-        return tex;
-      });
-    });
-
-    return () => {
-      disposed = true;
-    };
-  }, [baseColorMap]);
-
-  React.useEffect(() => {
-    let disposed = false;
-
-    if (!normalMap) {
-      setNMap((old) => {
-        if (old) old.dispose();
-        return null;
-      });
-      return;
-    }
-
-    const loader = new THREE.TextureLoader();
-    loader.load(normalMap, (tex) => {
-      if (disposed) {
-        tex.dispose();
-        return;
-      }
-      tex.colorSpace = THREE.NoColorSpace;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      setNMap((old) => {
-        if (old) old.dispose();
-        return tex;
-      });
-    });
-
-    return () => {
-      disposed = true;
-    };
-  }, [normalMap]);
+  const map = useLoadedTexture(baseColorMap, THREE.SRGBColorSpace, repeatX, repeatY);
+  const nMap = useLoadedTexture(normalMap, THREE.NoColorSpace, repeatX, repeatY);
+  const rMap = useLoadedTexture(roughnessMap, THREE.NoColorSpace, repeatX, repeatY);
+  const mMap = useLoadedTexture(metalnessMap, THREE.NoColorSpace, repeatX, repeatY);
+  const aMap = useLoadedTexture(aoMap, THREE.NoColorSpace, repeatX, repeatY);
+  const eMap = useLoadedTexture(emissiveMap, THREE.SRGBColorSpace, repeatX, repeatY);
+  const alMap = useLoadedTexture(alphaMap, THREE.NoColorSpace, repeatX, repeatY);
 
   useFrame((state) => {
     if (meshRef.current) {
@@ -155,7 +190,7 @@ const Sphere: React.FC<SphereProps> = ({
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <PreviewMesh model={model} />
+      <primitive object={geometry} attach="geometry" />
       <meshPhysicalMaterial
         color={color}
         metalness={metalness}
@@ -170,11 +205,18 @@ const Sphere: React.FC<SphereProps> = ({
         attenuationDistance={transmission > 0 ? 0.8 : 0}
         attenuationColor={'#ffffff'}
         opacity={opacity}
-        transparent={opacity < 1 || transmission > 0}
+        transparent={opacity < 1 || transmission > 0 || !!alMap}
+        alphaTest={alphaTest}
         envMapIntensity={1.75}
         map={map ?? undefined}
         normalMap={nMap ?? undefined}
         normalScale={new THREE.Vector2(normalScale, normalScale)}
+        roughnessMap={rMap ?? undefined}
+        metalnessMap={mMap ?? undefined}
+        aoMap={aMap ?? undefined}
+        aoMapIntensity={aoIntensity}
+        emissiveMap={eMap ?? undefined}
+        alphaMap={alMap ?? undefined}
       />
     </mesh>
   );
@@ -227,6 +269,15 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
     baseColorMap,
     normalMap,
     normalScale,
+    roughnessMap,
+    metalnessMap,
+    aoMap,
+    emissiveMap,
+    alphaMap,
+    aoIntensity,
+    alphaTest,
+    repeatX,
+    repeatY,
     environment = 'warehouse',
     model = 'sphere',
     autoRotate = true,
@@ -281,6 +332,15 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
             baseColorMap={baseColorMap}
             normalMap={normalMap}
             normalScale={normalScale}
+            roughnessMap={roughnessMap}
+            metalnessMap={metalnessMap}
+            aoMap={aoMap}
+            emissiveMap={emissiveMap}
+            alphaMap={alphaMap}
+            aoIntensity={aoIntensity}
+            alphaTest={alphaTest}
+            repeatX={repeatX}
+            repeatY={repeatY}
             model={model}
             autoRotate={autoRotate}
           />

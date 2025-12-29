@@ -26,6 +26,13 @@ function loadTexture(url: string, colorSpace: THREE.ColorSpace) {
   });
 }
 
+function applyTextureParams(tex: THREE.Texture, repeatX: number, repeatY: number) {
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  tex.needsUpdate = true;
+}
+
 async function buildThreeMaterial(material: AppMaterial) {
   const mat = new THREE.MeshPhysicalMaterial({
     name: material.name,
@@ -44,17 +51,54 @@ async function buildThreeMaterial(material: AppMaterial) {
   });
 
   const disposableTextures: THREE.Texture[] = [];
+  const repeatX = material.repeatX ?? 1;
+  const repeatY = material.repeatY ?? 1;
   if (material.baseColorMap) {
     const t = await loadTexture(material.baseColorMap, THREE.SRGBColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
     mat.map = t;
     disposableTextures.push(t);
   }
   if (material.normalMap) {
     const t = await loadTexture(material.normalMap, THREE.NoColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
     mat.normalMap = t;
     disposableTextures.push(t);
     const s = material.normalScale ?? 1;
     mat.normalScale = new THREE.Vector2(s, s);
+  }
+  if (material.roughnessMap) {
+    const t = await loadTexture(material.roughnessMap, THREE.NoColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
+    mat.roughnessMap = t;
+    disposableTextures.push(t);
+  }
+  if (material.metalnessMap) {
+    const t = await loadTexture(material.metalnessMap, THREE.NoColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
+    mat.metalnessMap = t;
+    disposableTextures.push(t);
+  }
+  if (material.aoMap) {
+    const t = await loadTexture(material.aoMap, THREE.NoColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
+    mat.aoMap = t;
+    mat.aoMapIntensity = material.aoIntensity ?? 1;
+    disposableTextures.push(t);
+  }
+  if (material.emissiveMap) {
+    const t = await loadTexture(material.emissiveMap, THREE.SRGBColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
+    mat.emissiveMap = t;
+    disposableTextures.push(t);
+  }
+  if (material.alphaMap) {
+    const t = await loadTexture(material.alphaMap, THREE.NoColorSpace);
+    applyTextureParams(t, repeatX, repeatY);
+    mat.alphaMap = t;
+    mat.alphaTest = material.alphaTest ?? 0;
+    mat.transparent = true;
+    disposableTextures.push(t);
   }
   mat.needsUpdate = true;
   return { mat, disposableTextures };
@@ -79,6 +123,7 @@ async function exportSceneAsGlb(scene: THREE.Object3D) {
 
 export async function exportMaterialAsGlb(material: AppMaterial): Promise<{ filename: string; blob: Blob }> {
   const geometry = new THREE.SphereGeometry(1, 64, 64);
+  geometry.setAttribute('uv2', geometry.attributes.uv);
   let mat: THREE.MeshPhysicalMaterial | null = null;
   let disposableTextures: THREE.Texture[] = [];
   try {
@@ -110,6 +155,7 @@ export async function exportLibraryAsGlb(
   if (!materials.length) return null;
 
   const geometry = new THREE.SphereGeometry(1, 64, 64);
+  geometry.setAttribute('uv2', geometry.attributes.uv);
   const scene = new THREE.Scene();
   const disposable: Array<{ mat: THREE.Material; textures: THREE.Texture[] }> = [];
 

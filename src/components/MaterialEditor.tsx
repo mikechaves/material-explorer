@@ -144,6 +144,10 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       ior: 1.5,
       opacity: 1,
       normalScale: 1,
+      aoIntensity: 1,
+      alphaTest: 0,
+      repeatX: 1,
+      repeatY: 1,
     }),
     []
   );
@@ -203,6 +207,10 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       if (!Number.isFinite(parsed)) return null;
       if (name === 'ior') return Math.max(1, Math.min(2.5, parsed));
       if (name === 'normalScale') return Math.max(0, Math.min(2, parsed));
+      if (name === 'aoIntensity') return Math.max(0, Math.min(2, parsed));
+      if (name === 'alphaTest') return Math.max(0, Math.min(1, parsed));
+      if (name === 'repeatX') return Math.max(0.01, Math.min(20, parsed));
+      if (name === 'repeatY') return Math.max(0.01, Math.min(20, parsed));
       return clamp01(parsed);
     })();
 
@@ -220,6 +228,11 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
+
+  const uploadMap = async (key: keyof MaterialDraft, file: File) => {
+    const dataUrl = await readFileAsDataUrl(file);
+    setMaterial((prev) => ({ ...prev, [key]: dataUrl }));
+  };
 
   return (
     <div className="flex items-center justify-center w-full h-full">
@@ -407,6 +420,18 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             <div className="text-sm text-white/90 font-medium">Textures</div>
 
             <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Tiling</div>
+              <div className="flex items-center gap-2">
+                <div className="w-36">
+                  <Control name="repeatX" value={material.repeatX ?? 1} label="U" min={0.01} max={20} step={0.01} onChange={handleChange} />
+                </div>
+                <div className="w-36">
+                  <Control name="repeatY" value={material.repeatY ?? 1} label="V" min={0.01} max={20} step={0.01} onChange={handleChange} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
               <div className="text-xs text-white/70">Base color map</div>
               <div className="flex items-center gap-2">
                 <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
@@ -418,8 +443,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const dataUrl = await readFileAsDataUrl(file);
-                      setMaterial((prev) => ({ ...prev, baseColorMap: dataUrl }));
+                      await uploadMap('baseColorMap', file);
                       e.target.value = '';
                     }}
                   />
@@ -448,8 +472,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const dataUrl = await readFileAsDataUrl(file);
-                      setMaterial((prev) => ({ ...prev, normalMap: dataUrl }));
+                      await uploadMap('normalMap', file);
                       e.target.value = '';
                     }}
                   />
@@ -473,6 +496,161 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                         step={0.01}
                         onChange={handleChange}
                       />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Roughness map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMap('roughnessMap', file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.roughnessMap && (
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                    onClick={() => setMaterial((prev) => ({ ...prev, roughnessMap: undefined }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Metalness map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMap('metalnessMap', file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.metalnessMap && (
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                    onClick={() => setMaterial((prev) => ({ ...prev, metalnessMap: undefined }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">AO map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMap('aoMap', file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.aoMap && (
+                  <>
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                      onClick={() => setMaterial((prev) => ({ ...prev, aoMap: undefined }))}
+                    >
+                      Remove
+                    </button>
+                    <div className="w-44">
+                      <Control name="aoIntensity" value={material.aoIntensity ?? 1} label="Strength" min={0} max={2} step={0.01} onChange={handleChange} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Emissive map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMap('emissiveMap', file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.emissiveMap && (
+                  <button
+                    type="button"
+                    className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                    onClick={() => setMaterial((prev) => ({ ...prev, emissiveMap: undefined }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/70">Opacity (alpha) map</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      await uploadMap('alphaMap', file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {material.alphaMap && (
+                  <>
+                    <button
+                      type="button"
+                      className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                      onClick={() => setMaterial((prev) => ({ ...prev, alphaMap: undefined }))}
+                    >
+                      Remove
+                    </button>
+                    <div className="w-44">
+                      <Control name="alphaTest" value={material.alphaTest ?? 0} label="Cutoff" min={0} max={1} step={0.01} onChange={handleChange} />
                     </div>
                   </>
                 )}
@@ -530,6 +708,15 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             baseColorMap={material.baseColorMap}
             normalMap={material.normalMap}
             normalScale={material.normalScale}
+            roughnessMap={material.roughnessMap}
+            metalnessMap={material.metalnessMap}
+            aoMap={material.aoMap}
+            emissiveMap={material.emissiveMap}
+            alphaMap={material.alphaMap}
+            aoIntensity={material.aoIntensity}
+            alphaTest={material.alphaTest}
+            repeatX={material.repeatX}
+            repeatY={material.repeatY}
             environment={previewEnv}
             model={previewModel}
             autoRotate={autoRotate}

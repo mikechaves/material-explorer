@@ -39,6 +39,19 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   const normalMap = typeof m.normalMap === 'string' && m.normalMap ? m.normalMap : undefined;
   const normalScaleRaw = typeof m.normalScale === 'number' ? m.normalScale : Number(m.normalScale);
   const normalScale = Number.isFinite(normalScaleRaw) ? Math.max(0, Math.min(2, normalScaleRaw)) : 1;
+  const roughnessMap = typeof m.roughnessMap === 'string' && m.roughnessMap ? m.roughnessMap : undefined;
+  const metalnessMap = typeof m.metalnessMap === 'string' && m.metalnessMap ? m.metalnessMap : undefined;
+  const aoMap = typeof m.aoMap === 'string' && m.aoMap ? m.aoMap : undefined;
+  const emissiveMap = typeof m.emissiveMap === 'string' && m.emissiveMap ? m.emissiveMap : undefined;
+  const alphaMap = typeof m.alphaMap === 'string' && m.alphaMap ? m.alphaMap : undefined;
+  const aoIntensityRaw = typeof m.aoIntensity === 'number' ? m.aoIntensity : Number(m.aoIntensity);
+  const aoIntensity = Number.isFinite(aoIntensityRaw) ? Math.max(0, Math.min(2, aoIntensityRaw)) : 1;
+  const alphaTestRaw = typeof m.alphaTest === 'number' ? m.alphaTest : Number(m.alphaTest);
+  const alphaTest = Number.isFinite(alphaTestRaw) ? Math.max(0, Math.min(1, alphaTestRaw)) : 0;
+  const repeatXRaw = typeof m.repeatX === 'number' ? m.repeatX : Number(m.repeatX);
+  const repeatYRaw = typeof m.repeatY === 'number' ? m.repeatY : Number(m.repeatY);
+  const repeatX = Number.isFinite(repeatXRaw) ? Math.max(0.01, Math.min(20, repeatXRaw)) : 1;
+  const repeatY = Number.isFinite(repeatYRaw) ? Math.max(0.01, Math.min(20, repeatYRaw)) : 1;
 
   const createdAt =
     typeof m.createdAt === 'number' && Number.isFinite(m.createdAt) ? (m.createdAt as number) : now;
@@ -61,6 +74,15 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
     ...(baseColorMap ? { baseColorMap } : {}),
     ...(normalMap ? { normalMap } : {}),
     ...(Number.isFinite(normalScaleRaw) ? { normalScale } : {}),
+    ...(roughnessMap ? { roughnessMap } : {}),
+    ...(metalnessMap ? { metalnessMap } : {}),
+    ...(aoMap ? { aoMap } : {}),
+    ...(emissiveMap ? { emissiveMap } : {}),
+    ...(alphaMap ? { alphaMap } : {}),
+    ...(Number.isFinite(aoIntensityRaw) ? { aoIntensity } : {}),
+    ...(Number.isFinite(alphaTestRaw) ? { alphaTest } : {}),
+    ...(Number.isFinite(repeatXRaw) ? { repeatX } : {}),
+    ...(Number.isFinite(repeatYRaw) ? { repeatY } : {}),
     createdAt,
     ...(updatedAt ? { updatedAt } : {}),
   };
@@ -82,6 +104,19 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
   const normalMap = typeof draft.normalMap === 'string' && draft.normalMap ? draft.normalMap : undefined;
   const normalScaleRaw = draft.normalScale ?? 1;
   const normalScale = Number.isFinite(normalScaleRaw) ? Math.max(0, Math.min(2, normalScaleRaw)) : 1;
+  const roughnessMap = typeof draft.roughnessMap === 'string' && draft.roughnessMap ? draft.roughnessMap : undefined;
+  const metalnessMap = typeof draft.metalnessMap === 'string' && draft.metalnessMap ? draft.metalnessMap : undefined;
+  const aoMap = typeof draft.aoMap === 'string' && draft.aoMap ? draft.aoMap : undefined;
+  const emissiveMap = typeof draft.emissiveMap === 'string' && draft.emissiveMap ? draft.emissiveMap : undefined;
+  const alphaMap = typeof draft.alphaMap === 'string' && draft.alphaMap ? draft.alphaMap : undefined;
+  const aoIntensityRaw = draft.aoIntensity ?? 1;
+  const aoIntensity = Number.isFinite(aoIntensityRaw) ? Math.max(0, Math.min(2, aoIntensityRaw)) : 1;
+  const alphaTestRaw = draft.alphaTest ?? 0;
+  const alphaTest = Number.isFinite(alphaTestRaw) ? Math.max(0, Math.min(1, alphaTestRaw)) : 0;
+  const repeatXRaw = draft.repeatX ?? 1;
+  const repeatYRaw = draft.repeatY ?? 1;
+  const repeatX = Number.isFinite(repeatXRaw) ? Math.max(0.01, Math.min(20, repeatXRaw)) : 1;
+  const repeatY = Number.isFinite(repeatYRaw) ? Math.max(0.01, Math.min(20, repeatYRaw)) : 1;
 
   return {
     id: draft.id ?? uuidv4(),
@@ -99,6 +134,15 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
     ...(baseColorMap ? { baseColorMap } : {}),
     ...(normalMap ? { normalMap } : {}),
     ...(Number.isFinite(draft.normalScale ?? NaN) ? { normalScale } : {}),
+    ...(roughnessMap ? { roughnessMap } : {}),
+    ...(metalnessMap ? { metalnessMap } : {}),
+    ...(aoMap ? { aoMap } : {}),
+    ...(emissiveMap ? { emissiveMap } : {}),
+    ...(alphaMap ? { alphaMap } : {}),
+    ...(Number.isFinite(draft.aoIntensity ?? NaN) ? { aoIntensity } : {}),
+    ...(Number.isFinite(draft.alphaTest ?? NaN) ? { alphaTest } : {}),
+    ...(Number.isFinite(draft.repeatX ?? NaN) ? { repeatX } : {}),
+    ...(Number.isFinite(draft.repeatY ?? NaN) ? { repeatY } : {}),
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
   };

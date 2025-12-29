@@ -94,6 +94,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         baseColorMap: material.baseColorMap,
         normalMap: material.normalMap,
         normalScale: material.normalScale,
+        roughnessMap: material.roughnessMap,
+        metalnessMap: material.metalnessMap,
+        aoMap: material.aoMap,
+        emissiveMap: material.emissiveMap,
+        alphaMap: material.alphaMap,
+        aoIntensity: material.aoIntensity,
+        alphaTest: material.alphaTest,
+        repeatX: material.repeatX,
+        repeatY: material.repeatY,
       })
     );
   };
@@ -249,6 +258,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       baseColorMap={material.baseColorMap}
                       normalMap={material.normalMap}
                       normalScale={material.normalScale}
+                      roughnessMap={material.roughnessMap}
+                      metalnessMap={material.metalnessMap}
+                      aoMap={material.aoMap}
+                      emissiveMap={material.emissiveMap}
+                      alphaMap={material.alphaMap}
+                      aoIntensity={material.aoIntensity}
+                      alphaTest={material.alphaTest}
+                      repeatX={material.repeatX}
+                      repeatY={material.repeatY}
                     />
                     
                     {/* Control overlay */}
