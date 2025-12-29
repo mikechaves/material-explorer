@@ -5,7 +5,7 @@ import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview, { type MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import { createMaterialFromDraft, clamp01, downloadBlob } from '../utils/material';
-import { decodeSharePayload, encodeSharePayload } from '../utils/share';
+import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
 
 interface MaterialEditorProps {
   width?: number;
@@ -188,7 +188,10 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     const payload = decodeSharePayload(m);
     if (!payload) return;
     startNewMaterial();
-    setMaterial((prev) => ({ ...prev, ...payload.material }));
+    setMaterial((prev) => {
+      const incoming = (payload as any).material as MaterialDraft;
+      return { ...prev, ...incoming };
+    });
     // keep URL clean after applying
     url.searchParams.delete('m');
     window.history.replaceState({}, '', url.toString());
@@ -372,15 +375,38 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                 type="button"
                 className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
                 onClick={async () => {
-                  const { baseColorMap, normalMap, ...shareable } = material;
-                  const payload = encodeSharePayload({ v: 1, material: shareable as any });
+                  const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } =
+                    material;
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest as any });
                   const url = new URL(window.location.href);
                   url.searchParams.set('m', payload);
                   await navigator.clipboard.writeText(url.toString());
-                  window.alert('Share link copied to clipboard.');
+                  window.alert('Share link copied (no textures).');
                 }}
               >
                 Share link
+              </button>
+              <button
+                type="button"
+                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                onClick={async () => {
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material: material as any });
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('m', payload);
+
+                  // Safety: URLs beyond ~8k chars can break in some contexts.
+                  if (url.toString().length > 8000) {
+                    window.alert(
+                      'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
+                    );
+                    return;
+                  }
+
+                  await navigator.clipboard.writeText(url.toString());
+                  window.alert('Share link copied (with textures).');
+                }}
+              >
+                Share + tex
               </button>
             </div>
           </div>

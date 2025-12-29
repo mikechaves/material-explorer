@@ -7,8 +7,8 @@ jest.mock('./components/MaterialEditor', () => () => <div />);
 
 import App from './App';
 
-test('renders sidebar title', () => {
+test('renders sidebar header actions', () => {
   render(<App />);
-  const titleElement = screen.getByText(/materials/i);
-  expect(titleElement).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /collapse sidebar/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /export json/i })).toBeInTheDocument();
 });
