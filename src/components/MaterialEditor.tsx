@@ -133,6 +133,8 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   const emptyDraft: MaterialDraft = React.useMemo(
     () => ({
       name: 'Untitled',
+      favorite: false,
+      tags: [],
       color: '#FFFFFF',
       metalness: 0.5,
       roughness: 0.5,
@@ -317,6 +319,33 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
               value={material.name ?? ''}
               onChange={handleChange}
               placeholder="Untitled"
+              className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
+                         focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-sm text-white/90">Favorite</label>
+            <input
+              type="checkbox"
+              checked={!!material.favorite}
+              onChange={(e) => setMaterial((prev) => ({ ...prev, favorite: e.target.checked }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-white/90">Tags</label>
+            <input
+              type="text"
+              value={(material.tags ?? []).join(', ')}
+              onChange={(e) => {
+                const tags = e.target.value
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean);
+                setMaterial((prev) => ({ ...prev, tags }));
+              }}
+              placeholder="e.g. glass, carpaint, fabric"
               className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
                          focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
             />

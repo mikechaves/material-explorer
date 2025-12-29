@@ -150,7 +150,8 @@ export async function exportMaterialAsGlb(material: AppMaterial): Promise<{ file
 }
 
 export async function exportLibraryAsGlb(
-  materials: AppMaterial[]
+  materials: AppMaterial[],
+  opts?: { filename?: string }
 ): Promise<{ filename: string; blob: Blob } | null> {
   if (!materials.length) return null;
 
@@ -183,7 +184,7 @@ export async function exportLibraryAsGlb(
     }
 
     const glb = await exportSceneAsGlb(scene);
-    const filename = `materials-library.glb`;
+    const filename = opts?.filename ?? `materials-library.glb`;
     return { filename, blob: new Blob([glb], { type: 'model/gltf-binary' }) };
   } finally {
     geometry.dispose();

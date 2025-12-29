@@ -1,6 +1,8 @@
 export interface Material {
   id: string;
   name: string;
+  favorite?: boolean;
+  tags?: string[];
   color: string;
   metalness: number;
   roughness: number;

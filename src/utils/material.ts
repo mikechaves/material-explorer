@@ -18,6 +18,9 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   if (!id) return null;
 
   const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : 'Untitled';
+  const favorite = typeof m.favorite === 'boolean' ? m.favorite : false;
+  const tags =
+    Array.isArray(m.tags) ? (m.tags.filter((t) => typeof t === 'string').map((t) => t.trim()).filter(Boolean) as string[]) : [];
   const color = isHexColor(m.color) ? (m.color as string) : '#FFFFFF';
 
   const metalness = clamp01(typeof m.metalness === 'number' ? m.metalness : Number(m.metalness));
@@ -61,6 +64,8 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   return {
     id,
     name,
+    ...(favorite ? { favorite } : {}),
+    ...(tags.length ? { tags } : {}),
     color,
     metalness,
     roughness,
@@ -90,6 +95,10 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
 
 export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date.now()): Material {
   const baseName = (draft.name ?? '').trim() || 'Untitled';
+  const favorite = !!draft.favorite;
+  const tags = Array.isArray(draft.tags)
+    ? Array.from(new Set(draft.tags.map((t) => String(t).trim()).filter(Boolean)))
+    : [];
   const color = isHexColor(draft.color) ? draft.color : '#FFFFFF';
   const metalness = clamp01(draft.metalness);
   const roughness = clamp01(draft.roughness);
@@ -121,6 +130,8 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
   return {
     id: draft.id ?? uuidv4(),
     name: baseName,
+    ...(favorite ? { favorite } : {}),
+    ...(tags.length ? { tags } : {}),
     color,
     metalness,
     roughness,
