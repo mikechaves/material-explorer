@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Security: pinned vulnerable transitive deps via npm overrides:
   - `node-forge` to `>=1.3.2`
   - `glob` to `>=10.5.0` (Node 16/18 compatible)
+  - `qs` to `>=6.14.1` (arrayLimit bracket-notation DoS)
 - Hardened persistence: schema normalization + safer numeric handling to avoid invalid values corrupting saved materials.
 - Build/developer experience: updated Browserslist DB, fixed `@mediapipe/tasks-vision` sourcemap mismatch, and cleaned up preview rendering warnings.
 - UI polish: better preview framing, dark-theme dropdowns, confirmation on delete, and small accessibility tweaks.
@@ -35,5 +36,4 @@ All notable changes to this project will be documented in this file.
 
 ### Highlights
 - Initial release: create/edit/delete materials with color/metalness/roughness and a 3D preview.
-
 
