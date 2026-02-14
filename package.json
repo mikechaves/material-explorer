@@ -40,6 +40,8 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "quality:ci": "npm run check-format && npm run lint && npm run type-check",
+    "security:audit": "npm audit --audit-level=high",
+    "quality:full": "npm run quality:ci && npm run test:ci && npm run build && npm run check:bundle && npm run test:e2e && npm run security:audit",
     "check:bundle": "node scripts/check-bundle-budget.js",
     "test": "vitest",
     "test:ci": "vitest run",

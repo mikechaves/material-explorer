@@ -70,16 +70,23 @@ This command builds the app for production to the `build` folder. The build is m
 Before opening a pull request, run:
 
 ```bash
+npm run quality:full
+```
+
+Equivalent expanded steps:
+
+```bash
 npm run check-format
 npm run lint
 npm run type-check
+npm run test:ci
 npm run build
 npm run check:bundle
-npm run test:ci
 npm run test:e2e
+npm run security:audit
 ```
 
-The repository also runs these checks in GitHub Actions on pull requests and on pushes to `main`.
+The repository runs these checks in GitHub Actions on pull requests and on pushes to `main`.
 
 ## Optional API Sync
 

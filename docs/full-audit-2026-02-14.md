@@ -12,6 +12,16 @@
 - Build health: TypeScript, unit tests, build, and Playwright smoke/a11y are passing.
 - Product state: strong interactive editor and library UX with modernized visual system, command palette, and first-run onboarding.
 
+## Progress Update (Implemented After Initial Audit)
+
+- Repository boundary shipped with local + HTTP fallback adapters and auth/scope support.
+- Storage failure UX shipped with non-blocking warnings and one-click `Export Backup JSON`.
+- Import guardrails shipped (file-size cap, payload-size cap, per-import material cap, oversized texture rejection).
+- High-value e2e paths expanded (bulk actions, compare toggle, export flow, recent commands, undo/redo).
+- Bundle budget checks added and enforced in CI.
+- Observability hooks added for web-vitals, global runtime errors, and remote sync failure paths.
+- CI quality gates now cover format, lint, type-check, tests, build, bundle budget, e2e, and security audit.
+
 ## Findings (Prioritized)
 
 ### P1 - Backend foundation missing abstraction boundary
@@ -85,7 +95,6 @@
 
 ## Recommended Next Execution Order
 
-1. Repository abstraction + storage error UX
-2. Import guardrails + validation hardening
-3. Test coverage expansion for high-value UX paths
-4. Bundle budget enforcement and deeper preview code-splitting
+1. Deepen preview/runtime code-splitting to reduce three.js cold-start cost on low-end devices.
+2. Add telemetry contract docs + backend endpoint example (or adapter) for production observability ingestion.
+3. Continue editor/sidebar modularization to reduce file complexity and improve test focus.

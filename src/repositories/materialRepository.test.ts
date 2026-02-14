@@ -7,11 +7,17 @@ vi.mock('../utils/storage', () => ({
   saveMaterials: vi.fn(),
 }));
 
+vi.mock('../utils/telemetry', () => ({
+  emitTelemetryEvent: vi.fn(),
+}));
+
 import { loadMaterials, saveMaterials } from '../utils/storage';
+import { emitTelemetryEvent } from '../utils/telemetry';
 import { createMaterialRepository } from './materialRepository';
 
 const loadMaterialsMock = vi.mocked(loadMaterials);
 const saveMaterialsMock = vi.mocked(saveMaterials);
+const emitTelemetryEventMock = vi.mocked(emitTelemetryEvent);
 
 function makeMaterial(overrides: Partial<Material> = {}): Material {
   const now = Date.now();
@@ -39,6 +45,7 @@ describe('materialRepository', () => {
     vi.clearAllMocks();
     loadMaterialsMock.mockReturnValue([]);
     saveMaterialsMock.mockReturnValue(true);
+    emitTelemetryEventMock.mockReset();
   });
 
   it('falls back to local repository when API URL is not set', async () => {
@@ -95,6 +102,11 @@ describe('materialRepository', () => {
     expect(result).toEqual({ ok: true, remoteSynced: false });
     expect(saveMaterialsMock).toHaveBeenCalledWith(materials, 'materials:user-1');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(emitTelemetryEventMock).toHaveBeenCalledWith(
+      'materials.save.remote_failed',
+      { status: 500, scope: 'user-1', source: 'http+local-fallback' },
+      'warn'
+    );
   });
 
   it('returns failure when local save fails even with API enabled', async () => {
@@ -108,6 +120,11 @@ describe('materialRepository', () => {
     expect(result).toEqual({ ok: false, remoteSynced: false });
     expect(saveMaterialsMock).toHaveBeenCalledWith(materials, 'materials:team-42');
     expect(fetchImpl).not.toHaveBeenCalled();
+    expect(emitTelemetryEventMock).toHaveBeenCalledWith(
+      'materials.save.local_failed',
+      { scope: 'team-42', source: 'http+local-fallback' },
+      'error'
+    );
   });
 
   it('uses scoped local storage key when API is disabled', async () => {
@@ -121,5 +138,35 @@ describe('materialRepository', () => {
     expect(repository.scope).toBe('alice');
     expect(loadMaterialsMock).toHaveBeenCalledWith('materials:alice');
     expect(saveMaterialsMock).toHaveBeenCalledWith(materials, 'materials:alice');
+  });
+
+  it('emits telemetry when remote load responds with non-200 status', async () => {
+    const fetchImpl = vi.fn(async () => new Response('bad gateway', { status: 502 })) as unknown as typeof fetch;
+    const repository = createMaterialRepository({ apiUrl: 'https://api.example.com', fetchImpl, userScope: 'user-9' });
+
+    const result = await repository.loadFromRemote?.();
+
+    expect(result).toBeNull();
+    expect(emitTelemetryEventMock).toHaveBeenCalledWith(
+      'materials.load.remote_failed',
+      { status: 502, scope: 'user-9', source: 'http+local-fallback' },
+      'warn'
+    );
+  });
+
+  it('emits telemetry when remote load payload is invalid', async () => {
+    const fetchImpl = vi.fn(
+      async () => new Response(JSON.stringify({ foo: 'bar' }), { status: 200 })
+    ) as unknown as typeof fetch;
+    const repository = createMaterialRepository({ apiUrl: 'https://api.example.com', fetchImpl, userScope: 'user-4' });
+
+    const result = await repository.loadFromRemote?.();
+
+    expect(result).toBeNull();
+    expect(emitTelemetryEventMock).toHaveBeenCalledWith(
+      'materials.load.remote_invalid_payload',
+      { scope: 'user-4', source: 'http+local-fallback' },
+      'warn'
+    );
   });
 });
