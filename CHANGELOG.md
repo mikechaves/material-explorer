@@ -28,12 +28,9 @@ All notable changes to this project will be documented in this file.
 ### Known issues
 - **LocalStorage quota**: texture maps are currently stored as data URLs inside material JSON; large images can exceed browser storage limits.
 - **Share links & textures**: “share + textures” is size-limited; for reliable sharing of textures, prefer **Export JSON**.
-- **CRA toolchain**: `npm audit` still reports vulnerabilities inherited from `react-scripts` dependencies; addressing them may require migrating off CRA.
-- **Cross-platform scripts**: `start/build` use `export NODE_OPTIONS=--openssl-legacy-provider` (works on macOS/Linux; Windows needs a different approach).
 - **GLB exports are previews**: exported `.glb` contains preview geometry (sphere/grid), not a user-imported mesh.
 
 ## [0.1] - 2024-03-24
 
 ### Highlights
 - Initial release: create/edit/delete materials with color/metalness/roughness and a 3D preview.
-

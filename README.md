@@ -15,7 +15,7 @@ Welcome to Material Explorer! This application allows you to interactively creat
 
 ## Prerequisites
 
-- Node.js (version 16.x or higher)
+- Node.js (version 20.x or higher)
 - npm (comes with Node.js)
 
 ## Installation
@@ -43,6 +43,12 @@ To start the development server:
 
 ```bash
 npm start
+```
+
+You can also run:
+
+```bash
+npm run dev
 ```
 
 This will open the app in your default web browser at `http://localhost:3000`. The app will automatically reload if you make changes to the source code.
@@ -95,6 +101,7 @@ The repository also runs these checks in GitHub Actions on pull requests and on 
 ## Technologies Used
 
 - React 18
+- Vite
 - Three.js
 - React Three Fiber
 - TypeScript
@@ -108,10 +115,6 @@ Contributions to Material Explorer are welcome! Please follow these steps:
 2. Create a new branch for your feature
 3. Make your changes
 4. Submit a pull request
-
-## Troubleshooting
-
-If you encounter the OpenSSL error when starting the development server, the project is configured to use the legacy OpenSSL provider. No additional configuration should be needed.
 
 ## License
 

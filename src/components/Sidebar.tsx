@@ -21,7 +21,7 @@ function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(' ');
 }
 
-const logoUrl = `${process.env.PUBLIC_URL}/logo.png`;
+const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const { materials, selectMaterial, deleteMaterial, addMaterial, updateMaterial, startNewMaterial } = useMaterials();

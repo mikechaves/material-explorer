@@ -15,5 +15,5 @@ root.render(
 
 // Keep web-vitals quiet by default (it can spam the console in production).
 // If you want to measure performance locally, uncomment:
-// if (process.env.NODE_ENV === 'development') reportWebVitals(console.log);
+// if (import.meta.env.DEV) reportWebVitals(console.log);
 reportWebVitals();
