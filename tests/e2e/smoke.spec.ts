@@ -299,6 +299,30 @@ test('bulk delete uses confirmation dialog before removing materials', async ({ 
     .toBe(1);
 });
 
+test('rejects non-image texture uploads with clear feedback', async ({ page }) => {
+  const textureInput = page.locator('input[type="file"][accept="image/*"]').first();
+  await textureInput.setInputFiles({
+    name: 'not-image.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"not":"an-image"}', 'utf8'),
+  });
+
+  await expect(page.getByText('Texture upload blocked', { exact: true })).toBeVisible();
+  await expect(page.getByText('Only image files can be used as texture maps.')).toBeVisible();
+});
+
+test('rejects oversized texture uploads with clear feedback', async ({ page }) => {
+  const textureInput = page.locator('input[type="file"][accept="image/*"]').first();
+  await textureInput.setInputFiles({
+    name: 'oversized-texture.png',
+    mimeType: 'image/png',
+    buffer: Buffer.alloc(4 * 1024 * 1024 + 1, 7),
+  });
+
+  await expect(page.getByText('Texture upload blocked', { exact: true })).toBeVisible();
+  await expect(page.getByText('Texture file is too large. Maximum supported size is 4 MB.')).toBeVisible();
+});
+
 test('can export materials as JSON', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(

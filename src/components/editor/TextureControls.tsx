@@ -40,6 +40,9 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         <div>
           <div className="text-sm font-semibold text-slate-100">Textures</div>
           <div className="text-xs ui-muted">Maps, tiling, and advanced material detail.</div>
+          <div className="mt-1 text-[11px] text-slate-300/75">
+            Upload images only. Recommended max size: 4 MB per map.
+          </div>
         </div>
       </div>
 
