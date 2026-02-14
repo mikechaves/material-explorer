@@ -51,6 +51,7 @@ function App() {
           </button>
         )}
         <main
+          id="maincontent"
           style={{ 
             marginLeft: isMobile ? 0 : isSidebarCollapsed ? '64px' : `${sidebarWidth}px`,
             width: isMobile ? '100%' : isSidebarCollapsed ? 'calc(100% - 64px)' : `calc(100% - ${sidebarWidth}px)`

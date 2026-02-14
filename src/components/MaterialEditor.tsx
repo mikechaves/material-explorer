@@ -4,12 +4,8 @@ import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import MaterialPreview, { type MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
-import { createMaterialFromDraft, clamp01, downloadBlob } from '../utils/material';
+import { createMaterialFromDraft, clamp01, coerceMaterialDraft, DEFAULT_MATERIAL_DRAFT, downloadBlob } from '../utils/material';
 import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
-
-interface MaterialEditorProps {
-  width?: number;
-}
 
 function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(' ');
@@ -126,43 +122,45 @@ const Control = ({
   </div>
 );
 
-const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
+type PreviewModel = 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
+type PreviewEnv = 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
+
+const PREVIEW_MODEL_OPTIONS: Array<{ value: PreviewModel; label: string }> = [
+  { value: 'sphere', label: 'Sphere' },
+  { value: 'box', label: 'Box' },
+  { value: 'torusKnot', label: 'Torus knot' },
+  { value: 'icosahedron', label: 'Icosahedron' },
+];
+
+const PREVIEW_ENV_OPTIONS: Array<{ value: PreviewEnv; label: string }> = [
+  { value: 'warehouse', label: 'Warehouse' },
+  { value: 'studio', label: 'Studio' },
+  { value: 'city', label: 'City' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'dawn', label: 'Dawn' },
+  { value: 'night', label: 'Night' },
+  { value: 'forest', label: 'Forest' },
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'park', label: 'Park' },
+  { value: 'lobby', label: 'Lobby' },
+];
+
+const MaterialEditor: React.FC = () => {
   const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle | null>(null);
 
   const emptyDraft: MaterialDraft = React.useMemo(
-    () => ({
-      name: 'Untitled',
-      favorite: false,
-      tags: [],
-      color: '#FFFFFF',
-      metalness: 0.5,
-      roughness: 0.5,
-      emissive: '#000000',
-      emissiveIntensity: 0,
-      clearcoat: 0,
-      clearcoatRoughness: 0.03,
-      transmission: 0,
-      ior: 1.5,
-      opacity: 1,
-      normalScale: 1,
-      aoIntensity: 1,
-      alphaTest: 0,
-      repeatX: 1,
-      repeatY: 1,
-    }),
+    () => ({ ...DEFAULT_MATERIAL_DRAFT }),
     []
   );
 
   const [material, setMaterial] = useState<MaterialDraft>(emptyDraft);
-  const [previewModel, setPreviewModel] = useState<'sphere' | 'box' | 'torusKnot' | 'icosahedron'>(() => {
+  const [previewModel, setPreviewModel] = useState<PreviewModel>(() => {
     const v = window.localStorage.getItem('previewModel');
     if (v === 'sphere' || v === 'box' || v === 'torusKnot' || v === 'icosahedron') return v;
     return 'sphere';
   });
-  const [previewEnv, setPreviewEnv] = useState<
-    'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby'
-  >(() => {
+  const [previewEnv, setPreviewEnv] = useState<PreviewEnv>(() => {
     const v = window.localStorage.getItem('previewEnv');
     if (v === 'warehouse' || v === 'studio' || v === 'city' || v === 'sunset' || v === 'dawn' || v === 'night' || v === 'forest' || v === 'apartment' || v === 'park' || v === 'lobby')
       return v;
@@ -188,14 +186,11 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
     const payload = decodeSharePayload(m);
     if (!payload) return;
     startNewMaterial();
-    setMaterial((prev) => {
-      const incoming = (payload as any).material as MaterialDraft;
-      return { ...prev, ...incoming };
-    });
+    setMaterial(coerceMaterialDraft(payload.material, emptyDraft));
     // keep URL clean after applying
     url.searchParams.delete('m');
     window.history.replaceState({}, '', url.toString());
-  }, [startNewMaterial]);
+  }, [startNewMaterial, emptyDraft]);
 
   useEffect(() => {
     window.localStorage.setItem('previewModel', previewModel);
@@ -215,6 +210,18 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
   useEffect(() => {
     window.localStorage.setItem('previewShowBackground', showBackground ? 'true' : 'false');
   }, [showBackground]);
+
+  const copyShareLink = async (url: string, successMessage: string) => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable');
+      }
+      await navigator.clipboard.writeText(url);
+      window.alert(successMessage);
+    } catch {
+      window.prompt('Copy this link:', url);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -352,29 +359,13 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
             <div className="flex items-center gap-2">
               <Dropdown
                 value={previewModel}
-                onChange={(v) => setPreviewModel(v as any)}
-                options={[
-                  { value: 'sphere', label: 'Sphere' },
-                  { value: 'box', label: 'Box' },
-                  { value: 'torusKnot', label: 'Torus knot' },
-                  { value: 'icosahedron', label: 'Icosahedron' },
-                ]}
+                onChange={setPreviewModel}
+                options={PREVIEW_MODEL_OPTIONS}
               />
               <Dropdown
                 value={previewEnv}
-                onChange={(v) => setPreviewEnv(v as any)}
-                options={[
-                  { value: 'warehouse', label: 'Warehouse' },
-                  { value: 'studio', label: 'Studio' },
-                  { value: 'city', label: 'City' },
-                  { value: 'sunset', label: 'Sunset' },
-                  { value: 'dawn', label: 'Dawn' },
-                  { value: 'night', label: 'Night' },
-                  { value: 'forest', label: 'Forest' },
-                  { value: 'apartment', label: 'Apartment' },
-                  { value: 'park', label: 'Park' },
-                  { value: 'lobby', label: 'Lobby' },
-                ]}
+                onChange={setPreviewEnv}
+                options={PREVIEW_ENV_OPTIONS}
               />
             </div>
             <label className="flex items-center gap-2 text-xs text-white/80 select-none">
@@ -462,11 +453,10 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                 onClick={async () => {
                   const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } =
                     material;
-                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest as any });
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
                   const url = new URL(window.location.href);
                   url.searchParams.set('m', payload);
-                  await navigator.clipboard.writeText(url.toString());
-                  window.alert('Share link copied (no textures).');
+                  await copyShareLink(url.toString(), 'Share link copied (no textures).');
                 }}
               >
                 Share link
@@ -475,7 +465,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                 type="button"
                 className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
                 onClick={async () => {
-                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material: material as any });
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
                   const url = new URL(window.location.href);
                   url.searchParams.set('m', payload);
 
@@ -487,8 +477,7 @@ const MaterialEditor: React.FC<MaterialEditorProps> = ({ width = 800 }) => {
                     return;
                   }
 
-                  await navigator.clipboard.writeText(url.toString());
-                  window.alert('Share link copied (with textures).');
+                  await copyShareLink(url.toString(), 'Share link copied (with textures).');
                 }}
               >
                 Share + tex

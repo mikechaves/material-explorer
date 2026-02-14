@@ -6,9 +6,11 @@ interface MaterialContextType {
   materials: Material[];
   selectedMaterial: Material | null;
   addMaterial: (material: Material) => void;
-  updateMaterial: (materialToUpdate: Material) => void; // Declare the updateMaterial function
-  // removeMaterial: (id: string) => void;
+  addMaterials: (newMaterials: Material[]) => void;
+  updateMaterial: (materialToUpdate: Material) => void;
+  updateMaterials: (materialsToUpdate: Material[]) => void;
   deleteMaterial: (id: string) => void;
+  deleteMaterials: (ids: string[]) => void;
   selectMaterial: (id: string) => void;
   startNewMaterial: () => void;
 }
@@ -20,31 +22,50 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
 
   const addMaterial = (material: Material) => {
-    setMaterials((prevMaterials) => {
-      const updatedMaterials = [...prevMaterials, material];
-      saveMaterials(updatedMaterials);
-      return updatedMaterials;
+    setMaterials((prev) => {
+      const updated = [...prev, material];
+      saveMaterials(updated);
+      return updated;
     });
+  };
+
+  const addMaterials = (newMaterials: Material[]) => {
+    if (newMaterials.length === 0) return;
+    setMaterials((prev) => {
+      const updated = [...prev, ...newMaterials];
+      saveMaterials(updated);
+      return updated;
+    });
+  };
+
+  const updateMaterials = (materialsToUpdate: Material[]) => {
+    if (materialsToUpdate.length === 0) return;
+    const byId = new Map(materialsToUpdate.map((m) => [m.id, m]));
+    setMaterials((prev) => {
+      const updated = prev.map((material) => byId.get(material.id) ?? material);
+      saveMaterials(updated);
+      return updated;
+    });
+    setSelectedMaterial((prev) => (prev ? byId.get(prev.id) ?? prev : prev));
   };
 
   const updateMaterial = (materialToUpdate: Material) => {
-    setMaterials((prevMaterials) => {
-      const updatedMaterials = prevMaterials.map((material) => 
-        material.id === materialToUpdate.id ? materialToUpdate : material
-      );
-      saveMaterials(updatedMaterials); // Persist the updated materials array
-      return updatedMaterials;
+    updateMaterials([materialToUpdate]);
+  };
+
+  const deleteMaterials = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setMaterials((prev) => {
+      const updated = prev.filter((material) => !idSet.has(material.id));
+      saveMaterials(updated);
+      return updated;
     });
-    setSelectedMaterial((prev) => (prev?.id === materialToUpdate.id ? materialToUpdate : prev));
+    setSelectedMaterial((prev) => (prev && idSet.has(prev.id) ? null : prev));
   };
 
   const removeMaterial = (id: string) => {
-    setMaterials((prevMaterials) => {
-      const updatedMaterials = prevMaterials.filter((material) => material.id !== id);
-      saveMaterials(updatedMaterials);
-      return updatedMaterials;
-    });
-    setSelectedMaterial((prev) => (prev?.id === id ? null : prev));
+    deleteMaterials([id]);
   };
 
   const selectMaterial = (id: string) => {
@@ -56,9 +77,19 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const startNewMaterial = () => setSelectedMaterial(null);
 
   return (
-    // <MaterialContext.Provider value={{ materials, selectedMaterial, addMaterial, updateMaterial, removeMaterial, selectMaterial, deleteMaterial }}>
     <MaterialContext.Provider
-      value={{ materials, selectedMaterial, addMaterial, updateMaterial, deleteMaterial, selectMaterial, startNewMaterial }}
+      value={{
+        materials,
+        selectedMaterial,
+        addMaterial,
+        addMaterials,
+        updateMaterial,
+        updateMaterials,
+        deleteMaterial,
+        deleteMaterials,
+        selectMaterial,
+        startNewMaterial,
+      }}
     >
       {children}
     </MaterialContext.Provider>

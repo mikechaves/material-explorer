@@ -105,20 +105,13 @@ async function buildThreeMaterial(material: AppMaterial) {
 }
 
 async function exportSceneAsGlb(scene: THREE.Object3D) {
-  const mod = await import('three/examples/jsm/exporters/GLTFExporter');
-  const GLTFExporter = (mod as any).GLTFExporter as new () => any;
+  const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter');
   const exporter = new GLTFExporter();
-  return await new Promise<ArrayBuffer>((resolve, reject) => {
-    exporter.parse(
-      scene,
-      (result: any) => {
-        if (result instanceof ArrayBuffer) resolve(result);
-        else reject(new Error('Expected GLB ArrayBuffer result'));
-      },
-      (err: any) => reject(err),
-      { binary: true }
-    );
-  });
+  const result = await exporter.parseAsync(scene, { binary: true });
+  if (!(result instanceof ArrayBuffer)) {
+    throw new Error('Expected GLB ArrayBuffer result');
+  }
+  return result;
 }
 
 export async function exportMaterialAsGlb(material: AppMaterial): Promise<{ filename: string; blob: Blob }> {
@@ -194,5 +187,4 @@ export async function exportLibraryAsGlb(
     });
   }
 }
-
 

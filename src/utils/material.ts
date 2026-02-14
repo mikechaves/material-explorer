@@ -10,6 +10,81 @@ export function isHexColor(s: unknown): s is string {
   return typeof s === 'string' && /^#[0-9a-fA-F]{6}$/.test(s);
 }
 
+export const DEFAULT_MATERIAL_DRAFT: MaterialDraft = {
+  name: 'Untitled',
+  favorite: false,
+  tags: [],
+  color: '#FFFFFF',
+  metalness: 0.5,
+  roughness: 0.5,
+  emissive: '#000000',
+  emissiveIntensity: 0,
+  clearcoat: 0,
+  clearcoatRoughness: 0.03,
+  transmission: 0,
+  ior: 1.5,
+  opacity: 1,
+  normalScale: 1,
+  aoIntensity: 1,
+  alphaTest: 0,
+  repeatX: 1,
+  repeatY: 1,
+};
+
+function asFiniteNumber(value: unknown, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function asOptionalDataUrl(value: unknown, fallback?: string): string | undefined {
+  if (typeof value === 'string' && value) return value;
+  return fallback;
+}
+
+export function coerceMaterialDraft(input: unknown, base: MaterialDraft = DEFAULT_MATERIAL_DRAFT): MaterialDraft {
+  const src = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
+  const fallback = { ...DEFAULT_MATERIAL_DRAFT, ...base };
+  const tags = Array.isArray(src.tags)
+    ? (src.tags.filter((t) => typeof t === 'string').map((t) => t.trim()).filter(Boolean) as string[])
+    : fallback.tags ?? [];
+
+  const draft: MaterialDraft = {
+    ...fallback,
+    id: typeof src.id === 'string' && src.id ? src.id : fallback.id,
+    name: typeof src.name === 'string' && src.name.trim() ? src.name.trim() : fallback.name,
+    favorite: typeof src.favorite === 'boolean' ? src.favorite : !!fallback.favorite,
+    tags,
+    color: isHexColor(src.color) ? src.color : fallback.color,
+    metalness: clamp01(asFiniteNumber(src.metalness, fallback.metalness)),
+    roughness: clamp01(asFiniteNumber(src.roughness, fallback.roughness)),
+    emissive: isHexColor(src.emissive) ? src.emissive : fallback.emissive,
+    emissiveIntensity: clamp01(asFiniteNumber(src.emissiveIntensity, fallback.emissiveIntensity)),
+    clearcoat: clamp01(asFiniteNumber(src.clearcoat, fallback.clearcoat)),
+    clearcoatRoughness: clamp01(asFiniteNumber(src.clearcoatRoughness, fallback.clearcoatRoughness)),
+    transmission: clamp01(asFiniteNumber(src.transmission, fallback.transmission)),
+    ior: Math.max(1, Math.min(2.5, asFiniteNumber(src.ior, fallback.ior))),
+    opacity: clamp01(asFiniteNumber(src.opacity, fallback.opacity)),
+    baseColorMap: asOptionalDataUrl(src.baseColorMap, fallback.baseColorMap),
+    normalMap: asOptionalDataUrl(src.normalMap, fallback.normalMap),
+    normalScale: Math.max(0, Math.min(2, asFiniteNumber(src.normalScale, fallback.normalScale ?? 1))),
+    roughnessMap: asOptionalDataUrl(src.roughnessMap, fallback.roughnessMap),
+    metalnessMap: asOptionalDataUrl(src.metalnessMap, fallback.metalnessMap),
+    aoMap: asOptionalDataUrl(src.aoMap, fallback.aoMap),
+    emissiveMap: asOptionalDataUrl(src.emissiveMap, fallback.emissiveMap),
+    alphaMap: asOptionalDataUrl(src.alphaMap, fallback.alphaMap),
+    aoIntensity: Math.max(0, Math.min(2, asFiniteNumber(src.aoIntensity, fallback.aoIntensity ?? 1))),
+    alphaTest: Math.max(0, Math.min(1, asFiniteNumber(src.alphaTest, fallback.alphaTest ?? 0))),
+    repeatX: Math.max(0.01, Math.min(20, asFiniteNumber(src.repeatX, fallback.repeatX ?? 1))),
+    repeatY: Math.max(0.01, Math.min(20, asFiniteNumber(src.repeatY, fallback.repeatY ?? 1))),
+    createdAt:
+      typeof src.createdAt === 'number' && Number.isFinite(src.createdAt) ? src.createdAt : fallback.createdAt,
+    updatedAt:
+      typeof src.updatedAt === 'number' && Number.isFinite(src.updatedAt) ? src.updatedAt : fallback.updatedAt,
+  };
+
+  return draft;
+}
+
 export function normalizeMaterial(input: unknown, now: number = Date.now()): Material | null {
   if (!input || typeof input !== 'object') return null;
   const m = input as Record<string, unknown>;
@@ -181,5 +256,4 @@ export function downloadBlob(filename: string, blob: Blob) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-
 

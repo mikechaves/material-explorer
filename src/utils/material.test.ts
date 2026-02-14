@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clamp01, isHexColor, normalizeMaterial } from './material';
+import { clamp01, coerceMaterialDraft, isHexColor, normalizeMaterial } from './material';
 
 describe('material utils', () => {
   it('clamp01 bounds numbers between 0 and 1', () => {
@@ -44,5 +44,27 @@ describe('material utils', () => {
     expect(normalizeMaterial(null)).toBeNull();
     expect(normalizeMaterial({})).toBeNull();
     expect(normalizeMaterial({ id: '' })).toBeNull();
+  });
+
+  it('coerces draft payloads and sanitizes invalid values', () => {
+    const coerced = coerceMaterialDraft({
+      name: '  Copper  ',
+      color: 'invalid',
+      metalness: 3,
+      roughness: -4,
+      tags: [' polished ', '', 42],
+      repeatX: 0,
+      repeatY: 30,
+      baseColorMap: 123,
+    });
+
+    expect(coerced.name).toBe('Copper');
+    expect(coerced.color).toBe('#FFFFFF');
+    expect(coerced.metalness).toBe(1);
+    expect(coerced.roughness).toBe(0);
+    expect(coerced.tags).toEqual(['polished']);
+    expect(coerced.repeatX).toBe(0.01);
+    expect(coerced.repeatY).toBe(20);
+    expect(coerced.baseColorMap).toBeUndefined();
   });
 });

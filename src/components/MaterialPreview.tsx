@@ -60,6 +60,7 @@ interface SphereProps {
   repeatX?: number;
   repeatY?: number;
   model?: MaterialPreviewProps['model'];
+  animate?: boolean;
 }
 
 function buildGeometry(model: MaterialPreviewProps['model']) {
@@ -80,8 +81,8 @@ function buildGeometry(model: MaterialPreviewProps['model']) {
       break;
   }
   // AO maps require uv2; reuse uv.
-  const uv = (g as any).attributes?.uv;
-  if (uv && !(g as any).attributes?.uv2) {
+  const uv = g.getAttribute('uv');
+  if (uv && !g.getAttribute('uv2')) {
     g.setAttribute('uv2', uv);
   }
   return g;
@@ -162,6 +163,7 @@ const Sphere: React.FC<SphereProps> = ({
   repeatX = 1,
   repeatY = 1,
   model = 'sphere',
+  animate = true,
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -177,10 +179,11 @@ const Sphere: React.FC<SphereProps> = ({
   const alMap = useLoadedTexture(alphaMap, THREE.NoColorSpace, repeatX, repeatY);
 
   useFrame((state) => {
+    if (!animate) return;
     if (meshRef.current) {
       // Smooth rotation
       meshRef.current.rotation.y += 0.005;
-      
+
       // Subtle floating animation
       meshRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.1;
     }
@@ -234,8 +237,8 @@ const Scene: React.FC<SphereProps & { autoRotate?: boolean; enableZoom?: boolean
   return (
     <>
       {/* Main sphere */}
-      <Sphere {...props} />
-      
+      <Sphere {...props} animate={!!autoRotate} />
+
       {/* Contact shadows for better grounding */}
       <ContactShadows
         position={[0, -1.4, 0]}
@@ -298,20 +301,54 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
   } = props;
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   const [frameNonce, setFrameNonce] = useState(0);
+  const [captureBufferEnabled, setCaptureBufferEnabled] = useState(false);
+  const [snapshotRequestNonce, setSnapshotRequestNonce] = useState(0);
+  const pendingSnapshotResolveRef = useRef<((blob: Blob | null) => void) | null>(null);
 
   useImperativeHandle(
     ref,
     () => ({
       snapshotPng: () =>
         new Promise((resolve) => {
-          const canvas = glRef.current?.domElement;
-          if (!canvas) return resolve(null);
-          canvas.toBlob((b) => resolve(b), 'image/png');
+          if (pendingSnapshotResolveRef.current) pendingSnapshotResolveRef.current(null);
+          pendingSnapshotResolveRef.current = resolve;
+          setCaptureBufferEnabled(true);
+          setSnapshotRequestNonce((n) => n + 1);
         }),
       resetView: () => setFrameNonce((n) => n + 1),
     }),
     []
   );
+
+  React.useEffect(() => {
+    if (!snapshotRequestNonce || !captureBufferEnabled) return;
+    if (!pendingSnapshotResolveRef.current) return;
+
+    const raf = window.requestAnimationFrame(() => {
+      const canvas = glRef.current?.domElement;
+      if (!canvas) {
+        pendingSnapshotResolveRef.current?.(null);
+        pendingSnapshotResolveRef.current = null;
+        setCaptureBufferEnabled(false);
+        return;
+      }
+
+      canvas.toBlob((blob) => {
+        pendingSnapshotResolveRef.current?.(blob);
+        pendingSnapshotResolveRef.current = null;
+        setCaptureBufferEnabled(false);
+      }, 'image/png');
+    });
+
+    return () => window.cancelAnimationFrame(raf);
+  }, [snapshotRequestNonce, captureBufferEnabled]);
+
+  React.useEffect(() => {
+    return () => {
+      pendingSnapshotResolveRef.current?.(null);
+      pendingSnapshotResolveRef.current = null;
+    };
+  }, []);
 
   return (
     <motion.div
@@ -322,8 +359,9 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       className={`relative w-full h-full ${className} rounded-xl overflow-hidden`}
     >
       <Canvas
+        frameloop={autoRotate || captureBufferEnabled ? 'always' : 'demand'}
         dpr={[1, 2]}
-        gl={{ antialias: true, preserveDrawingBuffer: true, alpha: !showBackground }}
+        gl={{ antialias: true, preserveDrawingBuffer: captureBufferEnabled, alpha: !showBackground }}
         onCreated={({ gl }) => {
           glRef.current = gl;
         }}
@@ -332,7 +370,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       >
         {showBackground && <color attach="background" args={['#000000']} />}
         {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
-        
+
         <Stage key={frameNonce} intensity={1} environment={environment} adjustCamera={0.55}>
           <Scene
             color={color}

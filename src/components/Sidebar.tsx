@@ -16,22 +16,44 @@ interface SidebarProps {
 }
 
 const [minWidth, maxWidth] = [200, 500];
+type SortMode = 'updated' | 'created' | 'name' | 'manual';
+
+const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
+  { value: 'updated', label: 'Updated' },
+  { value: 'created', label: 'Created' },
+  { value: 'name', label: 'Name' },
+  { value: 'manual', label: 'Manual' },
+];
 
 function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(' ');
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
-  const { materials, selectMaterial, deleteMaterial, addMaterial, updateMaterial, startNewMaterial } = useMaterials();
+  const {
+    materials,
+    selectMaterial,
+    deleteMaterial,
+    deleteMaterials,
+    addMaterial,
+    addMaterials,
+    updateMaterial,
+    updateMaterials,
+    startNewMaterial,
+  } = useMaterials();
   const [isDragging, setIsDragging] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isDragged = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [sort, setSort] = useState<'updated' | 'created' | 'name' | 'manual'>('updated');
+  const [sort, setSort] = useState<SortMode>('updated');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -45,12 +67,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     }
   });
 
+  const setSidebarWidthValue = React.useCallback((nextWidth: number) => {
+    const clamped = Math.min(Math.max(nextWidth, minWidth), maxWidth);
+    setWidth(clamped);
+    window.localStorage.setItem('sidebarWidth', clamped.toString());
+  }, [setWidth]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragged.current) return;
-      const newWidth = Math.min(Math.max(e.clientX, minWidth), maxWidth);
-      setWidth(newWidth);
-      localStorage.setItem("sidebarWidth", newWidth.toString());
+      setSidebarWidthValue(e.clientX);
       document.body.style.cursor = 'ew-resize';
     };
 
@@ -67,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [setWidth]);
+  }, [setSidebarWidthValue]);
 
   const exportAll = () => {
     downloadJson('materials.json', { version: 1, exportedAt: Date.now(), materials });
@@ -137,10 +163,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       const now = Date.now();
       const incoming: unknown[] = Array.isArray(parsed)
         ? parsed
-        : parsed && typeof parsed === 'object' && Array.isArray((parsed as any).materials)
-          ? (parsed as any).materials
-          : parsed && typeof parsed === 'object' && (parsed as any).material
-            ? [(parsed as any).material]
+        : isRecord(parsed) && Array.isArray(parsed.materials)
+          ? parsed.materials
+          : isRecord(parsed) && 'material' in parsed
+            ? [parsed.material]
             : [parsed];
 
       const normalized = incoming
@@ -154,10 +180,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
       // Ensure imported ids don’t collide; if they do, assign a new id.
       const existingIds = new Set(materials.map((m) => m.id));
-      normalized.forEach((m) => {
+      const imported = normalized.map((m) => {
         const draft = existingIds.has(m.id) ? { ...m, id: undefined } : m;
-        addMaterial(createMaterialFromDraft(draft));
+        const created = createMaterialFromDraft(draft);
+        existingIds.add(created.id);
+        return created;
       });
+      addMaterials(imported);
     } catch (e) {
       console.error(e);
       window.alert('Failed to import materials. Make sure it is valid JSON.');
@@ -214,13 +243,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const bulkDelete = () => {
     const ok = window.confirm(`Delete ${selectedIds.length} material(s)?`);
     if (!ok) return;
-    selectedIds.forEach((id) => deleteMaterial(id));
+    deleteMaterials(selectedIds);
     setSelectedIds([]);
   };
 
   const bulkSetFavorite = (fav: boolean) => {
     const now = Date.now();
-    selectedMaterials.forEach((m) => updateMaterial({ ...m, favorite: fav, updatedAt: now }));
+    updateMaterials(selectedMaterials.map((m) => ({ ...m, favorite: fav, updatedAt: now })));
   };
 
   const filtered = useMemo(() => {
@@ -355,6 +384,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                   onlyFavorites ? 'bg-purple-600/30 border-purple-500/30' : 'bg-white/5 border-white/10'
                 }`}
                 title="Toggle favorites"
+                aria-label={onlyFavorites ? 'Show all materials' : 'Show only favorites'}
+                aria-pressed={onlyFavorites}
               >
                 ★
               </button>
@@ -365,6 +396,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                   bulkMode ? 'bg-purple-600/30 border-purple-500/30' : 'bg-white/5 border-white/10'
                 }`}
                 title="Bulk select"
+                aria-label={bulkMode ? 'Disable bulk selection' : 'Enable bulk selection'}
+                aria-pressed={bulkMode}
               >
                 ✓
               </button>
@@ -381,15 +414,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       className="absolute z-50 mt-2 w-40 max-h-60 overflow-auto rounded-lg bg-gray-950/95 backdrop-blur
                                  border border-white/10 shadow-xl p-1 text-sm text-white"
                     >
-                      {[
-                        { value: 'updated', label: 'Updated' },
-                        { value: 'created', label: 'Created' },
-                        { value: 'name', label: 'Name' },
-                        { value: 'manual', label: 'Manual' },
-                      ].map((opt) => (
+                      {SORT_OPTIONS.map((opt) => (
                         <Listbox.Option
                           key={opt.value}
-                          value={opt.value as any}
+                          value={opt.value}
                           className={({ active }) =>
                             classNames('cursor-pointer select-none rounded-md px-3 py-2', active && 'bg-white/10')
                           }
@@ -555,9 +583,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize sidebar"
+          aria-valuemin={minWidth}
+          aria-valuemax={maxWidth}
+          aria-valuenow={width}
+          tabIndex={0}
           onMouseDown={() => {
             isDragged.current = true;
             setIsDragging(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              setSidebarWidthValue(width - 16);
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              setSidebarWidthValue(width + 16);
+            } else if (e.key === 'Home') {
+              e.preventDefault();
+              setSidebarWidthValue(minWidth);
+            } else if (e.key === 'End') {
+              e.preventDefault();
+              setSidebarWidthValue(maxWidth);
+            }
           }}
         >
           <motion.div
