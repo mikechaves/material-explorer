@@ -3,7 +3,6 @@ import { useMaterials } from '../contexts/MaterialContext';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson, normalizeMaterial } from '../utils/material';
-import { exportLibraryAsGlb, exportMaterialAsGlb } from '../utils/gltfExport';
 import { Listbox, Transition } from '@headlessui/react';
 import { MaterialCard } from './sidebar/MaterialCard';
 
@@ -34,6 +33,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
+
+async function loadGltfExporters() {
+  return await import('../utils/gltfExport');
+}
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const {
@@ -101,6 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const exportAllGlb = async () => {
     try {
+      const { exportLibraryAsGlb } = await loadGltfExporters();
       const result = await exportLibraryAsGlb(materials, { filename: 'materials-library.glb' });
       if (!result) return;
       downloadBlob(result.filename, result.blob);
@@ -116,6 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const exportOneGlb = async (material: Material) => {
     try {
+      const { exportMaterialAsGlb } = await loadGltfExporters();
       const { filename, blob } = await exportMaterialAsGlb(material);
       downloadBlob(filename, blob);
     } catch (e) {
@@ -235,6 +240,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   };
 
   const bulkExportGlb = async () => {
+    const { exportLibraryAsGlb } = await loadGltfExporters();
     const result = await exportLibraryAsGlb(selectedMaterials, { filename: 'materials-selected.glb' });
     if (!result) return;
     downloadBlob(result.filename, result.blob);

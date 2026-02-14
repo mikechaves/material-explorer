@@ -1,7 +1,22 @@
 import React, { useImperativeHandle, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { motion } from 'framer-motion';
-import * as THREE from 'three';
+import {
+  type BufferGeometry,
+  type ColorSpace,
+  type Mesh,
+  type Texture,
+  type WebGLRenderer,
+  BoxGeometry,
+  IcosahedronGeometry,
+  NoColorSpace,
+  RepeatWrapping,
+  SphereGeometry,
+  SRGBColorSpace,
+  TextureLoader,
+  TorusKnotGeometry,
+  Vector2,
+} from 'three';
 import { OrbitControls } from '@react-three/drei/core/OrbitControls';
 
 interface MaterialPreviewProps {
@@ -202,20 +217,20 @@ const LIGHTING_PRESETS: Record<EnvironmentName, LightingPreset> = {
 };
 
 function buildGeometry(model: MaterialPreviewProps['model']) {
-  let g: THREE.BufferGeometry;
+  let g: BufferGeometry;
   switch (model) {
     case 'box':
-      g = new THREE.BoxGeometry(1.6, 1.6, 1.6, 1, 1, 1);
+      g = new BoxGeometry(1.6, 1.6, 1.6, 1, 1, 1);
       break;
     case 'torusKnot':
-      g = new THREE.TorusKnotGeometry(0.85, 0.28, 220, 24);
+      g = new TorusKnotGeometry(0.85, 0.28, 220, 24);
       break;
     case 'icosahedron':
-      g = new THREE.IcosahedronGeometry(1.1, 2);
+      g = new IcosahedronGeometry(1.1, 2);
       break;
     case 'sphere':
     default:
-      g = new THREE.SphereGeometry(1, 64, 64);
+      g = new SphereGeometry(1, 64, 64);
       break;
   }
   // AO maps require uv2; reuse uv.
@@ -226,20 +241,20 @@ function buildGeometry(model: MaterialPreviewProps['model']) {
   return g;
 }
 
-function applyTextureParams(tex: THREE.Texture, repeatX: number, repeatY: number) {
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
+function applyTextureParams(tex: Texture, repeatX: number, repeatY: number) {
+  tex.wrapS = RepeatWrapping;
+  tex.wrapT = RepeatWrapping;
   tex.repeat.set(repeatX, repeatY);
   tex.needsUpdate = true;
 }
 
 function useLoadedTexture(
   url: string | undefined,
-  colorSpace: THREE.ColorSpace,
+  colorSpace: ColorSpace,
   repeatX: number,
   repeatY: number
 ) {
-  const [tex, setTex] = useState<THREE.Texture | null>(null);
+  const [tex, setTex] = useState<Texture | null>(null);
   React.useEffect(() => {
     let disposed = false;
     if (!url) {
@@ -249,7 +264,7 @@ function useLoadedTexture(
       });
       return;
     }
-    const loader = new THREE.TextureLoader();
+    const loader = new TextureLoader();
     loader.load(url, (t) => {
       if (disposed) {
         t.dispose();
@@ -303,18 +318,18 @@ const Sphere: React.FC<SphereProps> = ({
   model = 'sphere',
   animate = true,
 }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const geometry = React.useMemo(() => buildGeometry(model), [model]);
   React.useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const map = useLoadedTexture(baseColorMap, THREE.SRGBColorSpace, repeatX, repeatY);
-  const nMap = useLoadedTexture(normalMap, THREE.NoColorSpace, repeatX, repeatY);
-  const rMap = useLoadedTexture(roughnessMap, THREE.NoColorSpace, repeatX, repeatY);
-  const mMap = useLoadedTexture(metalnessMap, THREE.NoColorSpace, repeatX, repeatY);
-  const aMap = useLoadedTexture(aoMap, THREE.NoColorSpace, repeatX, repeatY);
-  const eMap = useLoadedTexture(emissiveMap, THREE.SRGBColorSpace, repeatX, repeatY);
-  const alMap = useLoadedTexture(alphaMap, THREE.NoColorSpace, repeatX, repeatY);
+  const map = useLoadedTexture(baseColorMap, SRGBColorSpace, repeatX, repeatY);
+  const nMap = useLoadedTexture(normalMap, NoColorSpace, repeatX, repeatY);
+  const rMap = useLoadedTexture(roughnessMap, NoColorSpace, repeatX, repeatY);
+  const mMap = useLoadedTexture(metalnessMap, NoColorSpace, repeatX, repeatY);
+  const aMap = useLoadedTexture(aoMap, NoColorSpace, repeatX, repeatY);
+  const eMap = useLoadedTexture(emissiveMap, SRGBColorSpace, repeatX, repeatY);
+  const alMap = useLoadedTexture(alphaMap, NoColorSpace, repeatX, repeatY);
 
   useFrame((state) => {
     if (!animate) return;
@@ -354,7 +369,7 @@ const Sphere: React.FC<SphereProps> = ({
         envMapIntensity={1.75}
         map={map ?? undefined}
         normalMap={nMap ?? undefined}
-        normalScale={new THREE.Vector2(normalScale, normalScale)}
+        normalScale={new Vector2(normalScale, normalScale)}
         roughnessMap={rMap ?? undefined}
         metalnessMap={mMap ?? undefined}
         aoMap={aMap ?? undefined}
@@ -467,7 +482,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
     showGrid = false,
     showBackground = true,
   } = props;
-  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  const glRef = useRef<WebGLRenderer | null>(null);
   const [frameNonce, setFrameNonce] = useState(0);
   const [captureBufferEnabled, setCaptureBufferEnabled] = useState(false);
   const [snapshotRequestNonce, setSnapshotRequestNonce] = useState(0);
