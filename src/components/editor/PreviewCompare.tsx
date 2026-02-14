@@ -20,6 +20,7 @@ type PreviewCompareProps = {
   enableZoom: boolean;
   showGrid: boolean;
   showBackground: boolean;
+  onPrimaryPreviewReady?: () => void;
 };
 
 const previewFallback = <div className="w-full h-full rounded-xl bg-white/5 animate-pulse" aria-hidden="true" />;
@@ -40,6 +41,7 @@ export function PreviewCompare({
   enableZoom,
   showGrid,
   showBackground,
+  onPrimaryPreviewReady,
 }: PreviewCompareProps) {
   const fallbackSwatchStyle: React.CSSProperties = {
     background: `radial-gradient(circle at 25% 20%, rgba(255,255,255,0.28), rgba(255,255,255,0) 45%), linear-gradient(145deg, ${material.color} 0%, #111827 100%)`,
@@ -183,6 +185,7 @@ export function PreviewCompare({
         <Suspense fallback={previewFallback}>
           <MaterialPreview
             ref={previewRef}
+            onReady={onPrimaryPreviewReady}
             className="w-full h-full"
             color={material.color}
             metalness={material.metalness}

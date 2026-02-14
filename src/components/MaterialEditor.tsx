@@ -35,6 +35,7 @@ import {
   resetOpticsSection as applyOpticsSectionReset,
   resetSurfaceSection as applySurfaceSectionReset,
 } from './editor/draftSections';
+import { emitTelemetryEvent } from '../utils/telemetry';
 
 const HISTORY_LIMIT = 120;
 const DRAFT_COMPARE_KEYS: Array<keyof MaterialDraft> = [
@@ -147,6 +148,39 @@ const MaterialEditor: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(
     () => window.localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true'
   );
+  const previewPerfRef = useRef<{
+    firstEnableAtMs: number | null;
+    firstEnableSource: string | null;
+    firstEnableEventSent: boolean;
+    firstReadyEventSent: boolean;
+  }>({
+    firstEnableAtMs: previewEnabled ? performance.now() : null,
+    firstEnableSource: previewEnabled ? (previewAutoEnable ? 'startup-auto' : 'startup-manual') : null,
+    firstEnableEventSent: false,
+    firstReadyEventSent: false,
+  });
+
+  const markPreviewEnabled = React.useCallback(
+    (source: string) => {
+      const perfState = previewPerfRef.current;
+      if (perfState.firstEnableAtMs !== null) return;
+      perfState.firstEnableAtMs = performance.now();
+      perfState.firstEnableSource = source;
+      perfState.firstEnableEventSent = true;
+      emitTelemetryEvent(
+        'preview.first_enabled',
+        {
+          source,
+          autoRotate,
+          enableZoom,
+          model: previewModel,
+          environment: previewEnv,
+        },
+        'info'
+      );
+    },
+    [autoRotate, enableZoom, previewEnv, previewModel]
+  );
 
   const setMaterialWithHistory = React.useCallback((nextState: React.SetStateAction<MaterialDraft>) => {
     setMaterial((prev) => {
@@ -256,6 +290,28 @@ const MaterialEditor: React.FC = () => {
     window.localStorage.setItem('previewAutoEnable', previewAutoEnable ? 'true' : 'false');
   }, [previewAutoEnable]);
 
+  useEffect(() => {
+    const perfState = previewPerfRef.current;
+    if (!previewEnabled) return;
+    if (perfState.firstEnableAtMs === null) {
+      markPreviewEnabled('state-sync');
+      return;
+    }
+    if (perfState.firstEnableEventSent) return;
+    perfState.firstEnableEventSent = true;
+    emitTelemetryEvent(
+      'preview.first_enabled',
+      {
+        source: perfState.firstEnableSource ?? 'startup',
+        autoRotate,
+        enableZoom,
+        model: previewModel,
+        environment: previewEnv,
+      },
+      'info'
+    );
+  }, [autoRotate, enableZoom, markPreviewEnabled, previewEnabled, previewEnv, previewModel]);
+
   const copyShareLink = async (url: string, successMessage: string) => {
     try {
       if (!navigator.clipboard?.writeText) {
@@ -278,20 +334,24 @@ const MaterialEditor: React.FC = () => {
   };
 
   const enablePreviewNow = () => {
+    markPreviewEnabled('enable-preview-now');
     setPreviewEnabled(true);
   };
 
   const enablePreviewAlways = () => {
+    markPreviewEnabled('enable-preview-always');
     setPreviewAutoEnable(true);
     setPreviewEnabled(true);
   };
 
   const handlePreviewEnabledToggle = (enabled: boolean) => {
+    if (enabled) markPreviewEnabled('preview-toggle');
     setPreviewEnabled(enabled);
     if (!enabled) setPreviewAutoEnable(false);
   };
 
   const handlePreviewAutoEnableToggle = (enabled: boolean) => {
+    if (enabled) markPreviewEnabled('preview-auto-enable');
     setPreviewAutoEnable(enabled);
     if (enabled) setPreviewEnabled(true);
   };
@@ -425,6 +485,7 @@ const MaterialEditor: React.FC = () => {
       if (action === 'toggle-preview') {
         setPreviewEnabled((prev) => {
           const next = !prev;
+          if (next) markPreviewEnabled('command-toggle-preview');
           if (!next) setPreviewAutoEnable(false);
           return next;
         });
@@ -460,7 +521,7 @@ const MaterialEditor: React.FC = () => {
 
     window.addEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
     return () => window.removeEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
-  }, [compareA, material, redoMaterialChange, saveMaterial, undoMaterialChange]);
+  }, [compareA, markPreviewEnabled, material, redoMaterialChange, saveMaterial, undoMaterialChange]);
 
   const baselineDraft = React.useMemo(
     () => (selectedMaterial ? coerceMaterialDraft(selectedMaterial, emptyDraft) : emptyDraft),
@@ -486,6 +547,25 @@ const MaterialEditor: React.FC = () => {
     setMaterialWithHistory((prev) => applyOpticsSectionReset(prev, baselineDraft));
   }, [baselineDraft, setMaterialWithHistory]);
 
+  const handlePrimaryPreviewReady = React.useCallback(() => {
+    const perfState = previewPerfRef.current;
+    if (perfState.firstReadyEventSent) return;
+    if (perfState.firstEnableAtMs === null) return;
+    perfState.firstReadyEventSent = true;
+    emitTelemetryEvent(
+      'preview.first_ready',
+      {
+        source: perfState.firstEnableSource ?? 'unknown',
+        durationMs: Math.round(performance.now() - perfState.firstEnableAtMs),
+        autoRotate,
+        enableZoom,
+        model: previewModel,
+        environment: previewEnv,
+      },
+      'info'
+    );
+  }, [autoRotate, enableZoom, previewEnv, previewModel]);
+
   return (
     <div className="w-full h-full overflow-y-auto">
       <div className="max-w-[1240px] mx-auto p-4 sm:p-6">
@@ -507,6 +587,7 @@ const MaterialEditor: React.FC = () => {
               compareA={compareA}
               material={material}
               previewRef={previewRef}
+              onPrimaryPreviewReady={handlePrimaryPreviewReady}
               previewEnabled={previewEnabled}
               previewAutoEnable={previewAutoEnable}
               onEnablePreview={enablePreviewNow}

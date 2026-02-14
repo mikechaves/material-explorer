@@ -25,6 +25,7 @@ const OrbitControls = React.lazy(async () => {
 
 interface MaterialPreviewProps {
   className?: string;
+  onReady?: () => void;
   color: string;
   metalness: number;
   roughness: number;
@@ -468,6 +469,7 @@ class PreviewErrorBoundary extends React.Component<
 const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewProps>((props, ref) => {
   const {
     className = '',
+    onReady,
     color,
     metalness,
     roughness,
@@ -502,6 +504,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
   const [captureBufferEnabled, setCaptureBufferEnabled] = useState(false);
   const [snapshotRequestNonce, setSnapshotRequestNonce] = useState(0);
   const pendingSnapshotResolveRef = useRef<((blob: Blob | null) => void) | null>(null);
+  const readyNotifiedRef = useRef(false);
 
   useImperativeHandle(
     ref,
@@ -567,6 +570,9 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
           gl={{ antialias: true, preserveDrawingBuffer: captureBufferEnabled, alpha: !showBackground }}
           onCreated={({ gl }) => {
             glRef.current = gl;
+            if (readyNotifiedRef.current) return;
+            readyNotifiedRef.current = true;
+            onReady?.();
           }}
           camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
           className="bg-gradient-to-b from-slate-900/40 via-slate-950/30 to-slate-950/60"

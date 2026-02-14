@@ -123,6 +123,15 @@ VITE_TELEMETRY_URL=https://your-observability.example.com/events
 
 Telemetry is best-effort and never blocks user actions.
 
+Current telemetry events include:
+
+- `web-vital`
+- `window.error`
+- `window.unhandledrejection`
+- `materials.save.*` and `materials.load.*` sync failure paths
+- `preview.first_enabled`
+- `preview.first_ready`
+
 ## Local Mock Backend (Optional)
 
 For local backend/sync iteration, run the built-in mock API:
