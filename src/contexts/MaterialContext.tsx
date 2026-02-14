@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext } from 'react';
-import { saveMaterials, loadMaterials } from '../utils/storage';
 import type { Material } from '../types/material';
+import { localMaterialRepository } from '../repositories/materialRepository';
 
 interface MaterialContextType {
   materials: Material[];
   selectedMaterial: Material | null;
+  storageError: string | null;
+  clearStorageError: () => void;
   addMaterial: (material: Material) => void;
   addMaterials: (newMaterials: Material[]) => void;
   updateMaterial: (materialToUpdate: Material) => void;
@@ -16,15 +18,23 @@ interface MaterialContextType {
 }
 
 const MaterialContext = createContext<MaterialContextType | undefined>(undefined);
+const STORAGE_ERROR_MESSAGE =
+  'Could not save materials locally. Your browser storage may be full. Export JSON backup before continuing.';
 
 export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [materials, setMaterials] = useState<Material[]>(loadMaterials());
+  const [materials, setMaterials] = useState<Material[]>(() => localMaterialRepository.loadAll());
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
+
+  const persistMaterials = (updated: Material[]) => {
+    const ok = localMaterialRepository.saveAll(updated);
+    setStorageError(ok ? null : STORAGE_ERROR_MESSAGE);
+  };
 
   const addMaterial = (material: Material) => {
     setMaterials((prev) => {
       const updated = [...prev, material];
-      saveMaterials(updated);
+      persistMaterials(updated);
       return updated;
     });
   };
@@ -33,7 +43,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (newMaterials.length === 0) return;
     setMaterials((prev) => {
       const updated = [...prev, ...newMaterials];
-      saveMaterials(updated);
+      persistMaterials(updated);
       return updated;
     });
   };
@@ -43,7 +53,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const byId = new Map(materialsToUpdate.map((m) => [m.id, m]));
     setMaterials((prev) => {
       const updated = prev.map((material) => byId.get(material.id) ?? material);
-      saveMaterials(updated);
+      persistMaterials(updated);
       return updated;
     });
     setSelectedMaterial((prev) => (prev ? byId.get(prev.id) ?? prev : prev));
@@ -58,7 +68,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const idSet = new Set(ids);
     setMaterials((prev) => {
       const updated = prev.filter((material) => !idSet.has(material.id));
-      saveMaterials(updated);
+      persistMaterials(updated);
       return updated;
     });
     setSelectedMaterial((prev) => (prev && idSet.has(prev.id) ? null : prev));
@@ -74,6 +84,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteMaterial = removeMaterial;
+  const clearStorageError = () => setStorageError(null);
   const startNewMaterial = () => setSelectedMaterial(null);
 
   return (
@@ -81,6 +92,8 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         materials,
         selectedMaterial,
+        storageError,
+        clearStorageError,
         addMaterial,
         addMaterials,
         updateMaterial,

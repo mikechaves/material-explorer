@@ -43,6 +43,8 @@ async function loadGltfExporters() {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const {
     materials,
+    storageError,
+    clearStorageError,
     selectMaterial,
     deleteMaterial,
     deleteMaterials,
@@ -549,6 +551,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
         {!isCollapsed && (
           <>
+            {storageError && (
+              <div className="mb-4 rounded-xl border border-rose-300/45 bg-rose-500/10 px-3 py-2">
+                <div className="text-xs text-rose-100/95">{storageError}</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportAll}
+                    className="ui-btn px-2.5 py-1 text-xs font-semibold"
+                  >
+                    Export Backup JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearStorageError}
+                    className="ui-btn px-2.5 py-1 text-xs"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2 mb-4">
               <input
                 ref={searchInputRef}

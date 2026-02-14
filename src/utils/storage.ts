@@ -3,13 +3,15 @@ import { normalizeMaterial } from './material';
 
 const MATERIALS_STORAGE_KEY = 'materials';
 
-export const saveMaterials = (materials: Material[]) => {
+export const saveMaterials = (materials: Material[]): boolean => {
   try {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return true;
     const serializedMaterials = JSON.stringify(materials);
     window.localStorage.setItem(MATERIALS_STORAGE_KEY, serializedMaterials);
+    return true;
   } catch (error) {
     console.error('Failed to save materials:', error);
+    return false;
   }
 };
 
@@ -27,4 +29,3 @@ export const loadMaterials = (): Material[] => {
     return [];
   }
 };
-
