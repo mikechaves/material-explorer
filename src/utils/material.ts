@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const MATERIAL_NAME_MAX_LENGTH = 120;
 export const MATERIAL_TAG_MAX_COUNT = 32;
 export const MATERIAL_TAG_MAX_LENGTH = 40;
+export const DOWNLOAD_FILENAME_MAX_LENGTH = 80;
 
 export function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -259,6 +260,31 @@ export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
   };
+}
+
+function sanitizeFilenamePart(input: unknown, fallback: string): string {
+  const raw = typeof input === 'string' ? input : fallback;
+  const withoutControlChars = Array.from(raw)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join('');
+  const sanitized = withoutControlChars
+    .replace(/[<>:"/\\|?*]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\.+/, '')
+    .replace(/\.+$/, '')
+    .slice(0, DOWNLOAD_FILENAME_MAX_LENGTH);
+  return sanitized || fallback;
+}
+
+export function buildDownloadFilename(name: unknown, extension: string, fallbackBase: string = 'material'): string {
+  const cleanExtension = (extension.startsWith('.') ? extension.slice(1) : extension).replace(/[^a-zA-Z0-9]/g, '');
+  const base = sanitizeFilenamePart(name, fallbackBase);
+  const safeExtension = cleanExtension || 'bin';
+  return `${base}.${safeExtension}`;
 }
 
 export function downloadJson(filename: string, data: unknown) {

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DOWNLOAD_FILENAME_MAX_LENGTH,
   MATERIAL_NAME_MAX_LENGTH,
   MATERIAL_TAG_MAX_COUNT,
   MATERIAL_TAG_MAX_LENGTH,
+  buildDownloadFilename,
   clamp01,
   coerceMaterialDraft,
   createMaterialFromDraft,
@@ -114,5 +116,13 @@ describe('material utils', () => {
     expect(created.tags?.length).toBe(MATERIAL_TAG_MAX_COUNT);
     expect(created.tags?.[0]).toHaveLength(MATERIAL_TAG_MAX_LENGTH);
     expect(created.tags?.filter((tag) => tag === 'dup')).toHaveLength(1);
+  });
+
+  it('builds safe download filenames', () => {
+    expect(buildDownloadFilename('  my:material*name  ', 'json')).toBe('my material name.json');
+    expect(buildDownloadFilename('', '.png')).toBe('material.png');
+    expect(buildDownloadFilename('x'.repeat(DOWNLOAD_FILENAME_MAX_LENGTH + 20), 'png')).toBe(
+      `${'x'.repeat(DOWNLOAD_FILENAME_MAX_LENGTH)}.png`
+    );
   });
 });

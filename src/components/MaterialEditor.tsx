@@ -6,6 +6,7 @@ import { useDialogs } from '../contexts/DialogContext';
 import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import {
+  buildDownloadFilename,
   createMaterialFromDraft,
   clamp01,
   coerceMaterialDraft,
@@ -694,7 +695,7 @@ const MaterialEditor: React.FC = () => {
                 void (async () => {
                   const blob = await previewRef.current?.snapshotPng();
                   if (!blob) return;
-                  downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
+                  downloadBlob(buildDownloadFilename(material.name, 'png', 'material'), blob);
                 })();
               }}
               onSetCompareA={() => {

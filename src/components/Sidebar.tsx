@@ -4,7 +4,7 @@ import { useToasts } from '../contexts/ToastContext';
 import { useDialogs } from '../contexts/DialogContext';
 import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
-import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
+import { buildDownloadFilename, createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
 import { dispatchAppCommand } from '../types/commands';
 import { buildCommandItems } from './sidebar/commandItems';
 import { parseImportedMaterials, validateImportFileSize } from './sidebar/importMaterials';
@@ -130,7 +130,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   }, [materials, notify]);
 
   const exportOne = (material: Material) => {
-    downloadJson(`${material.name || 'material'}.json`, { version: 1, exportedAt: Date.now(), material });
+    downloadJson(buildDownloadFilename(material.name, 'json', 'material'), {
+      version: 1,
+      exportedAt: Date.now(),
+      material,
+    });
   };
 
   const exportOneGlb = async (material: Material) => {
