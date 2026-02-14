@@ -13,6 +13,7 @@ import { SidebarFilters } from './sidebar/SidebarFilters';
 import { SidebarBulkBar } from './sidebar/SidebarBulkBar';
 import { SidebarGrid } from './sidebar/SidebarGrid';
 import { filterMaterials } from './sidebar/filterMaterials';
+import { parseManualOrderStorage, sanitizeManualOrderIds } from './sidebar/manualOrder';
 import type { SortMode } from './sidebar/sidebarTypes';
 
 interface SidebarProps {
@@ -73,15 +74,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [manualOrder, setManualOrder] = useState<string[]>(() => {
-    try {
-      const raw = window.localStorage.getItem('materialsOrder');
-      const parsed = raw ? JSON.parse(raw) : null;
-      return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
-    } catch {
-      return [];
-    }
-  });
+  const [manualOrder, setManualOrder] = useState<string[]>(() =>
+    parseManualOrderStorage(window.localStorage.getItem('materialsOrder'))
+  );
 
   const setSidebarWidthValue = React.useCallback(
     (nextWidth: number) => {
@@ -235,8 +230,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       ids.forEach((id) => {
         if (!next.includes(id)) next.push(id);
       });
-      window.localStorage.setItem('materialsOrder', JSON.stringify(next));
-      return next;
+      const sanitized = sanitizeManualOrderIds(next);
+      window.localStorage.setItem('materialsOrder', JSON.stringify(sanitized));
+      return sanitized;
     });
   }, [materials]);
 
@@ -483,8 +479,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 filtered={filtered}
                 manualOrder={manualOrder}
                 onManualOrderChange={(nextOrder) => {
-                  setManualOrder(nextOrder);
-                  window.localStorage.setItem('materialsOrder', JSON.stringify(nextOrder));
+                  const sanitized = sanitizeManualOrderIds(nextOrder);
+                  setManualOrder(sanitized);
+                  window.localStorage.setItem('materialsOrder', JSON.stringify(sanitized));
                 }}
                 cardPreviewEnabled={cardPreviewEnabled}
                 bulkMode={bulkMode}
