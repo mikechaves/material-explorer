@@ -4,7 +4,8 @@ export type CommandAction =
   | 'save-material'
   | 'toggle-preview'
   | 'toggle-compare'
-  | 'focus-material-name';
+  | 'focus-material-name'
+  | 'open-onboarding';
 
 export type AppCommandEventDetail = {
   action: CommandAction;

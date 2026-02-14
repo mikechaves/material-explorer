@@ -80,9 +80,10 @@ const MATERIAL_PRESETS: MaterialPreset[] = [
 
 const checkboxClass =
   'h-3.5 w-3.5 rounded border border-cyan-100/40 bg-slate-950/55 text-cyan-300 focus:ring-2 focus:ring-cyan-300/35';
+const ONBOARDING_SEEN_KEY = 'materialExplorerOnboardingSeen';
 
 const MaterialEditor: React.FC = () => {
-  const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
+  const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +115,9 @@ const MaterialEditor: React.FC = () => {
   });
   const [compareOn, setCompareOn] = useState(false);
   const [compareA, setCompareA] = useState<MaterialDraft | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(
+    () => window.localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true'
+  );
 
   useEffect(() => {
     if (selectedMaterial) setMaterial(selectedMaterial);
@@ -248,6 +252,33 @@ const MaterialEditor: React.FC = () => {
     else addMaterial(full);
   };
 
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    window.localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
+  };
+
+  const startBlankFromOnboarding = () => {
+    startNewMaterial();
+    dismissOnboarding();
+  };
+
+  const addStarterKit = () => {
+    const now = Date.now();
+    const starter = MATERIAL_PRESETS.map((preset, index) =>
+      createMaterialFromDraft({
+        ...DEFAULT_MATERIAL_DRAFT,
+        ...preset.values,
+        name: preset.label,
+        tags: ['starter', ...(preset.id === 'frosted-glass' ? ['glass'] : [])],
+        createdAt: now + index,
+        updatedAt: now + index,
+      })
+    );
+    addMaterials(starter);
+    startNewMaterial();
+    dismissOnboarding();
+  };
+
   useEffect(() => {
     const onCommand = (event: Event) => {
       const customEvent = event as CustomEvent<AppCommandEventDetail>;
@@ -278,6 +309,11 @@ const MaterialEditor: React.FC = () => {
       if (action === 'focus-material-name') {
         nameInputRef.current?.focus();
         nameInputRef.current?.select();
+        return;
+      }
+      if (action === 'open-onboarding') {
+        setShowOnboarding(true);
+        window.localStorage.removeItem(ONBOARDING_SEEN_KEY);
       }
     };
 
@@ -290,6 +326,29 @@ const MaterialEditor: React.FC = () => {
       <div className="max-w-[1240px] mx-auto p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
           <section className="order-1 lg:order-2 space-y-3">
+            {showOnboarding && materials.length === 0 && (
+              <motion.div
+                className="section-shell px-4 py-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="text-sm font-semibold text-slate-100">Welcome to Material Explorer</div>
+                <div className="mt-1 text-xs ui-muted">
+                  Start fast with a polished starter kit or jump straight into a blank material.
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button type="button" className="ui-btn ui-btn-primary px-3 py-1.5 text-xs" onClick={addStarterKit}>
+                    Add Starter Kit
+                  </button>
+                  <button type="button" className="ui-btn px-3 py-1.5 text-xs" onClick={startBlankFromOnboarding}>
+                    Start Blank
+                  </button>
+                  <button type="button" className="ui-btn px-3 py-1.5 text-xs" onClick={dismissOnboarding}>
+                    Maybe Later
+                  </button>
+                </div>
+              </motion.div>
+            )}
             <div className="section-shell px-4 py-3">
               <div className="text-sm font-semibold text-slate-100">Live Material Lab</div>
               <div className="text-xs ui-muted">Tune values in real time and compare before committing changes.</div>

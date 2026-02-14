@@ -377,6 +377,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         keywords: ['name', 'title', 'focus'],
         run: () => dispatchAppCommand('focus-material-name'),
       },
+      {
+        id: 'open-onboarding',
+        title: 'Show Onboarding Card',
+        description: 'Reopen first-run guidance in the editor.',
+        keywords: ['onboarding', 'welcome', 'starter'],
+        run: () => dispatchAppCommand('open-onboarding'),
+      },
     ],
     [exportAll, focusSearch, isCollapsed, startNewMaterial, setIsCollapsed]
   );
