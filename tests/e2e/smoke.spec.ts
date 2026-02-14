@@ -70,3 +70,22 @@ test('can import materials from JSON', async ({ page }) => {
     })
     .toBe(true);
 });
+
+test('can save a material with keyboard shortcut', async ({ page }) => {
+  await page.locator('input[name="name"]').fill('Shortcut Material');
+  await page.keyboard.press('ControlOrMeta+KeyS');
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      return materials.length;
+    })
+    .toBe(1);
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      return materials[0]?.name;
+    })
+    .toBe('Shortcut Material');
+});

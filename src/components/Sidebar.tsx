@@ -1,10 +1,12 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson, normalizeMaterial } from '../utils/material';
 import { Listbox, Transition } from '@headlessui/react';
 import { MaterialCard } from './sidebar/MaterialCard';
+import { CommandPalette, type CommandPaletteItem } from './sidebar/CommandPalette';
+import { dispatchAppCommand } from '../types/commands';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -54,12 +56,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isDragged = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sort, setSort] = useState<SortMode>('updated');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [manualOrder, setManualOrder] = useState<string[]>(() => {
     try {
       const raw = window.localStorage.getItem('materialsOrder');
@@ -286,6 +290,154 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const favoriteCount = useMemo(() => materials.filter((m) => !!m.favorite).length, [materials]);
   const hasActiveFilters = query.trim().length > 0 || onlyFavorites || selectedTags.length > 0;
 
+  const focusSearch = useCallback(() => {
+    if (isCollapsed) setIsCollapsed(false);
+    const focusSearchField = () => searchInputRef.current?.focus();
+    window.requestAnimationFrame(focusSearchField);
+    window.setTimeout(focusSearchField, 220);
+  }, [isCollapsed, setIsCollapsed]);
+
+  const commandItems = useMemo<CommandPaletteItem[]>(
+    () => [
+      {
+        id: 'new-material',
+        title: 'Create New Material',
+        description: 'Start a blank draft in the editor.',
+        shortcut: 'Ctrl/Cmd+Shift+N',
+        keywords: ['new', 'material', 'draft'],
+        run: () => startNewMaterial(),
+      },
+      {
+        id: 'toggle-sidebar',
+        title: isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
+        description: 'Toggle the library panel.',
+        shortcut: 'Ctrl/Cmd+B',
+        keywords: ['sidebar', 'panel'],
+        run: () => setIsCollapsed((prev) => !prev),
+      },
+      {
+        id: 'focus-search',
+        title: 'Focus Material Search',
+        description: 'Jump to the sidebar search input.',
+        shortcut: 'Ctrl/Cmd+F',
+        keywords: ['search', 'find', 'filter'],
+        run: () => focusSearch(),
+      },
+      {
+        id: 'import-json',
+        title: 'Import Materials JSON',
+        description: 'Open file picker for JSON import.',
+        shortcut: 'Ctrl/Cmd+I',
+        keywords: ['import', 'json', 'file'],
+        run: () => fileInputRef.current?.click(),
+      },
+      {
+        id: 'export-json',
+        title: 'Export Library (JSON)',
+        description: 'Download full library as JSON.',
+        keywords: ['export', 'json', 'download'],
+        run: () => exportAll(),
+      },
+      {
+        id: 'export-glb',
+        title: 'Export Library (GLB)',
+        description: 'Download full library as GLB.',
+        keywords: ['export', 'glb', 'download'],
+        run: () => {
+          void exportAllGlb();
+        },
+      },
+      {
+        id: 'save-material',
+        title: 'Save Current Material',
+        description: 'Trigger save/update in the editor.',
+        shortcut: 'Ctrl/Cmd+S',
+        keywords: ['save', 'update', 'material'],
+        run: () => dispatchAppCommand('save-material'),
+      },
+      {
+        id: 'toggle-preview',
+        title: 'Toggle 3D Preview',
+        description: 'Enable or disable interactive 3D preview.',
+        shortcut: 'Ctrl/Cmd+P',
+        keywords: ['preview', '3d', 'render'],
+        run: () => dispatchAppCommand('toggle-preview'),
+      },
+      {
+        id: 'toggle-compare',
+        title: 'Toggle Compare Mode',
+        description: 'Capture or show A/B comparison in editor.',
+        keywords: ['compare', 'ab', 'reference'],
+        run: () => dispatchAppCommand('toggle-compare'),
+      },
+      {
+        id: 'focus-editor-name',
+        title: 'Focus Material Name',
+        description: 'Jump cursor to the editor name field.',
+        keywords: ['name', 'title', 'focus'],
+        run: () => dispatchAppCommand('focus-material-name'),
+      },
+    ],
+    [exportAll, focusSearch, isCollapsed, startNewMaterial, setIsCollapsed]
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      const hasModifier = event.metaKey || event.ctrlKey;
+      if (!hasModifier) return;
+
+      if (key === 'k') {
+        event.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      if (isCommandPaletteOpen) return;
+
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTypingTarget =
+        !!target &&
+        (target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+      if (isTypingTarget && key !== 's') return;
+
+      if (key === 'b') {
+        event.preventDefault();
+        setIsCollapsed((prev) => !prev);
+        return;
+      }
+      if (key === 'f') {
+        event.preventDefault();
+        focusSearch();
+        return;
+      }
+      if (key === 'i') {
+        event.preventDefault();
+        fileInputRef.current?.click();
+        return;
+      }
+      if (key === 's') {
+        event.preventDefault();
+        dispatchAppCommand('save-material');
+        return;
+      }
+      if (key === 'p') {
+        event.preventDefault();
+        dispatchAppCommand('toggle-preview');
+        return;
+      }
+      if (event.shiftKey && key === 'n') {
+        event.preventDefault();
+        startNewMaterial();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [focusSearch, isCommandPaletteOpen, setIsCollapsed, startNewMaterial]);
+
   return (
     <>
       {isMobile && !isCollapsed && (
@@ -366,6 +518,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               >
                 Export GLB
               </motion.button>
+              <motion.button
+                className="ui-btn px-3 py-1.5 text-xs font-semibold"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setIsCommandPaletteOpen(true)}
+              >
+                Commands
+              </motion.button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -384,6 +544,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           <>
             <div className="flex items-center gap-2 mb-4">
               <input
+                ref={searchInputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name or tags…"
@@ -642,6 +803,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         </div>
       )}
       </motion.div>
+      <CommandPalette open={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} commands={commandItems} />
     </>
   );
 };

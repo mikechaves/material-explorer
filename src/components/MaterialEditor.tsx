@@ -8,6 +8,7 @@ import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
 import { Dropdown, Control, type PreviewModel, type PreviewEnv, PREVIEW_MODEL_OPTIONS, PREVIEW_ENV_OPTIONS } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
+import { APP_COMMAND_EVENT, type AppCommandEventDetail } from '../types/commands';
 
 type MaterialPreset = {
   id: string;
@@ -83,6 +84,7 @@ const checkboxClass =
 const MaterialEditor: React.FC = () => {
   const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const emptyDraft: MaterialDraft = React.useMemo(
     () => ({ ...DEFAULT_MATERIAL_DRAFT }),
@@ -245,6 +247,43 @@ const MaterialEditor: React.FC = () => {
     if (material.id) updateMaterial(full);
     else addMaterial(full);
   };
+
+  useEffect(() => {
+    const onCommand = (event: Event) => {
+      const customEvent = event as CustomEvent<AppCommandEventDetail>;
+      const action = customEvent.detail?.action;
+      if (!action) return;
+
+      if (action === 'save-material') {
+        saveMaterial();
+        return;
+      }
+      if (action === 'toggle-preview') {
+        setPreviewEnabled((prev) => {
+          const next = !prev;
+          if (!next) setPreviewAutoEnable(false);
+          return next;
+        });
+        return;
+      }
+      if (action === 'toggle-compare') {
+        if (compareA) {
+          setCompareOn((prev) => !prev);
+          return;
+        }
+        setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
+        setCompareOn(true);
+        return;
+      }
+      if (action === 'focus-material-name') {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
+      }
+    };
+
+    window.addEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
+    return () => window.removeEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
+  }, [compareA, material, saveMaterial]);
 
   return (
     <div className="w-full h-full overflow-y-auto">
@@ -466,6 +505,7 @@ const MaterialEditor: React.FC = () => {
               <div className="space-y-2">
                 <label className="ui-label" htmlFor="material-name">Name</label>
                 <input
+                  ref={nameInputRef}
                   id="material-name"
                   type="text"
                   name="name"
