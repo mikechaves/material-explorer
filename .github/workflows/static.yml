@@ -51,7 +51,7 @@ jobs:
       - name: Bundle budgets
         run: npm run check:bundle
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           # Upload build output
           path: './build'
