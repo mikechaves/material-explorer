@@ -201,7 +201,7 @@ test('can undo and redo draft changes with shortcuts', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+KeyZ');
   await expect(roughnessValue).toHaveValue('0.5');
 
-  await page.keyboard.press('ControlOrMeta+Shift+KeyZ');
+  await page.keyboard.press('ControlOrMeta+KeyY');
   await expect(roughnessValue).toHaveValue('0.2');
 });
 

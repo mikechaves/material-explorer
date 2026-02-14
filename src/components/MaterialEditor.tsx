@@ -202,33 +202,29 @@ const MaterialEditor: React.FC = () => {
     setUndoStack((stack) => {
       const previous = stack[stack.length - 1];
       if (!previous) return stack;
-      setMaterial((current) => {
-        setRedoStack((future) => {
-          const nextFuture = [...future, cloneDraft(current)];
-          if (nextFuture.length > HISTORY_LIMIT) nextFuture.shift();
-          return nextFuture;
-        });
-        return cloneDraft(previous);
+      setRedoStack((future) => {
+        const nextFuture = [...future, cloneDraft(material)];
+        if (nextFuture.length > HISTORY_LIMIT) nextFuture.shift();
+        return nextFuture;
       });
+      setMaterial(cloneDraft(previous));
       return stack.slice(0, -1);
     });
-  }, []);
+  }, [material]);
 
   const redoMaterialChange = React.useCallback(() => {
     setRedoStack((stack) => {
       const next = stack[stack.length - 1];
       if (!next) return stack;
-      setMaterial((current) => {
-        setUndoStack((past) => {
-          const nextPast = [...past, cloneDraft(current)];
-          if (nextPast.length > HISTORY_LIMIT) nextPast.shift();
-          return nextPast;
-        });
-        return cloneDraft(next);
+      setUndoStack((past) => {
+        const nextPast = [...past, cloneDraft(material)];
+        if (nextPast.length > HISTORY_LIMIT) nextPast.shift();
+        return nextPast;
       });
+      setMaterial(cloneDraft(next));
       return stack.slice(0, -1);
     });
-  }, []);
+  }, [material]);
 
   useEffect(() => {
     if (selectedMaterial) setMaterial(cloneDraft(selectedMaterial));
