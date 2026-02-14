@@ -2,6 +2,12 @@
 
 Welcome to Material Explorer! This application allows you to interactively create, customize, and visualize materials in 3D. Leveraging the power of React Three Fiber, it offers real-time feedback on changes to material properties such as color, metalness, and roughness. The app is designed to be responsive and user-friendly, ensuring a seamless experience across various devices and screen sizes.
 
+## What's New in `2.0.0-beta`
+
+- Upgraded core stack: **React 19**, **Vite 7**, **TypeScript 5.9**, **Tailwind CSS 4**, **ESLint 9**.
+- Improved editor workflow: command palette, onboarding starter kit, draft unsaved state, undo/redo history, and section reset controls.
+- Stronger quality/security defaults: CI-quality script chain, bundle budgets, Playwright coverage, and dependency overrides (including `jsonpath`).
+
 ## Features
 
 - **PBR / Physical materials**: color, metalness, roughness, emissive, clearcoat, transmission/IOR, opacity
@@ -45,30 +51,22 @@ To run Material Explorer locally, follow these steps:
 To start the development server:
 
 ```bash
-npm start
-```
-
-You can also run:
-
-```bash
 npm run dev
 ```
 
-This will open the app in your default web browser at `http://localhost:5173`. The app will automatically reload if you make changes to the source code.
+`npm start` is an alias for `npm run dev`.
 
-## Building for Production
+The app opens at `http://localhost:5173` and reloads on file changes.
 
-To create a production build:
+## Testing & Quality Gates
+
+Quick pre-PR checks:
 
 ```bash
-npm run build
+npm run quality:ci
 ```
 
-This command builds the app for production to the `build` folder. The build is minified and the filenames include hashes for cache management.
-
-## Quality Gates
-
-Before opening a pull request, run:
+Full local gate run (matches CI):
 
 ```bash
 npm run quality:full
@@ -87,7 +85,21 @@ npm run test:e2e
 npm run security:audit
 ```
 
+Install Playwright browsers once (or after Playwright upgrades):
+
+```bash
+npx playwright install --with-deps chromium
+```
+
 The repository runs these checks in GitHub Actions on pull requests and on pushes to `main`.
+
+## Building for Production
+
+```bash
+npm run build
+```
+
+This command builds the app for production to the `build` folder. The build is minified and hashed for caching.
 
 ## Optional API Sync
 
@@ -190,12 +202,15 @@ Available routes on the mock server:
 
 ## Technologies Used
 
-- React 18
+- React 19
 - Vite
 - Three.js
 - React Three Fiber
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 4
+- Vitest
+- Playwright
+- ESLint 9 + Prettier
 
 ## Contributing
 
