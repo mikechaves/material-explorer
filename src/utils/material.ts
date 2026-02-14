@@ -1,6 +1,10 @@
 import type { Material, MaterialDraft } from '../types/material';
 import { v4 as uuidv4 } from 'uuid';
 
+export const MATERIAL_NAME_MAX_LENGTH = 120;
+export const MATERIAL_TAG_MAX_COUNT = 32;
+export const MATERIAL_TAG_MAX_LENGTH = 40;
+
 export function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(1, n));
@@ -41,20 +45,46 @@ function asOptionalDataUrl(value: unknown, fallback?: string): string | undefine
   return fallback;
 }
 
+function trimAndClampString(value: string, maxLength: number): string {
+  return value.trim().slice(0, maxLength);
+}
+
+function sanitizeMaterialName(input: unknown, fallback: string = DEFAULT_MATERIAL_DRAFT.name): string {
+  if (typeof input === 'string') {
+    const name = trimAndClampString(input, MATERIAL_NAME_MAX_LENGTH);
+    if (name) return name;
+  }
+
+  const fallbackName = trimAndClampString(fallback, MATERIAL_NAME_MAX_LENGTH);
+  return fallbackName || DEFAULT_MATERIAL_DRAFT.name;
+}
+
+function sanitizeMaterialTags(input: unknown, fallback: string[] = []): string[] {
+  const source = Array.isArray(input) ? input : fallback;
+  const tags: string[] = [];
+  const dedupe = new Set<string>();
+
+  for (const raw of source) {
+    if (typeof raw !== 'string') continue;
+    const tag = trimAndClampString(raw, MATERIAL_TAG_MAX_LENGTH);
+    if (!tag || dedupe.has(tag)) continue;
+    dedupe.add(tag);
+    tags.push(tag);
+    if (tags.length >= MATERIAL_TAG_MAX_COUNT) break;
+  }
+
+  return tags;
+}
+
 export function coerceMaterialDraft(input: unknown, base: MaterialDraft = DEFAULT_MATERIAL_DRAFT): MaterialDraft {
   const src = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
   const fallback = { ...DEFAULT_MATERIAL_DRAFT, ...base };
-  const tags = Array.isArray(src.tags)
-    ? (src.tags
-        .filter((t) => typeof t === 'string')
-        .map((t) => t.trim())
-        .filter(Boolean) as string[])
-    : (fallback.tags ?? []);
+  const tags = Array.isArray(src.tags) ? sanitizeMaterialTags(src.tags) : sanitizeMaterialTags(fallback.tags ?? []);
 
   const draft: MaterialDraft = {
     ...fallback,
     id: typeof src.id === 'string' && src.id ? src.id : fallback.id,
-    name: typeof src.name === 'string' && src.name.trim() ? src.name.trim() : fallback.name,
+    name: sanitizeMaterialName(src.name, fallback.name),
     favorite: typeof src.favorite === 'boolean' ? src.favorite : !!fallback.favorite,
     tags,
     color: isHexColor(src.color) ? src.color : fallback.color,
@@ -93,14 +123,9 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   const id = typeof m.id === 'string' ? m.id : '';
   if (!id) return null;
 
-  const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : 'Untitled';
+  const name = sanitizeMaterialName(m.name);
   const favorite = typeof m.favorite === 'boolean' ? m.favorite : false;
-  const tags = Array.isArray(m.tags)
-    ? (m.tags
-        .filter((t) => typeof t === 'string')
-        .map((t) => t.trim())
-        .filter(Boolean) as string[])
-    : [];
+  const tags = sanitizeMaterialTags(m.tags);
   const color = isHexColor(m.color) ? (m.color as string) : '#FFFFFF';
 
   const metalness = clamp01(typeof m.metalness === 'number' ? m.metalness : Number(m.metalness));
@@ -173,11 +198,9 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
 }
 
 export function createMaterialFromDraft(draft: MaterialDraft, now: number = Date.now()): Material {
-  const baseName = (draft.name ?? '').trim() || 'Untitled';
+  const baseName = sanitizeMaterialName(draft.name);
   const favorite = !!draft.favorite;
-  const tags = Array.isArray(draft.tags)
-    ? Array.from(new Set(draft.tags.map((t) => String(t).trim()).filter(Boolean)))
-    : [];
+  const tags = sanitizeMaterialTags(draft.tags);
   const color = isHexColor(draft.color) ? draft.color : '#FFFFFF';
   const metalness = clamp01(draft.metalness);
   const roughness = clamp01(draft.roughness);

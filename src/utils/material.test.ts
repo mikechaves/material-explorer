@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clamp01, coerceMaterialDraft, isHexColor, normalizeMaterial } from './material';
+import {
+  MATERIAL_NAME_MAX_LENGTH,
+  MATERIAL_TAG_MAX_COUNT,
+  MATERIAL_TAG_MAX_LENGTH,
+  clamp01,
+  coerceMaterialDraft,
+  createMaterialFromDraft,
+  isHexColor,
+  normalizeMaterial,
+} from './material';
 
 describe('material utils', () => {
   it('clamp01 bounds numbers between 0 and 1', () => {
@@ -66,5 +75,44 @@ describe('material utils', () => {
     expect(coerced.repeatX).toBe(0.01);
     expect(coerced.repeatY).toBe(20);
     expect(coerced.baseColorMap).toBeUndefined();
+  });
+
+  it('applies name and tag limits consistently across material conversions', () => {
+    const overlongName = ` ${'N'.repeat(MATERIAL_NAME_MAX_LENGTH + 25)} `;
+    const overlongTag = ` ${'T'.repeat(MATERIAL_TAG_MAX_LENGTH + 12)} `;
+    const manyTags = Array.from({ length: MATERIAL_TAG_MAX_COUNT + 5 }, (_, idx) => ` tag-${idx} `);
+
+    const coerced = coerceMaterialDraft({
+      name: overlongName,
+      tags: [overlongTag, 'dup', 'dup', '', 42, ...manyTags],
+    });
+
+    expect(coerced.name).toHaveLength(MATERIAL_NAME_MAX_LENGTH);
+    expect(coerced.tags?.length).toBe(MATERIAL_TAG_MAX_COUNT);
+    expect(coerced.tags?.[0]).toHaveLength(MATERIAL_TAG_MAX_LENGTH);
+    expect(coerced.tags?.filter((tag) => tag === 'dup')).toHaveLength(1);
+
+    const normalized = normalizeMaterial({
+      id: 'material-1',
+      name: '   ',
+      tags: [overlongTag, 'dup', 'dup', ...manyTags],
+    });
+
+    expect(normalized).not.toBeNull();
+    expect(normalized?.name).toBe('Untitled');
+    expect(normalized?.tags?.length).toBe(MATERIAL_TAG_MAX_COUNT);
+    expect(normalized?.tags?.[0]).toHaveLength(MATERIAL_TAG_MAX_LENGTH);
+    expect(normalized?.tags?.filter((tag) => tag === 'dup')).toHaveLength(1);
+
+    const created = createMaterialFromDraft({
+      ...coerced,
+      name: '  ',
+      tags: [overlongTag, 'dup', 'dup', ...manyTags],
+    });
+
+    expect(created.name).toBe('Untitled');
+    expect(created.tags?.length).toBe(MATERIAL_TAG_MAX_COUNT);
+    expect(created.tags?.[0]).toHaveLength(MATERIAL_TAG_MAX_LENGTH);
+    expect(created.tags?.filter((tag) => tag === 'dup')).toHaveLength(1);
   });
 });
