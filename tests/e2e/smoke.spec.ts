@@ -92,6 +92,33 @@ test('can import materials from JSON', async ({ page }) => {
     .toBe(true);
 });
 
+test('rejects import files with too many materials', async ({ page }) => {
+  const tooManyMaterialsPayload = {
+    version: 1,
+    materials: Array.from({ length: 601 }, (_, index) => makeSeedMaterial(`bulk-${index}`, `Bulk ${index}`)),
+  };
+  const dialogPromise = page.waitForEvent('dialog');
+
+  await page
+    .locator('input[type="file"][accept="application/json,.json"]')
+    .setInputFiles({
+      name: 'too-many-materials.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(tooManyMaterialsPayload), 'utf8'),
+    });
+
+  const dialog = await dialogPromise;
+  expect(dialog.message()).toContain('too many materials');
+  await dialog.accept();
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      return materials.length;
+    })
+    .toBe(0);
+});
+
 test('can save a material with keyboard shortcut', async ({ page }) => {
   await page.locator('input[name="name"]').fill('Shortcut Material');
   await page.keyboard.press('ControlOrMeta+KeyS');
