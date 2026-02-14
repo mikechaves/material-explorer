@@ -87,15 +87,23 @@ Material persistence defaults to local storage. To enable backend sync with loca
 
 ```bash
 VITE_MATERIALS_API_URL=https://your-api.example.com
+VITE_MATERIALS_USER_SCOPE=user-123
+# optional: if your API expects bearer auth
+VITE_MATERIALS_AUTH_TOKEN=token-value
 ```
 
 When set, the app uses:
 
-- `GET /materials` to hydrate the library on startup
-- `PUT /materials` to persist updates
+- `GET /materials?scope=<scope>` to hydrate the library on startup
+- `PUT /materials?scope=<scope>` to persist updates
 
 If the API is unavailable, the app continues using local storage.
 The sidebar will show a non-blocking sync warning when remote sync fails while local persistence still succeeds.
+
+Local fallback is also scope-aware:
+
+- default key: `materials`
+- scoped key: `materials:<scope>`
 
 ## Usage
 

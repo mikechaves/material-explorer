@@ -1,5 +1,5 @@
 import type { Material } from '../types/material';
-import { loadMaterials, saveMaterials } from '../utils/storage';
+import { loadMaterials, MATERIALS_STORAGE_KEY, saveMaterials } from '../utils/storage';
 import { normalizeMaterial } from '../utils/material';
 
 export type MaterialSaveResult = {
@@ -12,25 +12,55 @@ export interface MaterialRepository {
   saveAll: (materials: Material[]) => Promise<MaterialSaveResult>;
   loadFromRemote?: () => Promise<Material[] | null>;
   source: 'local' | 'http+local-fallback';
+  scope: string | null;
 }
-
-export const localMaterialRepository: MaterialRepository = {
-  source: 'local',
-  loadAll: loadMaterials,
-  saveAll: async (materials) => ({ ok: saveMaterials(materials), remoteSynced: null }),
-};
 
 type CreateMaterialRepositoryOptions = {
   apiUrl?: string;
   fetchImpl?: typeof fetch;
+  userScope?: string;
+  authToken?: string;
+  authTokenHeader?: string;
 };
 
 const REQUEST_TIMEOUT_MS = 5000;
+const USER_SCOPE_STORAGE_KEY = 'materialExplorerUserScope';
+const AUTH_TOKEN_STORAGE_KEY = 'materialExplorerAuthToken';
+const DEFAULT_AUTH_TOKEN_HEADER = 'Authorization';
 
 function resolveApiBaseUrl(rawApiUrl: string | undefined): string | null {
   const trimmed = rawApiUrl?.trim();
   if (!trimmed) return null;
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+}
+
+function resolveUserScope(rawUserScope: string | undefined): string | null {
+  const trimmed = rawUserScope?.trim();
+  if (trimmed) return trimmed;
+  if (typeof window === 'undefined') return null;
+  const localValue = window.localStorage.getItem(USER_SCOPE_STORAGE_KEY)?.trim();
+  return localValue || null;
+}
+
+function resolveAuthToken(rawAuthToken: string | undefined): string | null {
+  const trimmed = rawAuthToken?.trim();
+  if (trimmed) return trimmed;
+  if (typeof window === 'undefined') return null;
+  const localValue = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)?.trim();
+  return localValue || null;
+}
+
+function resolveStorageKey(scope: string | null): string {
+  return scope ? `${MATERIALS_STORAGE_KEY}:${scope}` : MATERIALS_STORAGE_KEY;
+}
+
+function createLocalMaterialRepository(storageKey: string, scope: string | null): MaterialRepository {
+  return {
+    source: 'local',
+    scope,
+    loadAll: () => loadMaterials(storageKey),
+    saveAll: async (materials) => ({ ok: saveMaterials(materials, storageKey), remoteSynced: null }),
+  };
 }
 
 function normalizeMaterialList(payload: unknown): Material[] | null {
@@ -58,24 +88,42 @@ async function fetchWithTimeout(fetchImpl: typeof fetch, input: RequestInfo | UR
 }
 
 export function createMaterialRepository(options: CreateMaterialRepositoryOptions = {}): MaterialRepository {
+  const scope = resolveUserScope(options.userScope ?? import.meta.env.VITE_MATERIALS_USER_SCOPE);
+  const storageKey = resolveStorageKey(scope);
+  const fallbackRepository = createLocalMaterialRepository(storageKey, scope);
+
   const baseUrl = resolveApiBaseUrl(options.apiUrl ?? import.meta.env.VITE_MATERIALS_API_URL);
-  if (!baseUrl) return localMaterialRepository;
+  if (!baseUrl) return fallbackRepository;
 
   const fetchImpl = options.fetchImpl ?? globalThis.fetch?.bind(globalThis);
-  if (!fetchImpl) return localMaterialRepository;
-  const materialsUrl = `${baseUrl}/materials`;
+  if (!fetchImpl) return fallbackRepository;
+  const authToken = resolveAuthToken(options.authToken ?? import.meta.env.VITE_MATERIALS_AUTH_TOKEN);
+  const authTokenHeader = options.authTokenHeader ?? DEFAULT_AUTH_TOKEN_HEADER;
+
+  const materialsUrl = new URL(`${baseUrl}/materials`);
+  if (scope) materialsUrl.searchParams.set('scope', scope);
+
+  const requestHeaders = (() => {
+    const headers: Record<string, string> = {};
+    if (scope) headers['X-Material-Scope'] = scope;
+    if (authToken) {
+      headers[authTokenHeader] = authTokenHeader.toLowerCase() === 'authorization' ? `Bearer ${authToken}` : authToken;
+    }
+    return headers;
+  })();
 
   return {
     source: 'http+local-fallback',
-    loadAll: loadMaterials,
+    scope,
+    loadAll: () => loadMaterials(storageKey),
     saveAll: async (materials) => {
-      const localSaved = saveMaterials(materials);
+      const localSaved = saveMaterials(materials, storageKey);
       if (!localSaved) return { ok: false, remoteSynced: false };
 
       try {
-        const response = await fetchWithTimeout(fetchImpl, materialsUrl, {
+        const response = await fetchWithTimeout(fetchImpl, materialsUrl.toString(), {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...requestHeaders },
           body: JSON.stringify({ version: 1, exportedAt: Date.now(), materials }),
         });
         if (!response.ok) {
@@ -90,12 +138,15 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
     },
     loadFromRemote: async () => {
       try {
-        const response = await fetchWithTimeout(fetchImpl, materialsUrl, { method: 'GET' });
+        const response = await fetchWithTimeout(fetchImpl, materialsUrl.toString(), {
+          method: 'GET',
+          headers: requestHeaders,
+        });
         if (!response.ok) return null;
         const parsed = (await response.json()) as unknown;
         const normalized = normalizeMaterialList(parsed);
         if (!normalized) return null;
-        if (!saveMaterials(normalized)) {
+        if (!saveMaterials(normalized, storageKey)) {
           console.warn('Fetched remote materials but failed to cache them locally.');
         }
         return normalized;
@@ -107,4 +158,5 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
   };
 }
 
+export const localMaterialRepository: MaterialRepository = createLocalMaterialRepository(MATERIALS_STORAGE_KEY, null);
 export const materialRepository = createMaterialRepository();
