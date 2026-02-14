@@ -2,6 +2,9 @@ import type { MaterialDraft } from '../types/material';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { coerceMaterialDraft } from './material';
 
+export const MAX_SHARE_TOKEN_CHARS = 12_000;
+export const MAX_SHARE_JSON_CHARS = 1_000_000;
+
 export type SharePayloadV1 = {
   v: 1;
   material: Omit<MaterialDraft, 'baseColorMap' | 'normalMap'>;
@@ -35,10 +38,12 @@ export function encodeSharePayloadV2(payload: SharePayloadV2): string {
 }
 
 export function decodeSharePayload(encoded: string): SharePayloadV1 | SharePayloadV2 | null {
+  if (!encoded || encoded.length > MAX_SHARE_TOKEN_CHARS) return null;
+
   try {
     // v2 uses lz-string; v1 uses base64. Try v2 first.
     const maybeJsonV2 = decompressFromEncodedURIComponent(encoded);
-    if (maybeJsonV2) {
+    if (maybeJsonV2 && maybeJsonV2.length <= MAX_SHARE_JSON_CHARS) {
       const parsed = JSON.parse(maybeJsonV2) as unknown;
       if (isRecord(parsed) && (parsed.v === 2 || parsed.v === '2') && 'material' in parsed) {
         return {
@@ -50,6 +55,7 @@ export function decodeSharePayload(encoded: string): SharePayloadV1 | SharePaylo
     }
 
     const json = b64DecodeUnicode(encoded);
+    if (json.length > MAX_SHARE_JSON_CHARS) return null;
     const parsed = JSON.parse(json) as unknown;
     if (!isRecord(parsed) || parsed.v !== 1 || !('material' in parsed)) return null;
     const { baseColorMap: _baseColorMap, normalMap: _normalMap, ...material } = coerceMaterialDraft(parsed.material);

@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MATERIAL_DRAFT } from './material';
-import { decodeSharePayload, encodeSharePayloadV2 } from './share';
+import { MAX_SHARE_TOKEN_CHARS, decodeSharePayload, encodeSharePayloadV2 } from './share';
 
 function encodeLegacyPayload(payload: unknown): string {
   return Buffer.from(encodeURIComponent(JSON.stringify(payload)), 'utf8').toString('base64');
@@ -54,5 +54,9 @@ describe('share utils', () => {
 
   it('returns null for malformed payloads', () => {
     expect(decodeSharePayload('%%%bad%%%')).toBeNull();
+  });
+
+  it('rejects oversized share tokens', () => {
+    expect(decodeSharePayload('x'.repeat(MAX_SHARE_TOKEN_CHARS + 1))).toBeNull();
   });
 });
