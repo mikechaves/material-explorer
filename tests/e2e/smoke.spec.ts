@@ -151,15 +151,27 @@ test('can undo and redo draft changes with shortcuts', async ({ page }) => {
   await expect(roughnessValue).toHaveValue('0.2');
 });
 
+test('shows unsaved state and can revert draft changes', async ({ page }) => {
+  const nameInput = page.locator('input[name="name"]');
+  await expect(page.getByText('All changes saved', { exact: true })).toBeVisible();
+
+  await nameInput.fill('Transient Draft');
+  await expect(page.getByText('Unsaved changes', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Revert' }).click();
+  await expect(nameInput).toHaveValue('Untitled');
+  await expect(page.getByText('All changes saved', { exact: true })).toBeVisible();
+});
+
 test('command palette shows recently used commands', async ({ page }) => {
-  await page.keyboard.press('ControlOrMeta+KeyK');
+  await page.getByRole('button', { name: 'Commands' }).click();
   const dialog = page.getByRole('dialog', { name: 'Command palette' });
   await expect(dialog).toBeVisible();
 
   await dialog.getByRole('button', { name: /Toggle 3D Preview/ }).click();
   await expect(dialog).not.toBeVisible();
 
-  await page.keyboard.press('ControlOrMeta+KeyK');
+  await page.getByRole('button', { name: 'Commands' }).click();
   await expect(dialog).toBeVisible();
 
   const togglePreviewRow = dialog.getByRole('button', { name: /Toggle 3D Preview/ }).first();

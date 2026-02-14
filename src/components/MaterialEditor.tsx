@@ -15,10 +15,54 @@ import { QuickPresetsCard } from './editor/QuickPresetsCard';
 import { PreviewControlsCard } from './editor/PreviewControlsCard';
 
 const HISTORY_LIMIT = 120;
+const DRAFT_COMPARE_KEYS: Array<keyof MaterialDraft> = [
+  'id',
+  'name',
+  'favorite',
+  'tags',
+  'color',
+  'metalness',
+  'roughness',
+  'emissive',
+  'emissiveIntensity',
+  'clearcoat',
+  'clearcoatRoughness',
+  'transmission',
+  'ior',
+  'opacity',
+  'baseColorMap',
+  'normalMap',
+  'normalScale',
+  'roughnessMap',
+  'metalnessMap',
+  'aoMap',
+  'emissiveMap',
+  'alphaMap',
+  'aoIntensity',
+  'alphaTest',
+  'repeatX',
+  'repeatY',
+  'createdAt',
+  'updatedAt',
+];
 
 function cloneDraft(draft: MaterialDraft): MaterialDraft {
   if (typeof structuredClone === 'function') return structuredClone(draft);
   return JSON.parse(JSON.stringify(draft)) as MaterialDraft;
+}
+
+function areStringArraysEqual(a: string[] | undefined, b: string[] | undefined) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  return a.every((value, index) => value === b[index]);
+}
+
+function areDraftsEqual(a: MaterialDraft, b: MaterialDraft) {
+  return DRAFT_COMPARE_KEYS.every((key) => {
+    if (key === 'tags') return areStringArraysEqual(a.tags, b.tags);
+    return a[key] === b[key];
+  });
 }
 
 const MaterialEditor: React.FC = () => {
@@ -330,8 +374,19 @@ const MaterialEditor: React.FC = () => {
     return () => window.removeEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
   }, [compareA, material, redoMaterialChange, saveMaterial, undoMaterialChange]);
 
+  const baselineDraft = React.useMemo(
+    () => (selectedMaterial ? coerceMaterialDraft(selectedMaterial, emptyDraft) : emptyDraft),
+    [emptyDraft, selectedMaterial]
+  );
+  const isDirty = React.useMemo(() => !areDraftsEqual(material, baselineDraft), [baselineDraft, material]);
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
+
+  const resetDraftChanges = React.useCallback(() => {
+    setMaterial(cloneDraft(baselineDraft));
+    setUndoStack([]);
+    setRedoStack([]);
+  }, [baselineDraft]);
 
   return (
     <div className="w-full h-full overflow-y-auto">
@@ -584,8 +639,22 @@ const MaterialEditor: React.FC = () => {
 
             <div className="section-shell px-3 py-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-xs ui-muted">Draft history</div>
+                <div>
+                  <div className="text-xs ui-muted">Draft history</div>
+                  <div className={`text-[11px] ${isDirty ? 'text-amber-100/90' : 'ui-muted'}`}>
+                    {isDirty ? 'Unsaved changes' : 'All changes saved'}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                    onClick={resetDraftChanges}
+                    disabled={!isDirty}
+                    title="Revert all unsaved changes"
+                  >
+                    Revert
+                  </button>
                   <button
                     type="button"
                     className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
