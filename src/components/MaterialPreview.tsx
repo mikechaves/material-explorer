@@ -267,6 +267,23 @@ export type MaterialPreviewHandle = {
   resetView: () => void;
 };
 
+class PreviewErrorBoundary extends React.Component<{ fallback: React.ReactNode; children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error(error);
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
 const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewProps>((props, ref) => {
   const {
     className = '',
@@ -358,50 +375,52 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       transition={{ duration: 0.5 }}
       className={`relative w-full h-full ${className} rounded-xl overflow-hidden`}
     >
-      <Canvas
-        frameloop={autoRotate || captureBufferEnabled ? 'always' : 'demand'}
-        dpr={[1, 2]}
-        gl={{ antialias: true, preserveDrawingBuffer: captureBufferEnabled, alpha: !showBackground }}
-        onCreated={({ gl }) => {
-          glRef.current = gl;
-        }}
-        camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
-        className="bg-gradient-to-b from-gray-900/50 to-black/50"
-      >
-        {showBackground && <color attach="background" args={['#000000']} />}
-        {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
+      <PreviewErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-b from-gray-900/60 to-black/80" aria-hidden="true" />}>
+        <Canvas
+          frameloop={autoRotate || captureBufferEnabled ? 'always' : 'demand'}
+          dpr={[1, 2]}
+          gl={{ antialias: true, preserveDrawingBuffer: captureBufferEnabled, alpha: !showBackground }}
+          onCreated={({ gl }) => {
+            glRef.current = gl;
+          }}
+          camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
+          className="bg-gradient-to-b from-gray-900/50 to-black/50"
+        >
+          {showBackground && <color attach="background" args={['#000000']} />}
+          {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
 
-        <Stage key={frameNonce} intensity={1} environment={environment} adjustCamera={0.55}>
-          <Scene
-            color={color}
-            metalness={metalness}
-            roughness={roughness}
-            emissive={emissive}
-            emissiveIntensity={emissiveIntensity}
-            clearcoat={clearcoat}
-            clearcoatRoughness={clearcoatRoughness}
-            transmission={transmission}
-            ior={ior}
-            opacity={opacity}
-            baseColorMap={baseColorMap}
-            normalMap={normalMap}
-            normalScale={normalScale}
-            roughnessMap={roughnessMap}
-            metalnessMap={metalnessMap}
-            aoMap={aoMap}
-            emissiveMap={emissiveMap}
-            alphaMap={alphaMap}
-            aoIntensity={aoIntensity}
-            alphaTest={alphaTest}
-            repeatX={repeatX}
-            repeatY={repeatY}
-            model={model}
-            autoRotate={autoRotate}
-            enableZoom={enableZoom}
-            showGrid={showGrid}
-          />
-        </Stage>
-      </Canvas>
+          <Stage key={frameNonce} intensity={1} environment={environment} adjustCamera={0.55}>
+            <Scene
+              color={color}
+              metalness={metalness}
+              roughness={roughness}
+              emissive={emissive}
+              emissiveIntensity={emissiveIntensity}
+              clearcoat={clearcoat}
+              clearcoatRoughness={clearcoatRoughness}
+              transmission={transmission}
+              ior={ior}
+              opacity={opacity}
+              baseColorMap={baseColorMap}
+              normalMap={normalMap}
+              normalScale={normalScale}
+              roughnessMap={roughnessMap}
+              metalnessMap={metalnessMap}
+              aoMap={aoMap}
+              emissiveMap={emissiveMap}
+              alphaMap={alphaMap}
+              aoIntensity={aoIntensity}
+              alphaTest={alphaTest}
+              repeatX={repeatX}
+              repeatY={repeatY}
+              model={model}
+              autoRotate={autoRotate}
+              enableZoom={enableZoom}
+              showGrid={showGrid}
+            />
+          </Stage>
+        </Canvas>
+      </PreviewErrorBoundary>
       
       {/* Optional overlay for better visual integration */}
       <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-t from-black/20 to-transparent" />

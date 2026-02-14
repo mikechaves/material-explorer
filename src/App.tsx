@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
-import MaterialEditor from './components/MaterialEditor';
-import Sidebar from './components/Sidebar';
 import './styles/App.css';
+
+const MaterialEditor = React.lazy(() => import('./components/MaterialEditor'));
+const Sidebar = React.lazy(() => import('./components/Sidebar'));
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -33,13 +34,19 @@ function App() {
   return (
     <MaterialProvider>
       <div className="relative w-screen h-screen overflow-hidden bg-black">
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          setIsCollapsed={setIsSidebarCollapsed}
-          width={sidebarWidth}
-          setWidth={setSidebarWidth}
-          isMobile={isMobile}
-        />
+        <Suspense
+          fallback={
+            <div className="fixed top-0 left-0 h-full z-20" style={{ width: isMobile ? 'min(85vw, 360px)' : 64 }} />
+          }
+        >
+          <Sidebar
+            isCollapsed={isSidebarCollapsed}
+            setIsCollapsed={setIsSidebarCollapsed}
+            width={sidebarWidth}
+            setWidth={setSidebarWidth}
+            isMobile={isMobile}
+          />
+        </Suspense>
         {isMobile && isSidebarCollapsed && (
           <button
             type="button"
@@ -58,7 +65,9 @@ function App() {
           }}
           className="h-full transition-all duration-300 ease-in-out overflow-hidden"
         >
-          <MaterialEditor />
+          <Suspense fallback={<div className="h-full w-full bg-black" />}>
+            <MaterialEditor />
+          </Suspense>
         </main>
       </div>
     </MaterialProvider>

@@ -30,6 +30,25 @@ export default defineConfig({
   build: {
     outDir: 'build',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (
+            id.includes('/three/') ||
+            id.includes('@react-three/') ||
+            id.includes('/three-stdlib/') ||
+            id.includes('/troika-')
+          ) {
+            return 'vendor-three';
+          }
+          if (id.includes('/framer-motion/')) return 'vendor-motion';
+          if (id.includes('@headlessui/') || id.includes('@radix-ui/')) return 'vendor-ui';
+          if (id.includes('/react/') || id.includes('/react-dom/')) return 'vendor-react';
+          return undefined;
+        },
+      },
+    },
   },
   test: {
     environment: 'node',
