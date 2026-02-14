@@ -8,6 +8,7 @@ Welcome to Material Explorer! This application allows you to interactively creat
 - **Texture maps**: base color, normal (+ scale), roughness, metalness, AO (+ strength), emissive, alpha (+ cutoff), plus tiling (U/V)
 - **Live 3D preview**: model picker, HDRI/environment picker, zoom/grid/background toggles, reset view, PNG snapshot, A/B compare
 - **Library UX**: favorites, tags, search/sort, tag filter chips, bulk actions, manual drag-to-reorder
+- **In-app feedback**: non-blocking toast notifications for import/export/share outcomes
 - **Import/Export**:
   - JSON presets (single + whole library)
   - GLB export per material and GLB export of the library (grid of preview spheres)

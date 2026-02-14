@@ -102,7 +102,6 @@ test('rejects import files with too many materials', async ({ page }) => {
     version: 1,
     materials: Array.from({ length: 601 }, (_, index) => makeSeedMaterial(`bulk-${index}`, `Bulk ${index}`)),
   };
-  const dialogPromise = page.waitForEvent('dialog');
 
   await page.locator('input[type="file"][accept="application/json,.json"]').setInputFiles({
     name: 'too-many-materials.json',
@@ -110,9 +109,8 @@ test('rejects import files with too many materials', async ({ page }) => {
     buffer: Buffer.from(JSON.stringify(tooManyMaterialsPayload), 'utf8'),
   });
 
-  const dialog = await dialogPromise;
-  expect(dialog.message()).toContain('too many materials');
-  await dialog.accept();
+  await expect(page.getByText('Import blocked', { exact: true })).toBeVisible();
+  await expect(page.getByText(/too many materials/i)).toBeVisible();
 
   await expect
     .poll(async () => {

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
+import { useToasts } from '../contexts/ToastContext';
 import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
@@ -31,6 +32,7 @@ async function loadGltfExporters() {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
+  const { notify } = useToasts();
   const {
     materials,
     storageError,
@@ -117,9 +119,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       downloadBlob(result.filename, result.blob);
     } catch (e) {
       console.error(e);
-      window.alert('Failed to export library GLB.');
+      notify({
+        variant: 'error',
+        title: 'Library GLB export failed',
+        message: 'Please try again. If this persists, reduce material count or texture sizes.',
+      });
     }
-  }, [materials]);
+  }, [materials, notify]);
 
   const exportOne = (material: Material) => {
     downloadJson(`${material.name || 'material'}.json`, { version: 1, exportedAt: Date.now(), material });
@@ -132,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       downloadBlob(filename, blob);
     } catch (e) {
       console.error(e);
-      window.alert('Failed to export GLB.');
+      notify({ variant: 'error', title: 'GLB export failed', message: 'Please try again for this material.' });
     }
   };
 
@@ -171,19 +177,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     try {
       const fileSizeError = validateImportFileSize(file);
       if (fileSizeError) {
-        window.alert(fileSizeError);
+        notify({ variant: 'warn', title: 'Import blocked', message: fileSizeError });
         return;
       }
       const raw = await file.text();
       const importResult = parseImportedMaterials(raw, materials);
       if (!importResult.ok) {
-        window.alert(importResult.message);
+        notify({ variant: 'warn', title: 'Import blocked', message: importResult.message });
         return;
       }
       addMaterials(importResult.materials);
+      notify({
+        variant: 'success',
+        title: `Imported ${importResult.materials.length} material${importResult.materials.length === 1 ? '' : 's'}`,
+      });
     } catch (e) {
       console.error(e);
-      window.alert('Failed to import materials. Make sure it is valid JSON.');
+      notify({
+        variant: 'error',
+        title: 'Import failed',
+        message: 'Make sure the file is valid JSON and try again.',
+      });
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }

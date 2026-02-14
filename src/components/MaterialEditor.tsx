@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
+import { useToasts } from '../contexts/ToastContext';
 import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import {
@@ -91,6 +92,7 @@ async function loadShareUtils() {
 
 const MaterialEditor: React.FC = () => {
   const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
+  const { notify } = useToasts();
   const previewRef = useRef<MaterialPreviewHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -258,8 +260,13 @@ const MaterialEditor: React.FC = () => {
         throw new Error('Clipboard API unavailable');
       }
       await navigator.clipboard.writeText(url);
-      window.alert(successMessage);
+      notify({ variant: 'success', title: successMessage });
     } catch {
+      notify({
+        variant: 'warn',
+        title: 'Clipboard unavailable',
+        message: 'A manual copy dialog is opening.',
+      });
       window.prompt('Copy this link:', url);
     }
   };
@@ -572,9 +579,11 @@ const MaterialEditor: React.FC = () => {
                   url.searchParams.set('m', payload);
 
                   if (url.toString().length > 8000) {
-                    window.alert(
-                      'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
-                    );
+                    notify({
+                      variant: 'warn',
+                      title: 'Share link too large',
+                      message: 'Textures can exceed URL limits. Use Export JSON when sharing textures.',
+                    });
                     return;
                   }
 
