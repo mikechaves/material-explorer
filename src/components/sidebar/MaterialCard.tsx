@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import type { Material } from '../../types/material';
+import { useDialogs } from '../../contexts/DialogContext';
 
 const MaterialPreview = React.lazy(() => import('../MaterialPreview'));
 
@@ -33,6 +34,7 @@ export function MaterialCard({
   onDelete,
   reorderable,
 }: MaterialCardProps) {
+  const { confirm } = useDialogs();
   const controls = useDragControls();
   const previewFallback = <div className="w-full h-full bg-white/5 animate-pulse" aria-hidden="true" />;
   const [showPreview, setShowPreview] = React.useState(false);
@@ -154,8 +156,15 @@ export function MaterialCard({
             </motion.button>
             <motion.button
               onClick={() => {
-                const ok = window.confirm('Delete this material?');
-                if (ok) onDelete();
+                void (async () => {
+                  const ok = await confirm({
+                    title: 'Delete material?',
+                    message: `This will permanently remove "${material.name || 'Untitled'}".`,
+                    confirmLabel: 'Delete',
+                    tone: 'danger',
+                  });
+                  if (ok) onDelete();
+                })();
               }}
               aria-label="Delete material"
               className="ui-btn ui-btn-danger px-4 py-1 text-xs"

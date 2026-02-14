@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import { useToasts } from '../contexts/ToastContext';
+import { useDialogs } from '../contexts/DialogContext';
 import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import {
@@ -93,6 +94,7 @@ async function loadShareUtils() {
 const MaterialEditor: React.FC = () => {
   const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const { notify } = useToasts();
+  const { showCopyDialog } = useDialogs();
   const previewRef = useRef<MaterialPreviewHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -265,9 +267,13 @@ const MaterialEditor: React.FC = () => {
       notify({
         variant: 'warn',
         title: 'Clipboard unavailable',
-        message: 'A manual copy dialog is opening.',
+        message: 'Use the manual copy dialog instead.',
       });
-      window.prompt('Copy this link:', url);
+      showCopyDialog({
+        title: 'Copy share link',
+        message: 'Clipboard access was blocked. Copy the link below.',
+        value: url,
+      });
     }
   };
 

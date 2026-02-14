@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
 import { useToasts } from '../contexts/ToastContext';
+import { useDialogs } from '../contexts/DialogContext';
 import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
@@ -38,6 +39,7 @@ const CommandPalette = React.lazy(async () => {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const { notify } = useToasts();
+  const { confirm } = useDialogs();
   const {
     materials,
     storageError,
@@ -258,12 +260,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     downloadBlob(result.filename, result.blob);
   };
 
-  const bulkDelete = () => {
-    const ok = window.confirm(`Delete ${selectedIds.length} material(s)?`);
+  const bulkDelete = useCallback(async () => {
+    if (selectedIds.length === 0) return;
+    const ok = await confirm({
+      title: `Delete ${selectedIds.length} material${selectedIds.length === 1 ? '' : 's'}?`,
+      message: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
     if (!ok) return;
     deleteMaterials(selectedIds);
     setSelectedIds([]);
-  };
+  }, [confirm, deleteMaterials, selectedIds]);
 
   const bulkSetFavorite = (fav: boolean) => {
     const now = Date.now();
@@ -458,7 +466,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               {bulkMode && (
                 <SidebarBulkBar
                   selectedCount={selectedIds.length}
-                  onDelete={bulkDelete}
+                  onDelete={() => {
+                    void bulkDelete();
+                  }}
                   onExportJson={bulkExportJson}
                   onExportGlb={() => {
                     void bulkExportGlb();

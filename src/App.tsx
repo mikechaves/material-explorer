@@ -5,6 +5,10 @@ import { initGlobalTelemetryListeners } from './utils/telemetry';
 
 const MaterialEditor = React.lazy(() => import('./components/MaterialEditor'));
 const Sidebar = React.lazy(() => import('./components/Sidebar'));
+const DialogProvider = React.lazy(async () => {
+  const module = await import('./contexts/DialogContext');
+  return { default: module.DialogProvider };
+});
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -39,51 +43,62 @@ function App() {
   return (
     <MaterialProvider>
       <ToastProvider>
-        <div className="app-shell relative w-screen h-screen overflow-hidden">
-          <div
-            className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-blue-300/20 blur-3xl"
-            aria-hidden="true"
-          />
-          <Suspense
-            fallback={
-              <div className="fixed top-0 left-0 h-full z-20" style={{ width: isMobile ? 'min(85vw, 360px)' : 64 }} />
-            }
-          >
-            <Sidebar
-              isCollapsed={isSidebarCollapsed}
-              setIsCollapsed={setIsSidebarCollapsed}
-              width={sidebarWidth}
-              setWidth={setSidebarWidth}
-              isMobile={isMobile}
-            />
-          </Suspense>
-          {isMobile && isSidebarCollapsed && (
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={() => setIsSidebarCollapsed(false)}
-              className="ui-btn absolute top-4 left-4 z-20 px-3 py-2 text-sm backdrop-blur-md"
-            >
-              Menu
-            </button>
-          )}
-          <main
-            id="maincontent"
-            style={{
-              marginLeft: isMobile ? 0 : isSidebarCollapsed ? '64px' : `${sidebarWidth}px`,
-              width: isMobile ? '100%' : isSidebarCollapsed ? 'calc(100% - 64px)' : `calc(100% - ${sidebarWidth}px)`,
-            }}
-            className="h-full transition-all duration-300 ease-in-out overflow-hidden"
-          >
-            <Suspense fallback={<div className="h-full w-full bg-black" />}>
-              <MaterialEditor />
-            </Suspense>
-          </main>
-        </div>
+        <Suspense fallback={<div className="app-shell relative w-screen h-screen overflow-hidden" />}>
+          <DialogProvider>
+            <div className="app-shell relative w-screen h-screen overflow-hidden">
+              <div
+                className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl"
+                aria-hidden="true"
+              />
+              <div
+                className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-blue-300/20 blur-3xl"
+                aria-hidden="true"
+              />
+              <Suspense
+                fallback={
+                  <div
+                    className="fixed top-0 left-0 h-full z-20"
+                    style={{ width: isMobile ? 'min(85vw, 360px)' : 64 }}
+                  />
+                }
+              >
+                <Sidebar
+                  isCollapsed={isSidebarCollapsed}
+                  setIsCollapsed={setIsSidebarCollapsed}
+                  width={sidebarWidth}
+                  setWidth={setSidebarWidth}
+                  isMobile={isMobile}
+                />
+              </Suspense>
+              {isMobile && isSidebarCollapsed && (
+                <button
+                  type="button"
+                  aria-label="Open sidebar"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  className="ui-btn absolute top-4 left-4 z-20 px-3 py-2 text-sm backdrop-blur-md"
+                >
+                  Menu
+                </button>
+              )}
+              <main
+                id="maincontent"
+                style={{
+                  marginLeft: isMobile ? 0 : isSidebarCollapsed ? '64px' : `${sidebarWidth}px`,
+                  width: isMobile
+                    ? '100%'
+                    : isSidebarCollapsed
+                      ? 'calc(100% - 64px)'
+                      : `calc(100% - ${sidebarWidth}px)`,
+                }}
+                className="h-full transition-all duration-300 ease-in-out overflow-hidden"
+              >
+                <Suspense fallback={<div className="h-full w-full bg-black" />}>
+                  <MaterialEditor />
+                </Suspense>
+              </main>
+            </div>
+          </DialogProvider>
+        </Suspense>
       </ToastProvider>
     </MaterialProvider>
   );
