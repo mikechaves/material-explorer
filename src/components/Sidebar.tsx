@@ -2,11 +2,13 @@ import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useMaterials } from '../contexts/MaterialContext';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import type { Material } from '../types/material';
-import { createMaterialFromDraft, downloadBlob, downloadJson, normalizeMaterial } from '../utils/material';
+import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
 import { Listbox, Transition } from '@headlessui/react';
 import { MaterialCard } from './sidebar/MaterialCard';
-import { CommandPalette, type CommandPaletteItem } from './sidebar/CommandPalette';
+import { CommandPalette } from './sidebar/CommandPalette';
 import { dispatchAppCommand } from '../types/commands';
+import { buildCommandItems } from './sidebar/commandItems';
+import { parseImportedMaterials, validateImportFileSize } from './sidebar/importMaterials';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -25,20 +27,9 @@ const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
   { value: 'name', label: 'Name' },
   { value: 'manual', label: 'Manual' },
 ];
-const MAX_IMPORT_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
-const MAX_IMPORT_JSON_CHARS = 12 * 1024 * 1024;
-const MAX_IMPORT_MATERIALS = 600;
-const MAX_TEXTURE_DATA_URL_CHARS = 2_500_000;
-const textureFields: Array<
-  'baseColorMap' | 'normalMap' | 'roughnessMap' | 'metalnessMap' | 'aoMap' | 'emissiveMap' | 'alphaMap'
-> = ['baseColorMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'];
 
 function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(' ');
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
@@ -175,63 +166,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const onImportFile = async (file: File) => {
     try {
-      if (file.size > MAX_IMPORT_FILE_BYTES) {
-        window.alert('Import file is too large. Maximum supported size is 8 MB.');
+      const fileSizeError = validateImportFileSize(file);
+      if (fileSizeError) {
+        window.alert(fileSizeError);
         return;
       }
-
       const raw = await file.text();
-      if (raw.length > MAX_IMPORT_JSON_CHARS) {
-        window.alert('Import payload is too large. Try splitting the file into smaller batches.');
+      const importResult = parseImportedMaterials(raw, materials);
+      if (!importResult.ok) {
+        window.alert(importResult.message);
         return;
       }
-      const parsed = JSON.parse(raw) as unknown;
-
-      const now = Date.now();
-      const incoming: unknown[] = Array.isArray(parsed)
-        ? parsed
-        : isRecord(parsed) && Array.isArray(parsed.materials)
-          ? parsed.materials
-          : isRecord(parsed) && 'material' in parsed
-            ? [parsed.material]
-            : [parsed];
-
-      if (incoming.length > MAX_IMPORT_MATERIALS) {
-        window.alert(`Import contains too many materials (${incoming.length}). Maximum supported is ${MAX_IMPORT_MATERIALS}.`);
-        return;
-      }
-
-      const normalized = incoming
-        .map((m) => normalizeMaterial(m, now))
-        .filter((m): m is Material => m !== null);
-
-      if (normalized.length === 0) {
-        window.alert('No valid materials found in that file.');
-        return;
-      }
-
-      const oversizedTextureMaterial = normalized.find((material) =>
-        textureFields.some((field) => {
-          const value = material[field];
-          return typeof value === 'string' && value.length > MAX_TEXTURE_DATA_URL_CHARS;
-        })
-      );
-      if (oversizedTextureMaterial) {
-        window.alert(
-          'Import includes very large embedded texture data. Use smaller textures or split imports to avoid browser storage limits.'
-        );
-        return;
-      }
-
-      // Ensure imported ids don’t collide; if they do, assign a new id.
-      const existingIds = new Set(materials.map((m) => m.id));
-      const imported = normalized.map((m) => {
-        const draft = existingIds.has(m.id) ? { ...m, id: undefined } : m;
-        const created = createMaterialFromDraft(draft);
-        existingIds.add(created.id);
-        return created;
-      });
-      addMaterials(imported);
+      addMaterials(importResult.materials);
     } catch (e) {
       console.error(e);
       window.alert('Failed to import materials. Make sure it is valid JSON.');
@@ -333,95 +279,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     window.setTimeout(focusSearchField, 220);
   }, [isCollapsed, setIsCollapsed]);
 
-  const commandItems = useMemo<CommandPaletteItem[]>(
-    () => [
-      {
-        id: 'new-material',
-        title: 'Create New Material',
-        description: 'Start a blank draft in the editor.',
-        shortcut: 'Ctrl/Cmd+Shift+N',
-        keywords: ['new', 'material', 'draft'],
-        run: () => startNewMaterial(),
-      },
-      {
-        id: 'toggle-sidebar',
-        title: isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
-        description: 'Toggle the library panel.',
-        shortcut: 'Ctrl/Cmd+B',
-        keywords: ['sidebar', 'panel'],
-        run: () => setIsCollapsed((prev) => !prev),
-      },
-      {
-        id: 'focus-search',
-        title: 'Focus Material Search',
-        description: 'Jump to the sidebar search input.',
-        shortcut: 'Ctrl/Cmd+F',
-        keywords: ['search', 'find', 'filter'],
-        run: () => focusSearch(),
-      },
-      {
-        id: 'import-json',
-        title: 'Import Materials JSON',
-        description: 'Open file picker for JSON import.',
-        shortcut: 'Ctrl/Cmd+I',
-        keywords: ['import', 'json', 'file'],
-        run: () => fileInputRef.current?.click(),
-      },
-      {
-        id: 'export-json',
-        title: 'Export Library (JSON)',
-        description: 'Download full library as JSON.',
-        keywords: ['export', 'json', 'download'],
-        run: () => exportAll(),
-      },
-      {
-        id: 'export-glb',
-        title: 'Export Library (GLB)',
-        description: 'Download full library as GLB.',
-        keywords: ['export', 'glb', 'download'],
-        run: () => {
-          void exportAllGlb();
-        },
-      },
-      {
-        id: 'save-material',
-        title: 'Save Current Material',
-        description: 'Trigger save/update in the editor.',
-        shortcut: 'Ctrl/Cmd+S',
-        keywords: ['save', 'update', 'material'],
-        run: () => dispatchAppCommand('save-material'),
-      },
-      {
-        id: 'toggle-preview',
-        title: 'Toggle 3D Preview',
-        description: 'Enable or disable interactive 3D preview.',
-        shortcut: 'Ctrl/Cmd+P',
-        keywords: ['preview', '3d', 'render'],
-        run: () => dispatchAppCommand('toggle-preview'),
-      },
-      {
-        id: 'toggle-compare',
-        title: 'Toggle Compare Mode',
-        description: 'Capture or show A/B comparison in editor.',
-        keywords: ['compare', 'ab', 'reference'],
-        run: () => dispatchAppCommand('toggle-compare'),
-      },
-      {
-        id: 'focus-editor-name',
-        title: 'Focus Material Name',
-        description: 'Jump cursor to the editor name field.',
-        keywords: ['name', 'title', 'focus'],
-        run: () => dispatchAppCommand('focus-material-name'),
-      },
-      {
-        id: 'open-onboarding',
-        title: 'Show Onboarding Card',
-        description: 'Reopen first-run guidance in the editor.',
-        keywords: ['onboarding', 'welcome', 'starter'],
-        run: () => dispatchAppCommand('open-onboarding'),
-      },
-    ],
-    [exportAll, focusSearch, isCollapsed, startNewMaterial, setIsCollapsed]
+  const commandItems = useMemo(
+    () =>
+      buildCommandItems({
+        isCollapsed,
+        setIsCollapsed,
+        startNewMaterial,
+        focusSearch,
+        openImportPicker: () => fileInputRef.current?.click(),
+        exportAll,
+        exportAllGlb,
+      }),
+    [exportAll, exportAllGlb, focusSearch, isCollapsed, setIsCollapsed, startNewMaterial]
   );
 
   useEffect(() => {

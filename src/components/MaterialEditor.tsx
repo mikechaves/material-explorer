@@ -5,82 +5,14 @@ import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import { createMaterialFromDraft, clamp01, coerceMaterialDraft, DEFAULT_MATERIAL_DRAFT, downloadBlob } from '../utils/material';
 import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
-import { Dropdown, Control, type PreviewModel, type PreviewEnv, PREVIEW_MODEL_OPTIONS, PREVIEW_ENV_OPTIONS } from './editor/EditorFields';
+import { Control, type PreviewModel, type PreviewEnv } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
 import { APP_COMMAND_EVENT, type AppCommandEventDetail } from '../types/commands';
-
-type MaterialPreset = {
-  id: string;
-  label: string;
-  description: string;
-  values: Partial<MaterialDraft>;
-};
-
-const MATERIAL_PRESETS: MaterialPreset[] = [
-  {
-    id: 'brushed-metal',
-    label: 'Brushed Metal',
-    description: 'Reflective and premium',
-    values: {
-      color: '#9ca7bc',
-      metalness: 0.96,
-      roughness: 0.22,
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.08,
-      transmission: 0,
-      opacity: 1,
-    },
-  },
-  {
-    id: 'frosted-glass',
-    label: 'Frosted Glass',
-    description: 'Soft translucent look',
-    values: {
-      color: '#dcefff',
-      metalness: 0,
-      roughness: 0.16,
-      transmission: 0.95,
-      ior: 1.45,
-      clearcoat: 0.22,
-      clearcoatRoughness: 0.12,
-      opacity: 1,
-    },
-  },
-  {
-    id: 'matte-clay',
-    label: 'Matte Clay',
-    description: 'Warm product mockups',
-    values: {
-      color: '#b77f63',
-      metalness: 0,
-      roughness: 0.88,
-      clearcoat: 0,
-      transmission: 0,
-      opacity: 1,
-    },
-  },
-  {
-    id: 'neon-polymer',
-    label: 'Neon Polymer',
-    description: 'Glow-focused accent',
-    values: {
-      color: '#1f6cff',
-      emissive: '#00e6ff',
-      emissiveIntensity: 0.82,
-      metalness: 0.38,
-      roughness: 0.32,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.1,
-      transmission: 0,
-      opacity: 1,
-    },
-  },
-];
-
-const checkboxClass =
-  'h-3.5 w-3.5 rounded border border-cyan-100/40 bg-slate-950/55 text-cyan-300 focus:ring-2 focus:ring-cyan-300/35';
-const ONBOARDING_SEEN_KEY = 'materialExplorerOnboardingSeen';
+import { ONBOARDING_SEEN_KEY, MATERIAL_PRESETS, EDITOR_CHECKBOX_CLASS, type MaterialPreset } from './editor/materialPresets';
+import { OnboardingCard } from './editor/OnboardingCard';
+import { QuickPresetsCard } from './editor/QuickPresetsCard';
+import { PreviewControlsCard } from './editor/PreviewControlsCard';
 
 const MaterialEditor: React.FC = () => {
   const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
@@ -327,27 +259,11 @@ const MaterialEditor: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
           <section className="order-1 lg:order-2 space-y-3">
             {showOnboarding && materials.length === 0 && (
-              <motion.div
-                className="section-shell px-4 py-3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div className="text-sm font-semibold text-slate-100">Welcome to Material Explorer</div>
-                <div className="mt-1 text-xs ui-muted">
-                  Start fast with a polished starter kit or jump straight into a blank material.
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button type="button" className="ui-btn ui-btn-primary px-3 py-1.5 text-xs" onClick={addStarterKit}>
-                    Add Starter Kit
-                  </button>
-                  <button type="button" className="ui-btn px-3 py-1.5 text-xs" onClick={startBlankFromOnboarding}>
-                    Start Blank
-                  </button>
-                  <button type="button" className="ui-btn px-3 py-1.5 text-xs" onClick={dismissOnboarding}>
-                    Maybe Later
-                  </button>
-                </div>
-              </motion.div>
+              <OnboardingCard
+                onAddStarterKit={addStarterKit}
+                onStartBlank={startBlankFromOnboarding}
+                onDismiss={dismissOnboarding}
+              />
             )}
             <div className="section-shell px-4 py-3">
               <div className="text-sm font-semibold text-slate-100">Live Material Lab</div>
@@ -376,189 +292,67 @@ const MaterialEditor: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <div className="lg:sticky lg:top-0 z-20 bg-[#0d1428]/80 rounded-xl backdrop-blur-md p-3 section-shell space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-sm font-semibold text-slate-100">Preview Controls</div>
-                  <div className="text-xs ui-muted">Model, lighting, and camera behavior.</div>
-                </div>
-              </div>
+            <PreviewControlsCard
+              previewModel={previewModel}
+              previewEnv={previewEnv}
+              autoRotate={autoRotate}
+              previewEnabled={previewEnabled}
+              previewAutoEnable={previewAutoEnable}
+              enableZoom={enableZoom}
+              showGrid={showGrid}
+              showBackground={showBackground}
+              compareOn={compareOn}
+              hasCompareReference={!!compareA}
+              checkboxClass={EDITOR_CHECKBOX_CLASS}
+              onPreviewModelChange={setPreviewModel}
+              onPreviewEnvChange={setPreviewEnv}
+              onAutoRotateChange={setAutoRotate}
+              onPreviewEnabledToggle={handlePreviewEnabledToggle}
+              onPreviewAutoEnableToggle={handlePreviewAutoEnableToggle}
+              onEnableZoomChange={setEnableZoom}
+              onShowGridChange={setShowGrid}
+              onShowBackgroundChange={setShowBackground}
+              onResetView={() => previewRef.current?.resetView()}
+              onSnapshot={() => {
+                void (async () => {
+                  const blob = await previewRef.current?.snapshotPng();
+                  if (!blob) return;
+                  downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
+                })();
+              }}
+              onSetCompareA={() => {
+                setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
+                setCompareOn(true);
+              }}
+              onToggleCompare={() => setCompareOn((value) => !value)}
+              onShareLink={() => {
+                void (async () => {
+                  const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } = material;
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('m', payload);
+                  await copyShareLink(url.toString(), 'Share link copied (no textures).');
+                })();
+              }}
+              onShareWithTextures={() => {
+                void (async () => {
+                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('m', payload);
 
-              <div className="flex items-center gap-2">
-                <Dropdown
-                  value={previewModel}
-                  onChange={setPreviewModel}
-                  options={PREVIEW_MODEL_OPTIONS}
-                />
-                <Dropdown
-                  value={previewEnv}
-                  onChange={setPreviewEnv}
-                  options={PREVIEW_ENV_OPTIONS}
-                />
-              </div>
+                  if (url.toString().length > 8000) {
+                    window.alert(
+                      'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
+                    );
+                    return;
+                  }
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-200/85 select-none">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={autoRotate}
-                    onChange={(e) => setAutoRotate(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Auto-rotate
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={previewEnabled}
-                    onChange={(e) => handlePreviewEnabledToggle(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  3D
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={previewAutoEnable}
-                    onChange={(e) => handlePreviewAutoEnableToggle(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Always on startup
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={enableZoom}
-                    onChange={(e) => setEnableZoom(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Zoom
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showGrid}
-                    onChange={(e) => setShowGrid(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Grid
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showBackground}
-                    onChange={(e) => setShowBackground(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Background
-                </label>
-              </div>
+                  await copyShareLink(url.toString(), 'Share link copied (with textures).');
+                })();
+              }}
+            />
 
-              {!previewEnabled && (
-                <div className="text-[11px] text-slate-200/70 leading-relaxed">
-                  3D preview is disabled to keep first load fast. Enable it when you need interactive lighting or snapshots.
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  disabled={!previewEnabled}
-                  onClick={() => previewRef.current?.resetView()}
-                >
-                  Reset view
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  disabled={!previewEnabled}
-                  onClick={async () => {
-                    const blob = await previewRef.current?.snapshotPng();
-                    if (!blob) return;
-                    downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
-                  }}
-                >
-                  Snapshot (PNG)
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  onClick={() => {
-                    setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
-                    setCompareOn(true);
-                  }}
-                  disabled={compareOn && !!compareA}
-                  title="Capture current settings as A"
-                >
-                  Set A
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  onClick={() => setCompareOn((v) => !v)}
-                  disabled={!compareA}
-                  title="Toggle A/B comparison"
-                >
-                  {compareOn ? 'Hide Compare' : 'Compare'}
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  onClick={async () => {
-                    const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } =
-                      material;
-                    const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('m', payload);
-                    await copyShareLink(url.toString(), 'Share link copied (no textures).');
-                  }}
-                >
-                  Share link
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn px-3 py-2 text-sm"
-                  onClick={async () => {
-                    const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('m', payload);
-
-                    // Safety: URLs beyond ~8k chars can break in some contexts.
-                    if (url.toString().length > 8000) {
-                      window.alert(
-                        'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
-                      );
-                      return;
-                    }
-
-                    await copyShareLink(url.toString(), 'Share link copied (with textures).');
-                  }}
-                >
-                  Share + tex
-                </button>
-              </div>
-            </div>
-
-            <div className="section-shell px-3 py-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-100">Quick Presets</div>
-                <div className="text-[11px] ui-muted">One-click starter looks</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {MATERIAL_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => applyPreset(preset)}
-                    className="ui-chip px-3 py-2 text-left"
-                  >
-                    <div className="text-xs font-semibold text-slate-100">{preset.label}</div>
-                    <div className="text-[11px] ui-muted leading-snug">{preset.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <QuickPresetsCard presets={MATERIAL_PRESETS} onApplyPreset={applyPreset} />
 
             <div className="section-shell px-3 py-3 space-y-3">
               <div className="space-y-2">
@@ -582,7 +376,7 @@ const MaterialEditor: React.FC = () => {
                   type="checkbox"
                   checked={!!material.favorite}
                   onChange={(e) => setMaterial((prev) => ({ ...prev, favorite: e.target.checked }))}
-                  className={checkboxClass}
+                  className={EDITOR_CHECKBOX_CLASS}
                 />
               </div>
 
