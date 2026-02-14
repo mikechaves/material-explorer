@@ -49,7 +49,7 @@ function trimAndClampString(value: string, maxLength: number): string {
   return value.trim().slice(0, maxLength);
 }
 
-function sanitizeMaterialName(input: unknown, fallback: string = DEFAULT_MATERIAL_DRAFT.name): string {
+export function sanitizeMaterialName(input: unknown, fallback: string = DEFAULT_MATERIAL_DRAFT.name): string {
   if (typeof input === 'string') {
     const name = trimAndClampString(input, MATERIAL_NAME_MAX_LENGTH);
     if (name) return name;
@@ -59,7 +59,7 @@ function sanitizeMaterialName(input: unknown, fallback: string = DEFAULT_MATERIA
   return fallbackName || DEFAULT_MATERIAL_DRAFT.name;
 }
 
-function sanitizeMaterialTags(input: unknown, fallback: string[] = []): string[] {
+export function sanitizeMaterialTags(input: unknown, fallback: string[] = []): string[] {
   const source = Array.isArray(input) ? input : fallback;
   const tags: string[] = [];
   const dedupe = new Set<string>();

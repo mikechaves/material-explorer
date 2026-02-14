@@ -1,5 +1,6 @@
 import React from 'react';
 import type { MaterialDraft } from '../../types/material';
+import { MATERIAL_NAME_MAX_LENGTH } from '../../utils/material';
 
 type MaterialIdentityCardProps = {
   material: MaterialDraft;
@@ -32,6 +33,7 @@ export function MaterialIdentityCard({
           value={material.name ?? ''}
           onChange={onNameChange}
           placeholder="Untitled"
+          maxLength={MATERIAL_NAME_MAX_LENGTH}
           className="ui-input px-3 py-2 text-sm"
         />
       </div>

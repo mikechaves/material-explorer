@@ -11,6 +11,8 @@ import {
   coerceMaterialDraft,
   DEFAULT_MATERIAL_DRAFT,
   downloadBlob,
+  sanitizeMaterialName,
+  sanitizeMaterialTags,
 } from '../utils/material';
 import { type PreviewModel, type PreviewEnv } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
@@ -361,7 +363,7 @@ const MaterialEditor: React.FC = () => {
     const { name, value } = e.target;
     const field = name as keyof MaterialDraft;
     const newValue = (() => {
-      if (name === 'name') return value;
+      if (name === 'name') return sanitizeMaterialName(value);
       if (name === 'color') return value;
       if (name === 'emissive') return value;
       const parsed = Number.parseFloat(value);
@@ -397,12 +399,9 @@ const MaterialEditor: React.FC = () => {
 
   const handleTagsInputChange = React.useCallback(
     (value: string) => {
-      const tags = value
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean);
+      const tags = sanitizeMaterialTags(value.split(','));
       setMaterialWithHistory((prev) => {
-        if ((prev.tags ?? []).join('|') === tags.join('|')) return prev;
+        if (areStringArraysEqual(prev.tags, tags)) return prev;
         return { ...prev, tags };
       });
     },
