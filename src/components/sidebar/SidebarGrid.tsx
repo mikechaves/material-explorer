@@ -9,6 +9,7 @@ type SidebarGridProps = {
   filtered: Material[];
   manualOrder: string[];
   onManualOrderChange: (nextOrder: string[]) => void;
+  cardPreviewEnabled: boolean;
   bulkMode: boolean;
   selectedIds: string[];
   hasActiveFilters: boolean;
@@ -27,6 +28,7 @@ export function SidebarGrid({
   filtered,
   manualOrder,
   onManualOrderChange,
+  cardPreviewEnabled,
   bulkMode,
   selectedIds,
   hasActiveFilters,
@@ -57,6 +59,7 @@ export function SidebarGrid({
     <MaterialCard
       key={material.id}
       material={material}
+      previewEnabled={cardPreviewEnabled}
       bulkMode={bulkMode}
       selected={selectedIds.includes(material.id)}
       onToggleSelected={() => onToggleSelected(material.id)}

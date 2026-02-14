@@ -27,6 +27,7 @@ async function clearMaterials(page: Page) {
   await page.evaluate(() => {
     window.localStorage.clear();
     window.localStorage.setItem('materialExplorerOnboardingSeen', 'true');
+    window.localStorage.setItem('materialExplorerCardPreview3d', 'true');
   });
   await page.reload();
 }
@@ -176,6 +177,16 @@ test('command palette shows recently used commands', async ({ page }) => {
 
   const togglePreviewRow = dialog.getByRole('button', { name: /Toggle 3D Preview/ }).first();
   await expect(togglePreviewRow).toContainText('Recent');
+});
+
+test('can toggle 3D thumbnail preference', async ({ page }) => {
+  const disableButton = page.getByRole('button', { name: 'Disable 3D thumbnails' });
+  await disableButton.click();
+
+  await expect(page.getByRole('button', { name: 'Enable 3D thumbnails' })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem('materialExplorerCardPreview3d')))
+    .toBe('false');
 });
 
 test('can toggle compare mode after capturing reference', async ({ page }) => {

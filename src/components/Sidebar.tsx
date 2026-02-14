@@ -22,6 +22,7 @@ interface SidebarProps {
 }
 
 const [minWidth, maxWidth] = [200, 500];
+const CARD_PREVIEW_STORAGE_KEY = 'materialExplorerCardPreview3d';
 
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
 
@@ -49,6 +50,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
+  const [cardPreviewEnabled, setCardPreviewEnabled] = useState<boolean>(() => {
+    const stored = window.localStorage.getItem(CARD_PREVIEW_STORAGE_KEY);
+    if (stored === 'true') return true;
+    if (stored === 'false') return false;
+    return !window.matchMedia('(pointer: coarse)').matches;
+  });
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sort, setSort] = useState<SortMode>('updated');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -190,6 +197,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   useEffect(() => {
     setSelectedTags((prev) => prev.filter((t) => allTags.includes(t)));
   }, [allTags]);
+
+  useEffect(() => {
+    window.localStorage.setItem(CARD_PREVIEW_STORAGE_KEY, cardPreviewEnabled ? 'true' : 'false');
+  }, [cardPreviewEnabled]);
 
   useEffect(() => {
     const ids = materials.map((m) => m.id);
@@ -418,6 +429,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               searchInputRef={searchInputRef}
               query={query}
               onQueryChange={setQuery}
+              cardPreviewEnabled={cardPreviewEnabled}
+              onToggleCardPreview={() => setCardPreviewEnabled((value) => !value)}
               onlyFavorites={onlyFavorites}
               onToggleFavorites={() => setOnlyFavorites((value) => !value)}
               bulkMode={bulkMode}
@@ -453,6 +466,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 setManualOrder(nextOrder);
                 window.localStorage.setItem('materialsOrder', JSON.stringify(nextOrder));
               }}
+              cardPreviewEnabled={cardPreviewEnabled}
               bulkMode={bulkMode}
               selectedIds={selectedIds}
               hasActiveFilters={hasActiveFilters}

@@ -6,6 +6,7 @@ const MaterialPreview = React.lazy(() => import('../MaterialPreview'));
 
 type MaterialCardProps = {
   material: Material;
+  previewEnabled: boolean;
   bulkMode: boolean;
   selected: boolean;
   onToggleSelected: () => void;
@@ -20,6 +21,7 @@ type MaterialCardProps = {
 
 export function MaterialCard({
   material,
+  previewEnabled,
   bulkMode,
   selected,
   onToggleSelected,
@@ -45,7 +47,7 @@ export function MaterialCard({
       onFocusCapture={() => setShowPreview(true)}
     >
       <div className="aspect-square rounded-2xl overflow-hidden bg-slate-950/40 border border-slate-200/10 hover:border-cyan-200/40 transition-all duration-300 shadow-lg">
-        {showPreview ? (
+        {previewEnabled && showPreview ? (
           <React.Suspense fallback={previewFallback}>
             <MaterialPreview
               className="w-full h-full"

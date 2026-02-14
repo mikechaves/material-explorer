@@ -6,6 +6,8 @@ type SidebarFiltersProps = {
   searchInputRef: React.RefObject<HTMLInputElement>;
   query: string;
   onQueryChange: (value: string) => void;
+  cardPreviewEnabled: boolean;
+  onToggleCardPreview: () => void;
   onlyFavorites: boolean;
   onToggleFavorites: () => void;
   bulkMode: boolean;
@@ -22,6 +24,8 @@ export function SidebarFilters({
   searchInputRef,
   query,
   onQueryChange,
+  cardPreviewEnabled,
+  onToggleCardPreview,
   onlyFavorites,
   onToggleFavorites,
   bulkMode,
@@ -53,6 +57,17 @@ export function SidebarFilters({
           aria-pressed={onlyFavorites}
         >
           ★
+        </button>
+        <button
+          type="button"
+          onClick={onToggleCardPreview}
+          className="ui-chip px-3 py-2 text-sm"
+          data-active={cardPreviewEnabled}
+          title={cardPreviewEnabled ? 'Disable 3D thumbnails' : 'Enable 3D thumbnails'}
+          aria-label={cardPreviewEnabled ? 'Disable 3D thumbnails' : 'Enable 3D thumbnails'}
+          aria-pressed={cardPreviewEnabled}
+        >
+          3D
         </button>
         <button
           type="button"
