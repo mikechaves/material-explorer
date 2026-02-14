@@ -34,7 +34,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const {
     materials,
     storageError,
+    syncWarning,
     clearStorageError,
+    clearSyncWarning,
     selectMaterial,
     deleteMaterial,
     deleteMaterials,
@@ -409,6 +411,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       Export Backup JSON
                     </button>
                     <button type="button" onClick={clearStorageError} className="ui-btn px-2.5 py-1 text-xs">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+              {syncWarning && (
+                <div className="mb-4 rounded-xl border border-amber-300/45 bg-amber-500/10 px-3 py-2">
+                  <div className="text-xs text-amber-100/95">{syncWarning}</div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={exportAll} className="ui-btn px-2.5 py-1 text-xs font-semibold">
+                      Export Backup JSON
+                    </button>
+                    <button type="button" onClick={clearSyncWarning} className="ui-btn px-2.5 py-1 text-xs">
                       Dismiss
                     </button>
                   </div>

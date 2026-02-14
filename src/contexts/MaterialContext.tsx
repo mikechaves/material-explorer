@@ -6,7 +6,9 @@ interface MaterialContextType {
   materials: Material[];
   selectedMaterial: Material | null;
   storageError: string | null;
+  syncWarning: string | null;
   clearStorageError: () => void;
+  clearSyncWarning: () => void;
   addMaterial: (material: Material) => void;
   addMaterials: (newMaterials: Material[]) => void;
   updateMaterial: (materialToUpdate: Material) => void;
@@ -20,11 +22,13 @@ interface MaterialContextType {
 const MaterialContext = createContext<MaterialContextType | undefined>(undefined);
 const STORAGE_ERROR_MESSAGE =
   'Could not save materials locally. Your browser storage may be full. Export JSON backup before continuing.';
+const SYNC_WARNING_MESSAGE = 'Remote sync is unavailable. Changes are still saved locally on this device.';
 
 export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [materials, setMaterials] = useState<Material[]>(() => materialRepository.loadAll());
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [syncWarning, setSyncWarning] = useState<string | null>(null);
   const hasLocalMutationsRef = useRef(false);
   const persistSequenceRef = useRef(0);
 
@@ -49,9 +53,18 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const persistMaterials = (updated: Material[]) => {
     hasLocalMutationsRef.current = true;
     const persistSequence = ++persistSequenceRef.current;
-    void materialRepository.saveAll(updated).then((ok) => {
+    void materialRepository.saveAll(updated).then((result) => {
       if (persistSequence !== persistSequenceRef.current) return;
-      setStorageError(ok ? null : STORAGE_ERROR_MESSAGE);
+      setStorageError(result.ok ? null : STORAGE_ERROR_MESSAGE);
+      if (!result.ok) {
+        setSyncWarning(null);
+        return;
+      }
+      if (result.remoteSynced === false && materialRepository.source === 'http+local-fallback') {
+        setSyncWarning(SYNC_WARNING_MESSAGE);
+        return;
+      }
+      setSyncWarning(null);
     });
   };
 
@@ -109,6 +122,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteMaterial = removeMaterial;
   const clearStorageError = () => setStorageError(null);
+  const clearSyncWarning = () => setSyncWarning(null);
   const startNewMaterial = () => setSelectedMaterial(null);
 
   return (
@@ -117,7 +131,9 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         materials,
         selectedMaterial,
         storageError,
+        syncWarning,
         clearStorageError,
+        clearSyncWarning,
         addMaterial,
         addMaterials,
         updateMaterial,

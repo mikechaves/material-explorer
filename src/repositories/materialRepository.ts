@@ -2,9 +2,14 @@ import type { Material } from '../types/material';
 import { loadMaterials, saveMaterials } from '../utils/storage';
 import { normalizeMaterial } from '../utils/material';
 
+export type MaterialSaveResult = {
+  ok: boolean;
+  remoteSynced: boolean | null;
+};
+
 export interface MaterialRepository {
   loadAll: () => Material[];
-  saveAll: (materials: Material[]) => Promise<boolean>;
+  saveAll: (materials: Material[]) => Promise<MaterialSaveResult>;
   loadFromRemote?: () => Promise<Material[] | null>;
   source: 'local' | 'http+local-fallback';
 }
@@ -12,7 +17,7 @@ export interface MaterialRepository {
 export const localMaterialRepository: MaterialRepository = {
   source: 'local',
   loadAll: loadMaterials,
-  saveAll: async (materials) => saveMaterials(materials),
+  saveAll: async (materials) => ({ ok: saveMaterials(materials), remoteSynced: null }),
 };
 
 type CreateMaterialRepositoryOptions = {
@@ -65,7 +70,7 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
     loadAll: loadMaterials,
     saveAll: async (materials) => {
       const localSaved = saveMaterials(materials);
-      if (!localSaved) return false;
+      if (!localSaved) return { ok: false, remoteSynced: false };
 
       try {
         const response = await fetchWithTimeout(fetchImpl, materialsUrl, {
@@ -75,12 +80,13 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
         });
         if (!response.ok) {
           console.warn(`Remote material sync failed with status ${response.status}; using local fallback.`);
+          return { ok: true, remoteSynced: false };
         }
+        return { ok: true, remoteSynced: true };
       } catch (error) {
         console.warn('Remote material sync failed; using local fallback.', error);
+        return { ok: true, remoteSynced: false };
       }
-
-      return true;
     },
     loadFromRemote: async () => {
       try {

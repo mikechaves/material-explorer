@@ -95,6 +95,7 @@ When set, the app uses:
 - `PUT /materials` to persist updates
 
 If the API is unavailable, the app continues using local storage.
+The sidebar will show a non-blocking sync warning when remote sync fails while local persistence still succeeds.
 
 ## Usage
 

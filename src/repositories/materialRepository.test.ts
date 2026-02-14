@@ -48,8 +48,8 @@ describe('materialRepository', () => {
 
     expect(repository.source).toBe('local');
     expect(repository.loadAll()).toEqual(localMaterials);
-    const ok = await repository.saveAll(localMaterials);
-    expect(ok).toBe(true);
+    const result = await repository.saveAll(localMaterials);
+    expect(result).toEqual({ ok: true, remoteSynced: null });
     expect(saveMaterialsMock).toHaveBeenCalledWith(localMaterials);
   });
 
@@ -77,9 +77,9 @@ describe('materialRepository', () => {
     const materials = [makeMaterial({ id: 'fallback-1' })];
     const repository = createMaterialRepository({ apiUrl: 'https://api.example.com', fetchImpl });
 
-    const ok = await repository.saveAll(materials);
+    const result = await repository.saveAll(materials);
 
-    expect(ok).toBe(true);
+    expect(result).toEqual({ ok: true, remoteSynced: false });
     expect(saveMaterialsMock).toHaveBeenCalledWith(materials);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
@@ -90,9 +90,9 @@ describe('materialRepository', () => {
     const materials = [makeMaterial({ id: 'local-fail-1' })];
     const repository = createMaterialRepository({ apiUrl: 'https://api.example.com', fetchImpl });
 
-    const ok = await repository.saveAll(materials);
+    const result = await repository.saveAll(materials);
 
-    expect(ok).toBe(false);
+    expect(result).toEqual({ ok: false, remoteSynced: false });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
