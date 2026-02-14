@@ -9,6 +9,77 @@ import { Dropdown, Control, type PreviewModel, type PreviewEnv, PREVIEW_MODEL_OP
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
 
+type MaterialPreset = {
+  id: string;
+  label: string;
+  description: string;
+  values: Partial<MaterialDraft>;
+};
+
+const MATERIAL_PRESETS: MaterialPreset[] = [
+  {
+    id: 'brushed-metal',
+    label: 'Brushed Metal',
+    description: 'Reflective and premium',
+    values: {
+      color: '#9ca7bc',
+      metalness: 0.96,
+      roughness: 0.22,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.08,
+      transmission: 0,
+      opacity: 1,
+    },
+  },
+  {
+    id: 'frosted-glass',
+    label: 'Frosted Glass',
+    description: 'Soft translucent look',
+    values: {
+      color: '#dcefff',
+      metalness: 0,
+      roughness: 0.16,
+      transmission: 0.95,
+      ior: 1.45,
+      clearcoat: 0.22,
+      clearcoatRoughness: 0.12,
+      opacity: 1,
+    },
+  },
+  {
+    id: 'matte-clay',
+    label: 'Matte Clay',
+    description: 'Warm product mockups',
+    values: {
+      color: '#b77f63',
+      metalness: 0,
+      roughness: 0.88,
+      clearcoat: 0,
+      transmission: 0,
+      opacity: 1,
+    },
+  },
+  {
+    id: 'neon-polymer',
+    label: 'Neon Polymer',
+    description: 'Glow-focused accent',
+    values: {
+      color: '#1f6cff',
+      emissive: '#00e6ff',
+      emissiveIntensity: 0.82,
+      metalness: 0.38,
+      roughness: 0.32,
+      clearcoat: 0.4,
+      clearcoatRoughness: 0.1,
+      transmission: 0,
+      opacity: 1,
+    },
+  },
+];
+
+const checkboxClass =
+  'h-3.5 w-3.5 rounded border border-cyan-100/40 bg-slate-950/55 text-cyan-300 focus:ring-2 focus:ring-cyan-300/35';
+
 const MaterialEditor: React.FC = () => {
   const { addMaterial, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle>(null);
@@ -154,358 +225,398 @@ const MaterialEditor: React.FC = () => {
     setMaterial((prev) => ({ ...prev, [key]: dataUrl }));
   };
 
+  const applyPreset = (preset: MaterialPreset) => {
+    setMaterial((prev) => ({
+      ...prev,
+      ...preset.values,
+      name: prev.name?.trim() ? prev.name : preset.label,
+      updatedAt: Date.now(),
+    }));
+  };
+
+  const saveMaterial = () => {
+    const now = Date.now();
+    const full = createMaterialFromDraft({
+      ...material,
+      updatedAt: now,
+      ...(material.id ? {} : { createdAt: now }),
+    });
+
+    if (material.id) updateMaterial(full);
+    else addMaterial(full);
+  };
+
   return (
     <div className="w-full h-full overflow-y-auto">
-      <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8 max-w-6xl mx-auto p-4 sm:p-6">
-        {/* Preview first on mobile, right on desktop */}
-        <div className="order-1 lg:order-2">
-          <PreviewCompare
-            compareOn={compareOn}
-            compareA={compareA}
-            material={material}
-            previewRef={previewRef}
-            previewEnabled={previewEnabled}
-            previewAutoEnable={previewAutoEnable}
-            onEnablePreview={enablePreviewNow}
-            onAlwaysEnablePreview={enablePreviewAlways}
-            previewEnv={previewEnv}
-            previewModel={previewModel}
-            autoRotate={autoRotate}
-            enableZoom={enableZoom}
-            showGrid={showGrid}
-            showBackground={showBackground}
-          />
-        </div>
-
-        {/* Controls */}
-        <motion.div
-          className="order-2 lg:order-1 w-full lg:w-[420px] bg-black/60 backdrop-blur-sm rounded-xl px-4 py-3 lg:max-h-[calc(100vh-48px)] lg:overflow-y-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="lg:sticky lg:top-0 z-20 bg-black/60 backdrop-blur-sm pt-1 pb-3">
-            <div className="space-y-3">
-            <div className="text-sm text-white/90 font-medium">Preview</div>
-            <div className="flex items-center gap-2">
-              <Dropdown
-                value={previewModel}
-                onChange={setPreviewModel}
-                options={PREVIEW_MODEL_OPTIONS}
-              />
-              <Dropdown
-                value={previewEnv}
-                onChange={setPreviewEnv}
-                options={PREVIEW_ENV_OPTIONS}
-              />
+      <div className="max-w-[1240px] mx-auto p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
+          <section className="order-1 lg:order-2 space-y-3">
+            <div className="section-shell px-4 py-3">
+              <div className="text-sm font-semibold text-slate-100">Live Material Lab</div>
+              <div className="text-xs ui-muted">Tune values in real time and compare before committing changes.</div>
             </div>
-            <label className="flex items-center gap-2 text-xs text-white/80 select-none">
-              <input
-                type="checkbox"
-                checked={autoRotate}
-                onChange={(e) => setAutoRotate(e.target.checked)}
-              />
-              Auto-rotate
-            </label>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs text-white/80 select-none">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={previewEnabled}
-                  onChange={(e) => handlePreviewEnabledToggle(e.target.checked)}
-                />
-                3D
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={previewAutoEnable}
-                  onChange={(e) => handlePreviewAutoEnableToggle(e.target.checked)}
-                />
-                Always on startup
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={enableZoom}
-                  onChange={(e) => setEnableZoom(e.target.checked)}
-                />
-                Zoom
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showGrid}
-                  onChange={(e) => setShowGrid(e.target.checked)}
-                />
-                Grid
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showBackground}
-                  onChange={(e) => setShowBackground(e.target.checked)}
-                />
-                Background
-              </label>
-            </div>
-            {!previewEnabled && (
-              <div className="text-[11px] text-white/65 leading-relaxed">
-                3D preview is disabled to keep first load fast. Enable it when you need interactive lighting or snapshots.
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                disabled={!previewEnabled}
-                onClick={() => previewRef.current?.resetView()}
-              >
-                Reset view
-              </button>
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                disabled={!previewEnabled}
-                onClick={async () => {
-                  const blob = await previewRef.current?.snapshotPng();
-                  if (!blob) return;
-                  downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
-                }}
-              >
-                Snapshot (PNG)
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                onClick={() => {
-                  setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
-                  setCompareOn(true);
-                }}
-                disabled={compareOn && !!compareA}
-                title="Capture current settings as A"
-              >
-                Set A
-              </button>
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                onClick={() => setCompareOn((v) => !v)}
-                disabled={!compareA}
-                title="Toggle A/B comparison"
-              >
-                {compareOn ? 'Hide Compare' : 'Compare'}
-              </button>
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                onClick={async () => {
-                  const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } =
-                    material;
-                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('m', payload);
-                  await copyShareLink(url.toString(), 'Share link copied (no textures).');
-                }}
-              >
-                Share link
-              </button>
-              <button
-                type="button"
-                className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
-                onClick={async () => {
-                  const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('m', payload);
-
-                  // Safety: URLs beyond ~8k chars can break in some contexts.
-                  if (url.toString().length > 8000) {
-                    window.alert(
-                      'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
-                    );
-                    return;
-                  }
-
-                  await copyShareLink(url.toString(), 'Share link copied (with textures).');
-                }}
-              >
-                Share + tex
-              </button>
-            </div>
-          </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-white/90">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={material.name ?? ''}
-              onChange={handleChange}
-              placeholder="Untitled"
-              className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                         focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+            <PreviewCompare
+              compareOn={compareOn}
+              compareA={compareA}
+              material={material}
+              previewRef={previewRef}
+              previewEnabled={previewEnabled}
+              previewAutoEnable={previewAutoEnable}
+              onEnablePreview={enablePreviewNow}
+              onAlwaysEnablePreview={enablePreviewAlways}
+              previewEnv={previewEnv}
+              previewModel={previewModel}
+              autoRotate={autoRotate}
+              enableZoom={enableZoom}
+              showGrid={showGrid}
+              showBackground={showBackground}
             />
-          </div>
+          </section>
 
-          <div className="flex items-center justify-between gap-3">
-            <label className="text-sm text-white/90">Favorite</label>
-            <input
-              type="checkbox"
-              checked={!!material.favorite}
-              onChange={(e) => setMaterial((prev) => ({ ...prev, favorite: e.target.checked }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-white/90">Tags</label>
-            <input
-              type="text"
-              value={(material.tags ?? []).join(', ')}
-              onChange={(e) => {
-                const tags = e.target.value
-                  .split(',')
-                  .map((t) => t.trim())
-                  .filter(Boolean);
-                setMaterial((prev) => ({ ...prev, tags }));
-              }}
-              placeholder="e.g. glass, carpaint, fabric"
-              className="w-full px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                         focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-sm text-white/90">Material Color</label>
-            <div className="flex items-center gap-4">
-              <motion.div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                <input
-                  type="color"
-                  name="color"
-                  value={material.color}
-                  onChange={handleChange}
-                  className="absolute inset-0 w-full h-full cursor-pointer border-0"
-                />
-              </motion.div>
-              <div 
-                className="flex-1 h-12 rounded-lg"
-                style={{ backgroundColor: material.color }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Control 
-              name="metalness" 
-              value={material.metalness} 
-              label="Metalness" 
-              onChange={handleChange}
-            />
-            <Control 
-              name="roughness" 
-              value={material.roughness} 
-              label="Roughness" 
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <label className="text-sm text-white/90 font-medium">Emissive</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  name="emissive"
-                  value={material.emissive ?? '#000000'}
-                  onChange={handleChange}
-                  className="w-10 h-10 cursor-pointer border-0 bg-transparent"
-                />
-                <Control
-                  name="emissiveIntensity"
-                  value={material.emissiveIntensity}
-                  label="Intensity"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Control
-              name="clearcoat"
-              value={material.clearcoat}
-              label="Clearcoat"
-              onChange={handleChange}
-            />
-            <Control
-              name="clearcoatRoughness"
-              value={material.clearcoatRoughness}
-              label="Clearcoat Roughness"
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <Control
-              name="transmission"
-              value={material.transmission}
-              label="Transmission"
-              onChange={handleChange}
-            />
-            <Control
-              name="ior"
-              value={material.ior}
-              label="IOR"
-              min={1}
-              max={2.5}
-              step={0.01}
-              onChange={handleChange}
-            />
-            <Control
-              name="opacity"
-              value={material.opacity}
-              label="Opacity"
-              onChange={handleChange}
-            />
-          </div>
-
-          <TextureControls material={material} onChange={handleChange} onUploadMap={uploadMap} setMaterial={setMaterial} />
-
-          <motion.button
-            className="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-lg
-                     text-white text-sm font-medium transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              const now = Date.now();
-              const full = createMaterialFromDraft({
-                ...material,
-                updatedAt: now,
-                ...(material.id ? {} : { createdAt: now }),
-              });
-
-              if (material.id) updateMaterial(full);
-              else addMaterial(full);
-            }}
+          <motion.section
+            className="order-2 lg:order-1 w-full lg:w-[420px] glass-panel rounded-2xl px-4 py-3 lg:max-h-[calc(100vh-48px)] lg:overflow-y-auto space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
-            {material.id ? 'Update Material' : 'Save Material'}
-          </motion.button>
+            <div className="lg:sticky lg:top-0 z-20 bg-[#0d1428]/80 rounded-xl backdrop-blur-md p-3 section-shell space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-slate-100">Preview Controls</div>
+                  <div className="text-xs ui-muted">Model, lighting, and camera behavior.</div>
+                </div>
+              </div>
 
-          {material.id && (
+              <div className="flex items-center gap-2">
+                <Dropdown
+                  value={previewModel}
+                  onChange={setPreviewModel}
+                  options={PREVIEW_MODEL_OPTIONS}
+                />
+                <Dropdown
+                  value={previewEnv}
+                  onChange={setPreviewEnv}
+                  options={PREVIEW_ENV_OPTIONS}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-200/85 select-none">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoRotate}
+                    onChange={(e) => setAutoRotate(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  Auto-rotate
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={previewEnabled}
+                    onChange={(e) => handlePreviewEnabledToggle(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  3D
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={previewAutoEnable}
+                    onChange={(e) => handlePreviewAutoEnableToggle(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  Always on startup
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={enableZoom}
+                    onChange={(e) => setEnableZoom(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  Zoom
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showGrid}
+                    onChange={(e) => setShowGrid(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  Grid
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showBackground}
+                    onChange={(e) => setShowBackground(e.target.checked)}
+                    className={checkboxClass}
+                  />
+                  Background
+                </label>
+              </div>
+
+              {!previewEnabled && (
+                <div className="text-[11px] text-slate-200/70 leading-relaxed">
+                  3D preview is disabled to keep first load fast. Enable it when you need interactive lighting or snapshots.
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  disabled={!previewEnabled}
+                  onClick={() => previewRef.current?.resetView()}
+                >
+                  Reset view
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  disabled={!previewEnabled}
+                  onClick={async () => {
+                    const blob = await previewRef.current?.snapshotPng();
+                    if (!blob) return;
+                    downloadBlob(`${(material.name || 'material').trim() || 'material'}.png`, blob);
+                  }}
+                >
+                  Snapshot (PNG)
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  onClick={() => {
+                    setCompareA(JSON.parse(JSON.stringify(material)) as MaterialDraft);
+                    setCompareOn(true);
+                  }}
+                  disabled={compareOn && !!compareA}
+                  title="Capture current settings as A"
+                >
+                  Set A
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  onClick={() => setCompareOn((v) => !v)}
+                  disabled={!compareA}
+                  title="Toggle A/B comparison"
+                >
+                  {compareOn ? 'Hide Compare' : 'Compare'}
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  onClick={async () => {
+                    const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } =
+                      material;
+                    const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('m', payload);
+                    await copyShareLink(url.toString(), 'Share link copied (no textures).');
+                  }}
+                >
+                  Share link
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn px-3 py-2 text-sm"
+                  onClick={async () => {
+                    const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('m', payload);
+
+                    // Safety: URLs beyond ~8k chars can break in some contexts.
+                    if (url.toString().length > 8000) {
+                      window.alert(
+                        'That share link is too large (textures make URLs huge). Use Export JSON for sharing textures instead.'
+                      );
+                      return;
+                    }
+
+                    await copyShareLink(url.toString(), 'Share link copied (with textures).');
+                  }}
+                >
+                  Share + tex
+                </button>
+              </div>
+            </div>
+
+            <div className="section-shell px-3 py-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-100">Quick Presets</div>
+                <div className="text-[11px] ui-muted">One-click starter looks</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {MATERIAL_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className="ui-chip px-3 py-2 text-left"
+                  >
+                    <div className="text-xs font-semibold text-slate-100">{preset.label}</div>
+                    <div className="text-[11px] ui-muted leading-snug">{preset.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="section-shell px-3 py-3 space-y-3">
+              <div className="space-y-2">
+                <label className="ui-label" htmlFor="material-name">Name</label>
+                <input
+                  id="material-name"
+                  type="text"
+                  name="name"
+                  value={material.name ?? ''}
+                  onChange={handleChange}
+                  placeholder="Untitled"
+                  className="ui-input px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <label className="ui-label" htmlFor="material-favorite">Favorite</label>
+                <input
+                  id="material-favorite"
+                  type="checkbox"
+                  checked={!!material.favorite}
+                  onChange={(e) => setMaterial((prev) => ({ ...prev, favorite: e.target.checked }))}
+                  className={checkboxClass}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="ui-label" htmlFor="material-tags">Tags</label>
+                <input
+                  id="material-tags"
+                  type="text"
+                  value={(material.tags ?? []).join(', ')}
+                  onChange={(e) => {
+                    const tags = e.target.value
+                      .split(',')
+                      .map((t) => t.trim())
+                      .filter(Boolean);
+                    setMaterial((prev) => ({ ...prev, tags }));
+                  }}
+                  placeholder="e.g. glass, carpaint, fabric"
+                  className="ui-input px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="section-shell px-3 py-3 space-y-4">
+              <label className="ui-label">Material Color</label>
+              <div className="flex items-center gap-4">
+                <motion.div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-100/20">
+                  <input
+                    type="color"
+                    name="color"
+                    value={material.color}
+                    onChange={handleChange}
+                    aria-label="Material color"
+                    className="absolute inset-0 w-full h-full cursor-pointer border-0"
+                  />
+                </motion.div>
+                <div
+                  className="flex-1 h-12 rounded-xl border border-slate-100/20"
+                  style={{ backgroundColor: material.color }}
+                />
+              </div>
+              <Control
+                name="metalness"
+                value={material.metalness}
+                label="Metalness"
+                onChange={handleChange}
+              />
+              <Control
+                name="roughness"
+                value={material.roughness}
+                label="Roughness"
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="section-shell px-3 py-3 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <label className="ui-label">Emissive</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    name="emissive"
+                    value={material.emissive ?? '#000000'}
+                    onChange={handleChange}
+                    aria-label="Emissive color"
+                    className="w-10 h-10 cursor-pointer border border-slate-100/20 rounded-md bg-transparent"
+                  />
+                  <Control
+                    name="emissiveIntensity"
+                    value={material.emissiveIntensity}
+                    label="Intensity"
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <Control
+                name="clearcoat"
+                value={material.clearcoat}
+                label="Clearcoat"
+                onChange={handleChange}
+              />
+              <Control
+                name="clearcoatRoughness"
+                value={material.clearcoatRoughness}
+                label="Clearcoat Roughness"
+                onChange={handleChange}
+              />
+              <Control
+                name="transmission"
+                value={material.transmission}
+                label="Transmission"
+                onChange={handleChange}
+              />
+              <Control
+                name="ior"
+                value={material.ior}
+                label="IOR"
+                min={1}
+                max={2.5}
+                step={0.01}
+                onChange={handleChange}
+              />
+              <Control
+                name="opacity"
+                value={material.opacity}
+                label="Opacity"
+                onChange={handleChange}
+              />
+            </div>
+
+            <TextureControls material={material} onChange={handleChange} onUploadMap={uploadMap} setMaterial={setMaterial} />
+
             <motion.button
-              className="w-full py-2 bg-white/10 hover:bg-white/15 rounded-lg
-                       text-white text-sm font-medium transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => startNewMaterial()}
+              className="ui-btn ui-btn-primary w-full py-2.5 text-sm"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={saveMaterial}
             >
-              New Material
+              {material.id ? 'Update Material' : 'Save Material'}
             </motion.button>
-          )}
-        </motion.div>
+
+            {material.id && (
+              <motion.button
+                className="ui-btn w-full py-2.5 text-sm"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => startNewMaterial()}
+              >
+                New Material
+              </motion.button>
+            )}
+          </motion.section>
+        </div>
       </div>
     </div>
   );

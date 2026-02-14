@@ -539,9 +539,9 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className={`relative w-full h-full ${className} rounded-xl overflow-hidden`}
+      className={`relative w-full h-full ${className} rounded-2xl overflow-hidden`}
     >
-      <PreviewErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-b from-gray-900/60 to-black/80" aria-hidden="true" />}>
+      <PreviewErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-b from-slate-900/60 to-slate-950/90" aria-hidden="true" />}>
         <Canvas
           frameloop={autoRotate || captureBufferEnabled ? 'always' : 'demand'}
           dpr={[1, 2]}
@@ -550,10 +550,10 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
             glRef.current = gl;
           }}
           camera={{ position: [2.5, 1.5, 2.5], fov: 45 }}
-          className="bg-gradient-to-b from-gray-900/50 to-black/50"
+          className="bg-gradient-to-b from-slate-900/40 via-slate-950/30 to-slate-950/60"
         >
-          {showBackground && <color attach="background" args={['#000000']} />}
-          {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
+          {showBackground && <color attach="background" args={['#050914']} />}
+          {showBackground && <fog attach="fog" args={['#050914', 10, 20]} />}
           <Scene
             key={frameNonce}
             color={color}
@@ -588,7 +588,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       </PreviewErrorBoundary>
       
       {/* Optional overlay for better visual integration */}
-      <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-t from-black/20 to-transparent" />
+      <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-cyan-100/5" />
     </motion.div>
   );
 });

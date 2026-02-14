@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
-import './styles/App.css';
 
 const MaterialEditor = React.lazy(() => import('./components/MaterialEditor'));
 const Sidebar = React.lazy(() => import('./components/Sidebar'));
@@ -33,7 +32,9 @@ function App() {
 
   return (
     <MaterialProvider>
-      <div className="relative w-screen h-screen overflow-hidden bg-black">
+      <div className="app-shell relative w-screen h-screen overflow-hidden">
+        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-blue-300/20 blur-3xl" aria-hidden="true" />
         <Suspense
           fallback={
             <div className="fixed top-0 left-0 h-full z-20" style={{ width: isMobile ? 'min(85vw, 360px)' : 64 }} />
@@ -52,7 +53,7 @@ function App() {
             type="button"
             aria-label="Open sidebar"
             onClick={() => setIsSidebarCollapsed(false)}
-            className="absolute top-4 left-4 z-20 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm backdrop-blur"
+            className="ui-btn absolute top-4 left-4 z-20 px-3 py-2 text-sm backdrop-blur-md"
           >
             Menu
           </button>

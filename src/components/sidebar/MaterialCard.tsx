@@ -44,7 +44,7 @@ export function MaterialCard({
       onPointerEnter={() => setShowPreview(true)}
       onFocusCapture={() => setShowPreview(true)}
     >
-      <div className="aspect-square rounded-xl overflow-hidden bg-black/30 border border-white/5 hover:border-purple-500/30 transition-all duration-300">
+      <div className="aspect-square rounded-2xl overflow-hidden bg-slate-950/40 border border-slate-200/10 hover:border-cyan-200/40 transition-all duration-300 shadow-lg">
         {showPreview ? (
           <React.Suspense fallback={previewFallback}>
             <MaterialPreview
@@ -82,7 +82,7 @@ export function MaterialCard({
             type="button"
             onClick={onToggleSelected}
             className={`absolute top-2 right-2 w-7 h-7 rounded-md border flex items-center justify-center ${
-              selected ? 'bg-purple-600/70 border-purple-500/40' : 'bg-black/40 border-white/10'
+              selected ? 'bg-cyan-400/55 border-cyan-200/70 text-slate-950' : 'bg-slate-950/55 border-slate-100/20 text-slate-100'
             }`}
             aria-label="Select material"
           >
@@ -90,13 +90,13 @@ export function MaterialCard({
           </button>
         )}
 
-        <div className="absolute inset-0 flex items-end justify-center pb-3 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        <div className="absolute inset-0 flex items-end justify-center pb-3 bg-gradient-to-t from-slate-950/85 via-slate-950/45 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <div className="flex flex-wrap gap-2 justify-center px-2">
             {reorderable && (
               <motion.button
                 onPointerDown={(event) => controls.start(event)}
                 aria-label="Drag to reorder"
-                className="px-3 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 rounded-full text-white shadow-lg backdrop-blur-sm cursor-grab"
+                className="ui-btn px-3 py-1 text-xs font-semibold cursor-grab"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -106,7 +106,7 @@ export function MaterialCard({
             <motion.button
               onClick={onEdit}
               aria-label="Edit material"
-              className="px-4 py-1 text-xs font-medium bg-purple-500/90 hover:bg-purple-400 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn ui-btn-primary px-4 py-1 text-xs"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -115,7 +115,7 @@ export function MaterialCard({
             <motion.button
               onClick={onToggleFavorite}
               aria-label="Toggle favorite"
-              className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn px-4 py-1 text-xs font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -124,7 +124,7 @@ export function MaterialCard({
             <motion.button
               onClick={onDuplicate}
               aria-label="Duplicate material"
-              className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn px-4 py-1 text-xs font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -133,7 +133,7 @@ export function MaterialCard({
             <motion.button
               onClick={onExportJson}
               aria-label="Export material JSON"
-              className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn px-4 py-1 text-xs font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -142,7 +142,7 @@ export function MaterialCard({
             <motion.button
               onClick={onExportGlb}
               aria-label="Export material as GLB"
-              className="px-4 py-1 text-xs font-medium bg-white/15 hover:bg-white/20 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn px-4 py-1 text-xs font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -154,7 +154,7 @@ export function MaterialCard({
                 if (ok) onDelete();
               }}
               aria-label="Delete material"
-              className="px-4 py-1 text-xs font-medium bg-red-500/90 hover:bg-red-400 rounded-full text-white shadow-lg backdrop-blur-sm"
+              className="ui-btn ui-btn-danger px-4 py-1 text-xs"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -165,22 +165,22 @@ export function MaterialCard({
 
         <div className="absolute top-2 left-2 right-2 pointer-events-none">
           <div className="flex items-center gap-1">
-            <div className="inline-flex max-w-full px-2 py-0.5 rounded-full bg-black/40 text-[11px] text-white/90 truncate">
+            <div className="inline-flex max-w-full px-2 py-0.5 rounded-full bg-slate-950/55 text-[11px] text-white/90 truncate">
               {material.name || 'Untitled'}
             </div>
-            {material.favorite && <div className="px-2 py-0.5 rounded-full bg-black/40 text-[11px] text-yellow-300">★</div>}
+            {material.favorite && <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[11px] text-amber-200">★</div>}
           </div>
         </div>
 
         {!!material.tags?.length && (
           <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex flex-wrap gap-1">
             {material.tags.slice(0, 3).map((tag) => (
-              <div key={tag} className="px-2 py-0.5 rounded-full bg-black/40 text-[10px] text-white/80 truncate">
+              <div key={tag} className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-100/85 truncate">
                 {tag}
               </div>
             ))}
             {material.tags.length > 3 && (
-              <div className="px-2 py-0.5 rounded-full bg-black/40 text-[10px] text-white/60">+{material.tags.length - 3}</div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-200/70">+{material.tags.length - 3}</div>
             )}
           </div>
         )}

@@ -21,34 +21,51 @@ function uploadFromInput(
   };
 }
 
+function UploadButton({ onChange }: { onChange: (event: React.ChangeEvent<HTMLInputElement>) => void }) {
+  return (
+    <label className="ui-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">
+      Upload
+      <input type="file" accept="image/*" className="hidden" onChange={onChange} />
+    </label>
+  );
+}
+
+const rowClass = 'section-shell px-3 py-3 flex items-start justify-between gap-3';
+const actionClass = 'ui-btn px-3 py-1.5 text-xs font-semibold';
+
 export function TextureControls({ material, onChange, onUploadMap, setMaterial }: TextureControlsProps) {
   return (
-    <div className="space-y-3">
-      <div className="text-sm text-white/90 font-medium">Textures</div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-slate-100">Textures</div>
+          <div className="text-xs ui-muted">Maps, tiling, and advanced material detail.</div>
+        </div>
+      </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Tiling</div>
+      <div className={rowClass}>
+        <div>
+          <div className="text-sm text-slate-100 font-semibold">Tiling</div>
+          <div className="text-xs ui-muted">Repeat controls for UV axis.</div>
+        </div>
         <div className="flex items-center gap-2">
-          <div className="w-36">
+          <div className="w-44">
             <Control name="repeatX" value={material.repeatX ?? 1} label="U" min={0.01} max={20} step={0.01} onChange={onChange} />
           </div>
-          <div className="w-36">
+          <div className="w-44">
             <Control name="repeatY" value={material.repeatY ?? 1} label="V" min={0.01} max={20} step={0.01} onChange={onChange} />
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Base color map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Base color map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('baseColorMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('baseColorMap', onUploadMap)} />
           {material.baseColorMap && (
             <button
               type="button"
-              className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+              className={actionClass}
               onClick={() => setMaterial((prev) => ({ ...prev, baseColorMap: undefined }))}
             >
               Remove
@@ -57,18 +74,15 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Normal map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Normal map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('normalMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('normalMap', onUploadMap)} />
           {material.normalMap && (
             <>
               <button
                 type="button"
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className={actionClass}
                 onClick={() => setMaterial((prev) => ({ ...prev, normalMap: undefined }))}
               >
                 Remove
@@ -89,17 +103,14 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Roughness map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Roughness map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('roughnessMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('roughnessMap', onUploadMap)} />
           {material.roughnessMap && (
             <button
               type="button"
-              className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+              className={actionClass}
               onClick={() => setMaterial((prev) => ({ ...prev, roughnessMap: undefined }))}
             >
               Remove
@@ -108,17 +119,14 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Metalness map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Metalness map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('metalnessMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('metalnessMap', onUploadMap)} />
           {material.metalnessMap && (
             <button
               type="button"
-              className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+              className={actionClass}
               onClick={() => setMaterial((prev) => ({ ...prev, metalnessMap: undefined }))}
             >
               Remove
@@ -127,18 +135,15 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">AO map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">AO map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('aoMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('aoMap', onUploadMap)} />
           {material.aoMap && (
             <>
               <button
                 type="button"
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className={actionClass}
                 onClick={() => setMaterial((prev) => ({ ...prev, aoMap: undefined }))}
               >
                 Remove
@@ -151,17 +156,14 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Emissive map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Emissive map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('emissiveMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('emissiveMap', onUploadMap)} />
           {material.emissiveMap && (
             <button
               type="button"
-              className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+              className={actionClass}
               onClick={() => setMaterial((prev) => ({ ...prev, emissiveMap: undefined }))}
             >
               Remove
@@ -170,18 +172,15 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-white/70">Opacity (alpha) map</div>
+      <div className={rowClass}>
+        <div className="text-sm text-slate-100">Opacity (alpha) map</div>
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full cursor-pointer">
-            Upload
-            <input type="file" accept="image/*" className="hidden" onChange={uploadFromInput('alphaMap', onUploadMap)} />
-          </label>
+          <UploadButton onChange={uploadFromInput('alphaMap', onUploadMap)} />
           {material.alphaMap && (
             <>
               <button
                 type="button"
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className={actionClass}
                 onClick={() => setMaterial((prev) => ({ ...prev, alphaMap: undefined }))}
               >
                 Remove

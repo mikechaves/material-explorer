@@ -23,6 +23,7 @@ type PreviewCompareProps = {
 };
 
 const previewFallback = <div className="w-full h-full rounded-xl bg-white/5 animate-pulse" aria-hidden="true" />;
+const frameClass = 'w-full sm:w-[360px] md:w-[400px] aspect-square relative rounded-2xl overflow-hidden glass-panel';
 
 export function PreviewCompare({
   compareOn,
@@ -76,25 +77,25 @@ export function PreviewCompare({
     return (
       <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
         {compareOn && compareA && (
-          <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+          <div className={frameClass}>
             <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
-            <div className="w-full h-full rounded-xl" style={fallbackSwatchStyle} aria-hidden="true" />
+            <div className="w-full h-full rounded-2xl" style={fallbackSwatchStyle} aria-hidden="true" />
           </div>
         )}
-        <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+        <div className={frameClass}>
           {compareOn && compareA && (
             <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
           )}
-          <div className="w-full h-full rounded-xl relative" style={fallbackSwatchStyle}>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center">
-              <div className="text-xs text-white/80 max-w-[280px] leading-relaxed">
+          <div className="w-full h-full rounded-2xl relative" style={fallbackSwatchStyle}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center bg-slate-950/40 backdrop-blur-[2px]">
+              <div className="text-xs text-white/90 max-w-[280px] leading-relaxed">
                 3D preview is off for faster startup and lower memory use.
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={onEnablePreview}
-                  className="px-4 py-2 rounded-lg bg-black/60 hover:bg-black/70 border border-white/20 text-white text-sm"
+                  className="ui-btn ui-btn-primary px-4 py-2 text-sm"
                 >
                   Enable 3D now
                 </button>
@@ -102,7 +103,7 @@ export function PreviewCompare({
                   <button
                     type="button"
                     onClick={onAlwaysEnablePreview}
-                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm"
+                    className="ui-btn px-4 py-2 text-sm"
                   >
                     Always enable on startup
                   </button>
@@ -119,12 +120,12 @@ export function PreviewCompare({
     return (
       <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
         {compareOn && compareA && (
-          <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+          <div className={frameClass}>
             <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
             {previewFallback}
           </div>
         )}
-        <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+        <div className={frameClass}>
           {compareOn && compareA && (
             <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
           )}
@@ -137,7 +138,7 @@ export function PreviewCompare({
   return (
     <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
       {compareOn && compareA && (
-        <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+        <div className={frameClass}>
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
           <Suspense fallback={previewFallback}>
             <MaterialPreview
@@ -175,7 +176,7 @@ export function PreviewCompare({
         </div>
       )}
 
-      <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+      <div className={frameClass}>
         {compareOn && compareA && (
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
         )}

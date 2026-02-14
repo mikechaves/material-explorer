@@ -283,19 +283,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     }
     return list;
   }, [materials, onlyFavorites, query, sort, selectedTags, manualOrder]);
+  const favoriteCount = useMemo(() => materials.filter((m) => !!m.favorite).length, [materials]);
+  const hasActiveFilters = query.trim().length > 0 || onlyFavorites || selectedTags.length > 0;
 
   return (
     <>
       {isMobile && !isCollapsed && (
         <div
-          className="fixed inset-0 bg-black/50 z-10"
+          className="fixed inset-0 bg-black/55 z-10"
           onClick={() => setIsCollapsed(true)}
           aria-hidden="true"
         />
       )}
       <motion.div 
         ref={sidebarRef}
-        className="fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md text-white z-20 flex shadow-xl"
+        className="fixed top-0 left-0 h-full text-white z-20 flex glass-panel"
         animate={
           isMobile
             ? { x: isCollapsed ? '-100%' : 0, width: 'min(85vw, 360px)' }
@@ -304,12 +306,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         transition={{ type: "spring", bounce: 0, duration: 0.3 }}
       >
       <div className="p-4 w-full overflow-hidden">
-        <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center mb-6`}>
-          <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-4'}`}>
+        <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-start mb-5`}>
+          <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-3'}`}>
             <motion.button 
               onClick={() => setIsCollapsed(!isCollapsed)}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors"
+              className="p-1.5 rounded-xl bg-slate-900/65 hover:bg-slate-800/75 border border-slate-100/15 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -318,17 +320,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 width="48" 
                 height="48" 
                 src={logoUrl}
-                className="rounded-lg"
+                className="rounded-lg shadow-lg"
               />
             </motion.button>
-            
-            {/* Title removed for cleaner header; logo + controls are sufficient */}
+
+            {!isCollapsed && (
+              <div className="leading-tight">
+                <div className="text-sm font-semibold tracking-wide text-slate-100">Material Explorer</div>
+                <div className="text-xs ui-muted">{materials.length} materials • {favoriteCount} favorites</div>
+              </div>
+            )}
           </div>
 
           {!isCollapsed && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <motion.button
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className="ui-btn px-3 py-1.5 text-xs font-semibold"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => startNewMaterial()}
@@ -336,7 +343,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 New
               </motion.button>
               <motion.button
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className="ui-btn px-3 py-1.5 text-xs font-semibold"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => fileInputRef.current?.click()}
@@ -344,7 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 Import
               </motion.button>
               <motion.button
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className="ui-btn px-3 py-1.5 text-xs font-semibold"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={exportAll}
@@ -352,7 +359,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 Export JSON
               </motion.button>
               <motion.button
-                className="px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/15 rounded-full"
+                className="ui-btn px-3 py-1.5 text-xs font-semibold"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => void exportAllGlb()}
@@ -380,15 +387,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name or tags…"
-                className="flex-1 px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                           focus:bg-white/10 border border-white/5 focus:border-purple-500/30"
+                className="ui-input flex-1 px-3 py-2 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setOnlyFavorites((v) => !v)}
-                className={`px-3 py-2 rounded-lg text-sm border ${
-                  onlyFavorites ? 'bg-purple-600/30 border-purple-500/30' : 'bg-white/5 border-white/10'
-                }`}
+                className="ui-chip px-3 py-2 text-sm"
+                data-active={onlyFavorites}
                 title="Toggle favorites"
                 aria-label={onlyFavorites ? 'Show all materials' : 'Show only favorites'}
                 aria-pressed={onlyFavorites}
@@ -398,9 +403,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               <button
                 type="button"
                 onClick={() => setBulkMode((v) => !v)}
-                className={`px-3 py-2 rounded-lg text-sm border ${
-                  bulkMode ? 'bg-purple-600/30 border-purple-500/30' : 'bg-white/5 border-white/10'
-                }`}
+                className="ui-chip px-3 py-2 text-sm"
+                data-active={bulkMode}
                 title="Bulk select"
                 aria-label={bulkMode ? 'Disable bulk selection' : 'Enable bulk selection'}
                 aria-pressed={bulkMode}
@@ -410,22 +414,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
               <Listbox value={sort} onChange={setSort}>
                 <div className="relative">
                   <Listbox.Button
-                    className="px-3 py-2 bg-white/5 rounded-lg text-sm text-white/90 outline-none
-                               focus:bg-white/10 border border-white/5 focus:border-purple-500/30 text-left"
+                    className="ui-input px-3 py-2 text-sm text-left"
                   >
                     {sort === 'updated' ? 'Updated' : sort === 'created' ? 'Created' : sort === 'name' ? 'Name' : 'Manual'}
                   </Listbox.Button>
                   <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
                     <Listbox.Options
-                      className="absolute z-50 mt-2 w-40 max-h-60 overflow-auto rounded-lg bg-gray-950/95 backdrop-blur
-                                 border border-white/10 shadow-xl p-1 text-sm text-white"
+                      className="absolute z-50 mt-2 w-40 max-h-60 overflow-auto rounded-xl glass-panel p-1.5 text-sm text-white"
                     >
                       {SORT_OPTIONS.map((opt) => (
                         <Listbox.Option
                           key={opt.value}
                           value={opt.value}
-                          className={({ active }) =>
-                            classNames('cursor-pointer select-none rounded-md px-3 py-2', active && 'bg-white/10')
+                          className={({ active, selected }) =>
+                            classNames(
+                              'cursor-pointer select-none rounded-lg px-3 py-2 transition-colors',
+                              active && 'bg-white/10',
+                              selected && 'bg-cyan-400/20 text-cyan-100'
+                            )
                           }
                         >
                           {opt.label}
@@ -448,11 +454,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       onClick={() =>
                         setSelectedTags((prev) => (active ? prev.filter((x) => x !== t) : [...prev, t]))
                       }
-                      className={`px-2 py-1 rounded-full text-xs border ${
-                        active
-                          ? 'bg-purple-600/30 border-purple-500/30 text-white'
-                          : 'bg-white/5 border-white/10 text-white/80'
-                      }`}
+                      className="ui-chip px-2.5 py-1 text-xs"
+                      data-active={active}
                     >
                       {t}
                     </button>
@@ -462,7 +465,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                   <button
                     type="button"
                     onClick={() => setSelectedTags([])}
-                    className="px-2 py-1 rounded-full text-xs border bg-white/5 border-white/10 text-white/60"
+                    className="ui-chip px-2.5 py-1 text-xs"
                   >
                     Clear
                   </button>
@@ -471,9 +474,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
             )}
 
             {bulkMode && (
-              <div className="mb-4 p-3 rounded-lg border border-white/10 bg-white/5">
+              <div className="mb-4 p-3 rounded-xl section-shell">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-slate-200/80">
                     Selected: <span className="font-semibold text-white">{selectedIds.length}</span>
                   </div>
                   <div className="flex flex-wrap gap-2 justify-end">
@@ -481,7 +484,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       type="button"
                       disabled={selectedIds.length === 0}
                       onClick={bulkDelete}
-                      className="px-3 py-1 rounded-full text-xs bg-red-500/80 hover:bg-red-500 disabled:opacity-50"
+                      className="ui-btn ui-btn-danger px-3 py-1 text-xs disabled:opacity-50"
                     >
                       Delete
                     </button>
@@ -489,7 +492,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       type="button"
                       disabled={selectedIds.length === 0}
                       onClick={bulkExportJson}
-                      className="px-3 py-1 rounded-full text-xs bg-white/10 hover:bg-white/15 disabled:opacity-50"
+                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
                     >
                       Export JSON
                     </button>
@@ -497,7 +500,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       type="button"
                       disabled={selectedIds.length === 0}
                       onClick={() => void bulkExportGlb()}
-                      className="px-3 py-1 rounded-full text-xs bg-white/10 hover:bg-white/15 disabled:opacity-50"
+                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
                     >
                       Export GLB
                     </button>
@@ -505,7 +508,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       type="button"
                       disabled={selectedIds.length === 0}
                       onClick={() => bulkSetFavorite(true)}
-                      className="px-3 py-1 rounded-full text-xs bg-white/10 hover:bg-white/15 disabled:opacity-50"
+                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
                     >
                       Favorite
                     </button>
@@ -513,7 +516,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                       type="button"
                       disabled={selectedIds.length === 0}
                       onClick={() => bulkSetFavorite(false)}
-                      className="px-3 py-1 rounded-full text-xs bg-white/10 hover:bg-white/15 disabled:opacity-50"
+                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
                     >
                       Unfavorite
                     </button>
@@ -521,7 +524,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 </div>
               </div>
             )}
-          {sort === 'manual' ? (
+          {filtered.length === 0 ? (
+            <div className="section-shell px-4 py-5 text-sm text-slate-200/85">
+              <div className="font-semibold text-slate-100">No materials found</div>
+              <div className="mt-1 text-xs ui-muted">Try changing filters or create a new material from scratch.</div>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setOnlyFavorites(false);
+                    setSelectedTags([]);
+                  }}
+                  className="ui-btn mt-3 px-3 py-1.5 text-xs font-semibold"
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
+          ) : sort === 'manual' ? (
             <Reorder.Group
               axis="y"
               values={manualOrder}
@@ -584,7 +605,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       {/* Resize Handle */}
       {!isMobile && !isCollapsed && (
         <div
-          className="w-1 cursor-ew-resize bg-transparent hover:bg-purple-500/20 
+          className="w-1 cursor-ew-resize bg-transparent hover:bg-cyan-300/25 
                      transition-colors duration-200 relative"
           role="separator"
           aria-orientation="vertical"
@@ -614,7 +635,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           }}
         >
           <motion.div
-            className="absolute inset-y-0 -right-0.5 w-1 bg-purple-500/50"
+            className="absolute inset-y-0 -right-0.5 w-1 bg-cyan-300/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: isDragging ? 1 : 0 }}
           />
