@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-type StoredMaterial = { name?: string };
+type StoredMaterial = { name?: string; tags?: string[] };
 
 function makeSeedMaterial(id: string, name: string) {
   const now = Date.now();
@@ -57,6 +57,45 @@ test('can create a material', async ({ page }) => {
       return materials[0]?.name;
     })
     .toBe('Smoke Material');
+});
+
+test('enforces material name max length before save', async ({ page }) => {
+  const overlongName = 'N'.repeat(180);
+  const expected = 'N'.repeat(120);
+  const nameInput = page.locator('input[name="name"]');
+
+  await nameInput.fill(overlongName);
+  await expect(nameInput).toHaveValue(expected);
+
+  await page.getByRole('button', { name: 'Save Material' }).click();
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
+      return materials[0]?.name;
+    })
+    .toBe(expected);
+});
+
+test('sanitizes and limits tags before save', async ({ page }) => {
+  const overlongTag = 't'.repeat(70);
+  const tagsInput = [overlongTag, 'dup', 'dup', ...Array.from({ length: 40 }, (_, index) => `tag-${index}`)].join(', ');
+
+  await page.locator('#material-tags').fill(tagsInput);
+  await page.getByRole('button', { name: 'Save Material' }).click();
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
+      const tags = materials[0]?.tags ?? [];
+      const duplicateCount = tags.filter((tag) => tag === 'dup').length;
+      return `${tags.length}|${tags[0]?.length ?? 0}|${duplicateCount}`;
+    })
+    .toBe('32|40|1');
 });
 
 test('can import materials from JSON', async ({ page }) => {
