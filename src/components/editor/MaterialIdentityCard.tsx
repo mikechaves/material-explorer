@@ -5,7 +5,7 @@ import { MATERIAL_NAME_MAX_LENGTH, MATERIAL_TAG_MAX_COUNT } from '../../utils/ma
 type MaterialIdentityCardProps = {
   material: MaterialDraft;
   checkboxClass: string;
-  nameInputRef: React.RefObject<HTMLInputElement>;
+  nameInputRef: React.RefObject<HTMLInputElement | null>;
   onNameChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFavoriteChange: (checked: boolean) => void;
   onTagsInputChange: (value: string) => void;

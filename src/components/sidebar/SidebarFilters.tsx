@@ -3,7 +3,7 @@ import { Listbox, Transition } from '@headlessui/react';
 import { SORT_OPTIONS, classNames, type SortMode } from './sidebarTypes';
 
 type SidebarFiltersProps = {
-  searchInputRef: React.RefObject<HTMLInputElement>;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
   query: string;
   onQueryChange: (value: string) => void;
   cardPreviewEnabled: boolean;
