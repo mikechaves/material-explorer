@@ -151,6 +151,21 @@ test('can undo and redo draft changes with shortcuts', async ({ page }) => {
   await expect(roughnessValue).toHaveValue('0.2');
 });
 
+test('command palette shows recently used commands', async ({ page }) => {
+  await page.keyboard.press('ControlOrMeta+KeyK');
+  const dialog = page.getByRole('dialog', { name: 'Command palette' });
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByRole('button', { name: /Toggle 3D Preview/ }).click();
+  await expect(dialog).not.toBeVisible();
+
+  await page.keyboard.press('ControlOrMeta+KeyK');
+  await expect(dialog).toBeVisible();
+
+  const togglePreviewRow = dialog.getByRole('button', { name: /Toggle 3D Preview/ }).first();
+  await expect(togglePreviewRow).toContainText('Recent');
+});
+
 test('can toggle compare mode after capturing reference', async ({ page }) => {
   const compareButton = page.getByRole('button', { name: 'Compare', exact: true });
   await expect(compareButton).toBeDisabled();

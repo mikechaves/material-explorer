@@ -16,19 +16,59 @@ type CommandPaletteProps = {
   commands: CommandPaletteItem[];
 };
 
+const RECENT_COMMANDS_KEY = 'materialExplorerRecentCommands';
+const RECENT_COMMAND_LIMIT = 6;
+
+function loadRecentCommands(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_COMMANDS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string').slice(0, RECENT_COMMAND_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function persistRecentCommands(commandIds: string[]) {
+  try {
+    window.localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(commandIds.slice(0, RECENT_COMMAND_LIMIT)));
+  } catch {
+    // Ignore storage write errors for non-critical command history.
+  }
+}
+
 export function CommandPalette({ open, onClose, commands }: CommandPaletteProps) {
   const [query, setQuery] = React.useState('');
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [recentCommandIds, setRecentCommandIds] = React.useState<string[]>(() => loadRecentCommands());
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return commands;
+  const normalizedQuery = query.trim().toLowerCase();
+  const commandById = React.useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
+
+  const filteredCommands = React.useMemo(() => {
+    if (!normalizedQuery) return commands;
     return commands.filter((command) => {
       const haystack = [command.title, command.description ?? '', ...(command.keywords ?? [])].join(' ').toLowerCase();
-      return haystack.includes(q);
+      return haystack.includes(normalizedQuery);
     });
-  }, [commands, query]);
+  }, [commands, normalizedQuery]);
+
+  const recentCommands = React.useMemo(
+    () =>
+      recentCommandIds
+        .map((commandId) => commandById.get(commandId))
+        .filter((command): command is CommandPaletteItem => !!command),
+    [commandById, recentCommandIds]
+  );
+
+  const recentCommandIdSet = React.useMemo(() => new Set(recentCommands.map((command) => command.id)), [recentCommands]);
+
+  const visibleCommands = React.useMemo(() => {
+    if (normalizedQuery) return filteredCommands;
+    return [...recentCommands, ...commands.filter((command) => !recentCommandIdSet.has(command.id))];
+  }, [commands, filteredCommands, normalizedQuery, recentCommands, recentCommandIdSet]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -39,17 +79,30 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   }, [open]);
 
   React.useEffect(() => {
-    if (!filtered.length) {
+    if (!visibleCommands.length) {
       setActiveIndex(0);
       return;
     }
-    if (activeIndex >= filtered.length) {
+    if (activeIndex >= visibleCommands.length) {
       setActiveIndex(0);
     }
-  }, [activeIndex, filtered.length]);
+  }, [activeIndex, visibleCommands.length]);
+
+  React.useEffect(() => {
+    setRecentCommandIds((previous) => {
+      const next = previous.filter((commandId) => commandById.has(commandId));
+      if (next.length !== previous.length) persistRecentCommands(next);
+      return next;
+    });
+  }, [commandById]);
 
   const runCommand = (command: CommandPaletteItem | undefined) => {
     if (!command) return;
+    setRecentCommandIds((previous) => {
+      const next = [command.id, ...previous.filter((commandId) => commandId !== command.id)].slice(0, RECENT_COMMAND_LIMIT);
+      persistRecentCommands(next);
+      return next;
+    });
     command.run();
     onClose();
   };
@@ -71,20 +124,20 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
               onClose();
               return;
             }
-            if (!filtered.length) return;
+            if (!visibleCommands.length) return;
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              setActiveIndex((prev) => (prev + 1) % filtered.length);
+              setActiveIndex((prev) => (prev + 1) % visibleCommands.length);
               return;
             }
             if (event.key === 'ArrowUp') {
               event.preventDefault();
-              setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+              setActiveIndex((prev) => (prev - 1 + visibleCommands.length) % visibleCommands.length);
               return;
             }
             if (event.key === 'Enter') {
               event.preventDefault();
-              runCommand(filtered[activeIndex] ?? filtered[0]);
+              runCommand(visibleCommands[activeIndex] ?? visibleCommands[0]);
             }
           }}
         >
@@ -116,13 +169,13 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto space-y-1">
-              {filtered.length === 0 && (
+              {visibleCommands.length === 0 && (
                 <div className="section-shell rounded-xl px-3 py-4 text-sm ui-muted">
                   No command found. Try another keyword.
                 </div>
               )}
 
-              {filtered.map((command, index) => (
+              {visibleCommands.map((command, index) => (
                 <button
                   key={command.id}
                   type="button"
@@ -136,7 +189,14 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-sm font-semibold">{command.title}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-semibold">{command.title}</div>
+                        {!normalizedQuery && recentCommandIdSet.has(command.id) && (
+                          <div className="text-[10px] uppercase tracking-[0.08em] text-cyan-100/85 border border-cyan-200/30 rounded-md px-1.5 py-0.5">
+                            Recent
+                          </div>
+                        )}
+                      </div>
                       {command.description && <div className="text-xs ui-muted">{command.description}</div>}
                     </div>
                     {command.shortcut && (
