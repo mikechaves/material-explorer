@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0-beta] - 2026-02-14
+
+### Highlights
+
+- Migrated build/test stack from CRA to **Vite + Vitest + Playwright** with significantly faster iteration.
+- Reworked architecture with a **material repository layer** and optional API sync (`GET/PUT /materials`) plus local fallback.
+- Added **auth + scope-aware persistence** via `VITE_MATERIALS_USER_SCOPE` and optional auth token/header support.
+- Modernized editor and sidebar UX: onboarding starter kit, command palette + shortcuts, unsaved draft state, undo/redo history, section resets, bulk actions, and richer dialogs/toasts.
+- Expanded resilience and security guardrails across import/share/storage:
+  - import payload/file-size/material-count limits
+  - texture upload validation and rejection telemetry
+  - share payload decode size bounds and invalid-share recovery UX
+  - sanitized name/tag limits and sanitized download filenames
+  - safe localStorage wrappers for restricted/private environments
+- Added observability instrumentation (`preview.first_enabled`, `preview.first_ready`, sync and texture telemetry) and a dev telemetry inspector.
+- Increased test and quality coverage:
+  - expanded unit tests for repository/import/material/share/storage paths
+  - e2e smoke suite growth including accessibility and guardrail scenarios
+  - enforced quality gates: prettier, lint, type-check, unit, build, bundle budget, e2e, security audit.
+
+### Fixes
+
+- Security dependency hardening via overrides, including pinning `jsonpath` to `^1.2.1`.
+- Hardened manual sort persistence parsing (bounded, validated, deduplicated IDs) to avoid malformed storage state issues.
+- Replaced blocking `alert/confirm/prompt` flows with in-app toast/dialog patterns.
+- Improved startup and runtime performance with additional lazy-loading (preview controls, share codec, exporters, command palette paths).
+- Added recovery UX for malformed share links to prevent repeated decode failures.
+
+### Known issues
+
+- **LocalStorage quota**: textures are stored as data URLs inside material JSON; large images can exceed browser storage limits.
+- **Share links & textures**: “share + textures” remains size-limited; for reliable sharing with textures, prefer **Export JSON**.
+- **GLB exports are previews**: exported `.glb` contains preview geometry (sphere/grid), not a user-imported mesh.
+
 ## [1.0.0-beta] - 2025-12-29
 
 ### Highlights

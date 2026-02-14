@@ -54,7 +54,7 @@ You can also run:
 npm run dev
 ```
 
-This will open the app in your default web browser at `http://localhost:3000`. The app will automatically reload if you make changes to the source code.
+This will open the app in your default web browser at `http://localhost:5173`. The app will automatically reload if you make changes to the source code.
 
 ## Building for Production
 
