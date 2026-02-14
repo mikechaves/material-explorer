@@ -5,7 +5,7 @@ import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
 import { createMaterialFromDraft, clamp01, coerceMaterialDraft, DEFAULT_MATERIAL_DRAFT, downloadBlob } from '../utils/material';
 import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
-import { Control, type PreviewModel, type PreviewEnv } from './editor/EditorFields';
+import { type PreviewModel, type PreviewEnv } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
 import { APP_COMMAND_EVENT, type AppCommandEventDetail } from '../types/commands';
@@ -13,6 +13,10 @@ import { ONBOARDING_SEEN_KEY, MATERIAL_PRESETS, EDITOR_CHECKBOX_CLASS, type Mate
 import { OnboardingCard } from './editor/OnboardingCard';
 import { QuickPresetsCard } from './editor/QuickPresetsCard';
 import { PreviewControlsCard } from './editor/PreviewControlsCard';
+import { MaterialIdentityCard } from './editor/MaterialIdentityCard';
+import { MaterialSurfaceCard } from './editor/MaterialSurfaceCard';
+import { MaterialOpticsCard } from './editor/MaterialOpticsCard';
+import { DraftHistoryCard } from './editor/DraftHistoryCard';
 
 const HISTORY_LIMIT = 120;
 const DRAFT_COMPARE_KEYS: Array<keyof MaterialDraft> = [
@@ -260,6 +264,30 @@ const MaterialEditor: React.FC = () => {
     });
   };
 
+  const handleFavoriteChange = React.useCallback(
+    (checked: boolean) => {
+      setMaterialWithHistory((prev) => {
+        if (prev.favorite === checked) return prev;
+        return { ...prev, favorite: checked };
+      });
+    },
+    [setMaterialWithHistory]
+  );
+
+  const handleTagsInputChange = React.useCallback(
+    (value: string) => {
+      const tags = value
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      setMaterialWithHistory((prev) => {
+        if ((prev.tags ?? []).join('|') === tags.join('|')) return prev;
+        return { ...prev, tags };
+      });
+    },
+    [setMaterialWithHistory]
+  );
+
   const readFileAsDataUrl = (file: File) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -489,146 +517,18 @@ const MaterialEditor: React.FC = () => {
 
             <QuickPresetsCard presets={MATERIAL_PRESETS} onApplyPreset={applyPreset} />
 
-            <div className="section-shell px-3 py-3 space-y-3">
-              <div className="space-y-2">
-                <label className="ui-label" htmlFor="material-name">Name</label>
-                <input
-                  ref={nameInputRef}
-                  id="material-name"
-                  type="text"
-                  name="name"
-                  value={material.name ?? ''}
-                  onChange={handleChange}
-                  placeholder="Untitled"
-                  className="ui-input px-3 py-2 text-sm"
-                />
-              </div>
+            <MaterialIdentityCard
+              material={material}
+              checkboxClass={EDITOR_CHECKBOX_CLASS}
+              nameInputRef={nameInputRef}
+              onNameChange={handleChange}
+              onFavoriteChange={handleFavoriteChange}
+              onTagsInputChange={handleTagsInputChange}
+            />
 
-              <div className="flex items-center justify-between gap-3">
-                <label className="ui-label" htmlFor="material-favorite">Favorite</label>
-                <input
-                  id="material-favorite"
-                  type="checkbox"
-                  checked={!!material.favorite}
-                  onChange={(e) =>
-                    setMaterialWithHistory((prev) => {
-                      if (prev.favorite === e.target.checked) return prev;
-                      return { ...prev, favorite: e.target.checked };
-                    })
-                  }
-                  className={EDITOR_CHECKBOX_CLASS}
-                />
-              </div>
+            <MaterialSurfaceCard material={material} onChange={handleChange} />
 
-              <div className="space-y-2">
-                <label className="ui-label" htmlFor="material-tags">Tags</label>
-                <input
-                  id="material-tags"
-                  type="text"
-                  value={(material.tags ?? []).join(', ')}
-                  onChange={(e) => {
-                    const tags = e.target.value
-                      .split(',')
-                      .map((t) => t.trim())
-                      .filter(Boolean);
-                    setMaterialWithHistory((prev) => {
-                      if ((prev.tags ?? []).join('|') === tags.join('|')) return prev;
-                      return { ...prev, tags };
-                    });
-                  }}
-                  placeholder="e.g. glass, carpaint, fabric"
-                  className="ui-input px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="section-shell px-3 py-3 space-y-4">
-              <label className="ui-label">Material Color</label>
-              <div className="flex items-center gap-4">
-                <motion.div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-100/20">
-                  <input
-                    type="color"
-                    name="color"
-                    value={material.color}
-                    onChange={handleChange}
-                    aria-label="Material color"
-                    className="absolute inset-0 w-full h-full cursor-pointer border-0"
-                  />
-                </motion.div>
-                <div
-                  className="flex-1 h-12 rounded-xl border border-slate-100/20"
-                  style={{ backgroundColor: material.color }}
-                />
-              </div>
-              <Control
-                name="metalness"
-                value={material.metalness}
-                label="Metalness"
-                onChange={handleChange}
-              />
-              <Control
-                name="roughness"
-                value={material.roughness}
-                label="Roughness"
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="section-shell px-3 py-3 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <label className="ui-label">Emissive</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    name="emissive"
-                    value={material.emissive ?? '#000000'}
-                    onChange={handleChange}
-                    aria-label="Emissive color"
-                    className="w-10 h-10 cursor-pointer border border-slate-100/20 rounded-md bg-transparent"
-                  />
-                  <Control
-                    name="emissiveIntensity"
-                    value={material.emissiveIntensity}
-                    label="Intensity"
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <Control
-                name="clearcoat"
-                value={material.clearcoat}
-                label="Clearcoat"
-                onChange={handleChange}
-              />
-              <Control
-                name="clearcoatRoughness"
-                value={material.clearcoatRoughness}
-                label="Clearcoat Roughness"
-                onChange={handleChange}
-              />
-              <Control
-                name="transmission"
-                value={material.transmission}
-                label="Transmission"
-                onChange={handleChange}
-              />
-              <Control
-                name="ior"
-                value={material.ior}
-                label="IOR"
-                min={1}
-                max={2.5}
-                step={0.01}
-                onChange={handleChange}
-              />
-              <Control
-                name="opacity"
-                value={material.opacity}
-                label="Opacity"
-                onChange={handleChange}
-              />
-            </div>
+            <MaterialOpticsCard material={material} onChange={handleChange} />
 
             <TextureControls
               material={material}
@@ -637,45 +537,14 @@ const MaterialEditor: React.FC = () => {
               setMaterial={setMaterialWithHistory}
             />
 
-            <div className="section-shell px-3 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs ui-muted">Draft history</div>
-                  <div className={`text-[11px] ${isDirty ? 'text-amber-100/90' : 'ui-muted'}`}>
-                    {isDirty ? 'Unsaved changes' : 'All changes saved'}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                    onClick={resetDraftChanges}
-                    disabled={!isDirty}
-                    title="Revert all unsaved changes"
-                  >
-                    Revert
-                  </button>
-                  <button
-                    type="button"
-                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                    onClick={undoMaterialChange}
-                    disabled={!canUndo}
-                    title="Undo (Ctrl/Cmd+Z)"
-                  >
-                    Undo
-                  </button>
-                  <button
-                    type="button"
-                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                    onClick={redoMaterialChange}
-                    disabled={!canRedo}
-                    title="Redo (Ctrl/Cmd+Shift+Z)"
-                  >
-                    Redo
-                  </button>
-                </div>
-              </div>
-            </div>
+            <DraftHistoryCard
+              isDirty={isDirty}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onRevert={resetDraftChanges}
+              onUndo={undoMaterialChange}
+              onRedo={redoMaterialChange}
+            />
 
             <motion.button
               className="ui-btn ui-btn-primary w-full py-2.5 text-sm"
