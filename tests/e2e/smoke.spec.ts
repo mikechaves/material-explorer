@@ -66,6 +66,7 @@ test('enforces material name max length before save', async ({ page }) => {
 
   await nameInput.fill(overlongName);
   await expect(nameInput).toHaveValue(expected);
+  await expect(page.getByText('120/120 characters')).toBeVisible();
 
   await page.getByRole('button', { name: 'Save Material' }).click();
 
@@ -84,6 +85,7 @@ test('sanitizes and limits tags before save', async ({ page }) => {
   const tagsInput = [overlongTag, 'dup', 'dup', ...Array.from({ length: 40 }, (_, index) => `tag-${index}`)].join(', ');
 
   await page.locator('#material-tags').fill(tagsInput);
+  await expect(page.getByText('32/32 tags')).toBeVisible();
   await page.getByRole('button', { name: 'Save Material' }).click();
 
   await expect

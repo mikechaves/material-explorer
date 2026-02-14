@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MaterialDraft } from '../../types/material';
-import { MATERIAL_NAME_MAX_LENGTH } from '../../utils/material';
+import { MATERIAL_NAME_MAX_LENGTH, MATERIAL_TAG_MAX_COUNT } from '../../utils/material';
 
 type MaterialIdentityCardProps = {
   material: MaterialDraft;
@@ -19,6 +19,9 @@ export function MaterialIdentityCard({
   onFavoriteChange,
   onTagsInputChange,
 }: MaterialIdentityCardProps) {
+  const nameLength = (material.name ?? '').length;
+  const tagCount = (material.tags ?? []).length;
+
   return (
     <div className="section-shell px-3 py-3 space-y-3">
       <div className="space-y-2">
@@ -36,6 +39,9 @@ export function MaterialIdentityCard({
           maxLength={MATERIAL_NAME_MAX_LENGTH}
           className="ui-input px-3 py-2 text-sm"
         />
+        <p className={`text-xs ${nameLength >= MATERIAL_NAME_MAX_LENGTH ? 'text-amber-200' : 'ui-muted'}`}>
+          {nameLength}/{MATERIAL_NAME_MAX_LENGTH} characters
+        </p>
       </div>
 
       <div className="flex items-center justify-between gap-3">
@@ -63,6 +69,9 @@ export function MaterialIdentityCard({
           placeholder="e.g. glass, carpaint, fabric"
           className="ui-input px-3 py-2 text-sm"
         />
+        <p className={`text-xs ${tagCount >= MATERIAL_TAG_MAX_COUNT ? 'text-amber-200' : 'ui-muted'}`}>
+          {tagCount}/{MATERIAL_TAG_MAX_COUNT} tags
+        </p>
       </div>
     </div>
   );
