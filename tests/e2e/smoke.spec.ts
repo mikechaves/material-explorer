@@ -138,6 +138,12 @@ test('can import materials from JSON', async ({ page }) => {
     .toBe(true);
 });
 
+test('warns and clears invalid share payloads', async ({ page }) => {
+  await page.goto('/?m=%%%bad%%%');
+  await expect(page.getByText('Share link invalid', { exact: true })).toBeVisible();
+  await expect.poll(() => page.url()).not.toContain('?m=');
+});
+
 test('rejects import files with too many materials', async ({ page }) => {
   const tooManyMaterialsPayload = {
     version: 1,

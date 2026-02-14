@@ -248,7 +248,19 @@ const MaterialEditor: React.FC = () => {
       try {
         const { decodeSharePayload } = await loadShareUtils();
         const payload = decodeSharePayload(m);
-        if (!payload || cancelled) return;
+        if (!payload) {
+          if (!cancelled) {
+            notify({
+              variant: 'warn',
+              title: 'Share link invalid',
+              message: 'Could not decode that share payload. The editor opened with a blank draft instead.',
+            });
+            url.searchParams.delete('m');
+            window.history.replaceState({}, '', url.toString());
+          }
+          return;
+        }
+        if (cancelled) return;
         startNewMaterial();
         setMaterial(cloneDraft(coerceMaterialDraft(payload.material, emptyDraft)));
         setUndoStack([]);
@@ -264,7 +276,7 @@ const MaterialEditor: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [startNewMaterial, emptyDraft]);
+  }, [startNewMaterial, emptyDraft, notify]);
 
   useEffect(() => {
     setLocalStorageItem('previewModel', previewModel);
