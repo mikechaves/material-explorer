@@ -9,6 +9,9 @@ const DialogProvider = React.lazy(async () => {
   const module = await import('./contexts/DialogContext');
   return { default: module.DialogProvider };
 });
+const DevTelemetryDebugPanel = import.meta.env.DEV
+  ? React.lazy(() => import('./components/dev/TelemetryDebugPanel'))
+  : null;
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -96,6 +99,11 @@ function App() {
                   <MaterialEditor />
                 </Suspense>
               </main>
+              {DevTelemetryDebugPanel && (
+                <Suspense fallback={null}>
+                  <DevTelemetryDebugPanel />
+                </Suspense>
+              )}
             </div>
           </DialogProvider>
         </Suspense>

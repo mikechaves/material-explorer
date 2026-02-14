@@ -132,6 +132,8 @@ Current telemetry events include:
 - `preview.first_enabled`
 - `preview.first_ready`
 
+In development mode, use the bottom-right `Telemetry` button to inspect recent emitted events locally.
+
 ## Local Mock Backend (Optional)
 
 For local backend/sync iteration, run the built-in mock API:

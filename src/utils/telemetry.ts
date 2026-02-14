@@ -1,12 +1,14 @@
-type TelemetryLevel = 'info' | 'warn' | 'error';
+export type TelemetryLevel = 'info' | 'warn' | 'error';
 
-type TelemetryPayload = {
+export type TelemetryPayload = {
   app: 'material-explorer';
   level: TelemetryLevel;
   event: string;
   timestamp: string;
   data?: Record<string, unknown>;
 };
+
+export const TELEMETRY_DEBUG_EVENT = 'material-explorer:telemetry';
 
 const TELEMETRY_ENDPOINT = (() => {
   const raw = import.meta.env.VITE_TELEMETRY_URL as string | undefined;
@@ -56,13 +58,25 @@ async function postTelemetry(payload: TelemetryPayload) {
   return false;
 }
 
+function publishTelemetryDebugEvent(payload: TelemetryPayload) {
+  if (!import.meta.env.DEV) return;
+  if (typeof window === 'undefined' || typeof CustomEvent === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<TelemetryPayload>(TELEMETRY_DEBUG_EVENT, {
+      detail: payload,
+    })
+  );
+}
+
 export function emitTelemetryEvent(event: string, data?: Record<string, unknown>, level: TelemetryLevel = 'info') {
+  const payload = buildPayload(event, level, data);
+  publishTelemetryDebugEvent(payload);
   if (!hasTelemetryTransport()) return;
-  void postTelemetry(buildPayload(event, level, data));
+  void postTelemetry(payload);
 }
 
 export function initGlobalTelemetryListeners() {
-  if (globalTelemetryInitialized || typeof window === 'undefined' || !hasTelemetryTransport()) return;
+  if (globalTelemetryInitialized || typeof window === 'undefined') return;
   globalTelemetryInitialized = true;
 
   window.addEventListener('error', (event) => {

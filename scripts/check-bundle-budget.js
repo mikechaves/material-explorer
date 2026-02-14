@@ -52,7 +52,7 @@ function runBudgetChecks() {
   const totalCssRaw = cssFiles.reduce((sum, file) => sum + getSizeInfo(assetsDir, file).raw, 0);
 
   const checks = [
-    { label: 'Entry JS raw', value: info.entryJs.raw, max: 20 * 1024 },
+    { label: 'Entry JS raw', value: info.entryJs.raw, max: 21 * 1024 },
     { label: 'Sidebar JS raw', value: info.sidebarJs.raw, max: 30 * 1024 },
     { label: 'MaterialEditor JS raw', value: info.editorJs.raw, max: 42 * 1024 },
     { label: 'Three core JS raw', value: info.threeCoreJs.raw, max: 720 * 1024 },
