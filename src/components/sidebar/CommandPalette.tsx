@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getLocalStorageItem, setLocalStorageItem } from '../../utils/localStorage';
 import {
   deriveVisibleCommands,
   parseRecentCommandIds,
@@ -24,17 +25,11 @@ type CommandPaletteProps = {
 };
 
 function loadRecentCommands() {
-  if (typeof window === 'undefined') return [];
-  return parseRecentCommandIds(window.localStorage.getItem(RECENT_COMMANDS_KEY));
+  return parseRecentCommandIds(getLocalStorageItem(RECENT_COMMANDS_KEY));
 }
 
 function persistRecentCommands(commandIds: string[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(RECENT_COMMANDS_KEY, serializeRecentCommandIds(commandIds));
-  } catch {
-    // Ignore storage write errors for non-critical command history.
-  }
+  setLocalStorageItem(RECENT_COMMANDS_KEY, serializeRecentCommandIds(commandIds));
 }
 
 export function CommandPalette({ open, onClose, commands }: CommandPaletteProps) {

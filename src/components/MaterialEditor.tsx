@@ -39,6 +39,7 @@ import {
   resetSurfaceSection as applySurfaceSectionReset,
 } from './editor/draftSections';
 import { validateTextureDataUrl, validateTextureUploadFile } from './editor/textureUpload';
+import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../utils/localStorage';
 import { emitTelemetryEvent } from '../utils/telemetry';
 
 const HISTORY_LIMIT = 120;
@@ -109,12 +110,12 @@ const MaterialEditor: React.FC = () => {
   const [undoStack, setUndoStack] = useState<MaterialDraft[]>([]);
   const [redoStack, setRedoStack] = useState<MaterialDraft[]>([]);
   const [previewModel, setPreviewModel] = useState<PreviewModel>(() => {
-    const v = window.localStorage.getItem('previewModel');
+    const v = getLocalStorageItem('previewModel');
     if (v === 'sphere' || v === 'box' || v === 'torusKnot' || v === 'icosahedron') return v;
     return 'sphere';
   });
   const [previewEnv, setPreviewEnv] = useState<PreviewEnv>(() => {
-    const v = window.localStorage.getItem('previewEnv');
+    const v = getLocalStorageItem('previewEnv');
     if (
       v === 'warehouse' ||
       v === 'studio' ||
@@ -130,27 +131,23 @@ const MaterialEditor: React.FC = () => {
       return v;
     return 'warehouse';
   });
-  const [autoRotate, setAutoRotate] = useState<boolean>(
-    () => window.localStorage.getItem('previewAutoRotate') !== 'false'
-  );
-  const [enableZoom, setEnableZoom] = useState<boolean>(
-    () => window.localStorage.getItem('previewEnableZoom') === 'true'
-  );
-  const [showGrid, setShowGrid] = useState<boolean>(() => window.localStorage.getItem('previewShowGrid') === 'true');
+  const [autoRotate, setAutoRotate] = useState<boolean>(() => getLocalStorageItem('previewAutoRotate') !== 'false');
+  const [enableZoom, setEnableZoom] = useState<boolean>(() => getLocalStorageItem('previewEnableZoom') === 'true');
+  const [showGrid, setShowGrid] = useState<boolean>(() => getLocalStorageItem('previewShowGrid') === 'true');
   const [showBackground, setShowBackground] = useState<boolean>(
-    () => window.localStorage.getItem('previewShowBackground') !== 'false'
+    () => getLocalStorageItem('previewShowBackground') !== 'false'
   );
   const [previewAutoEnable, setPreviewAutoEnable] = useState<boolean>(
-    () => window.localStorage.getItem('previewAutoEnable') === 'true'
+    () => getLocalStorageItem('previewAutoEnable') === 'true'
   );
   const [previewEnabled, setPreviewEnabled] = useState<boolean>(() => {
-    if (window.localStorage.getItem('previewAutoEnable') === 'true') return true;
-    return window.localStorage.getItem('previewEnabled') === 'true';
+    if (getLocalStorageItem('previewAutoEnable') === 'true') return true;
+    return getLocalStorageItem('previewEnabled') === 'true';
   });
   const [compareOn, setCompareOn] = useState(false);
   const [compareA, setCompareA] = useState<MaterialDraft | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(
-    () => window.localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true'
+    () => getLocalStorageItem(ONBOARDING_SEEN_KEY) !== 'true'
   );
   const previewPerfRef = useRef<{
     firstEnableAtMs: number | null;
@@ -270,28 +267,28 @@ const MaterialEditor: React.FC = () => {
   }, [startNewMaterial, emptyDraft]);
 
   useEffect(() => {
-    window.localStorage.setItem('previewModel', previewModel);
+    setLocalStorageItem('previewModel', previewModel);
   }, [previewModel]);
   useEffect(() => {
-    window.localStorage.setItem('previewEnv', previewEnv);
+    setLocalStorageItem('previewEnv', previewEnv);
   }, [previewEnv]);
   useEffect(() => {
-    window.localStorage.setItem('previewAutoRotate', autoRotate ? 'true' : 'false');
+    setLocalStorageItem('previewAutoRotate', autoRotate ? 'true' : 'false');
   }, [autoRotate]);
   useEffect(() => {
-    window.localStorage.setItem('previewEnableZoom', enableZoom ? 'true' : 'false');
+    setLocalStorageItem('previewEnableZoom', enableZoom ? 'true' : 'false');
   }, [enableZoom]);
   useEffect(() => {
-    window.localStorage.setItem('previewShowGrid', showGrid ? 'true' : 'false');
+    setLocalStorageItem('previewShowGrid', showGrid ? 'true' : 'false');
   }, [showGrid]);
   useEffect(() => {
-    window.localStorage.setItem('previewShowBackground', showBackground ? 'true' : 'false');
+    setLocalStorageItem('previewShowBackground', showBackground ? 'true' : 'false');
   }, [showBackground]);
   useEffect(() => {
-    window.localStorage.setItem('previewEnabled', previewEnabled ? 'true' : 'false');
+    setLocalStorageItem('previewEnabled', previewEnabled ? 'true' : 'false');
   }, [previewEnabled]);
   useEffect(() => {
-    window.localStorage.setItem('previewAutoEnable', previewAutoEnable ? 'true' : 'false');
+    setLocalStorageItem('previewAutoEnable', previewAutoEnable ? 'true' : 'false');
   }, [previewAutoEnable]);
 
   useEffect(() => {
@@ -511,7 +508,7 @@ const MaterialEditor: React.FC = () => {
 
   const dismissOnboarding = () => {
     setShowOnboarding(false);
-    window.localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
+    setLocalStorageItem(ONBOARDING_SEEN_KEY, 'true');
   };
 
   const startBlankFromOnboarding = () => {
@@ -579,7 +576,7 @@ const MaterialEditor: React.FC = () => {
       }
       if (action === 'open-onboarding') {
         setShowOnboarding(true);
-        window.localStorage.removeItem(ONBOARDING_SEEN_KEY);
+        removeLocalStorageItem(ONBOARDING_SEEN_KEY);
       }
     };
 

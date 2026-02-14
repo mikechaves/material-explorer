@@ -1,4 +1,5 @@
 import type { Material } from '../types/material';
+import { getLocalStorageItem } from '../utils/localStorage';
 import { loadMaterials, MATERIALS_STORAGE_KEY, saveMaterials } from '../utils/storage';
 import { normalizeMaterial } from '../utils/material';
 import { emitTelemetryEvent } from '../utils/telemetry';
@@ -38,16 +39,14 @@ function resolveApiBaseUrl(rawApiUrl: string | undefined): string | null {
 function resolveUserScope(rawUserScope: string | undefined): string | null {
   const trimmed = rawUserScope?.trim();
   if (trimmed) return trimmed;
-  if (typeof window === 'undefined') return null;
-  const localValue = window.localStorage.getItem(USER_SCOPE_STORAGE_KEY)?.trim();
+  const localValue = getLocalStorageItem(USER_SCOPE_STORAGE_KEY)?.trim();
   return localValue || null;
 }
 
 function resolveAuthToken(rawAuthToken: string | undefined): string | null {
   const trimmed = rawAuthToken?.trim();
   if (trimmed) return trimmed;
-  if (typeof window === 'undefined') return null;
-  const localValue = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)?.trim();
+  const localValue = getLocalStorageItem(AUTH_TOKEN_STORAGE_KEY)?.trim();
   return localValue || null;
 }
 

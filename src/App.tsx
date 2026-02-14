@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { getLocalStorageItem } from './utils/localStorage';
 import { initGlobalTelemetryListeners } from './utils/telemetry';
 
 const MaterialEditor = React.lazy(() => import('./components/MaterialEditor'));
@@ -21,7 +22,7 @@ function App() {
   });
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return 350;
-    const raw = window.localStorage.getItem('sidebarWidth');
+    const raw = getLocalStorageItem('sidebarWidth');
     const parsed = raw ? Number.parseInt(raw, 10) : 350;
     return Number.isFinite(parsed) ? parsed : 350;
   });

@@ -4,6 +4,7 @@ import { useToasts } from '../contexts/ToastContext';
 import { useDialogs } from '../contexts/DialogContext';
 import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
+import { getLocalStorageItem, setLocalStorageItem } from '../utils/localStorage';
 import { buildDownloadFilename, createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
 import { dispatchAppCommand } from '../types/commands';
 import { buildCommandItems } from './sidebar/commandItems';
@@ -63,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [cardPreviewEnabled, setCardPreviewEnabled] = useState<boolean>(() => {
-    const stored = window.localStorage.getItem(CARD_PREVIEW_STORAGE_KEY);
+    const stored = getLocalStorageItem(CARD_PREVIEW_STORAGE_KEY);
     if (stored === 'true') return true;
     if (stored === 'false') return false;
     return !window.matchMedia('(pointer: coarse)').matches;
@@ -75,14 +76,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [manualOrder, setManualOrder] = useState<string[]>(() =>
-    parseManualOrderStorage(window.localStorage.getItem('materialsOrder'))
+    parseManualOrderStorage(getLocalStorageItem('materialsOrder'))
   );
 
   const setSidebarWidthValue = React.useCallback(
     (nextWidth: number) => {
       const clamped = Math.min(Math.max(nextWidth, minWidth), maxWidth);
       setWidth(clamped);
-      window.localStorage.setItem('sidebarWidth', clamped.toString());
+      setLocalStorageItem('sidebarWidth', clamped.toString());
     },
     [setWidth]
   );
@@ -224,7 +225,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   }, [allTags]);
 
   useEffect(() => {
-    window.localStorage.setItem(CARD_PREVIEW_STORAGE_KEY, cardPreviewEnabled ? 'true' : 'false');
+    setLocalStorageItem(CARD_PREVIEW_STORAGE_KEY, cardPreviewEnabled ? 'true' : 'false');
   }, [cardPreviewEnabled]);
 
   useEffect(() => {
@@ -235,7 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         if (!next.includes(id)) next.push(id);
       });
       const sanitized = sanitizeManualOrderIds(next);
-      window.localStorage.setItem('materialsOrder', JSON.stringify(sanitized));
+      setLocalStorageItem('materialsOrder', JSON.stringify(sanitized));
       return sanitized;
     });
   }, [materials]);
@@ -485,7 +486,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 onManualOrderChange={(nextOrder) => {
                   const sanitized = sanitizeManualOrderIds(nextOrder);
                   setManualOrder(sanitized);
-                  window.localStorage.setItem('materialsOrder', JSON.stringify(sanitized));
+                  setLocalStorageItem('materialsOrder', JSON.stringify(sanitized));
                 }}
                 cardPreviewEnabled={cardPreviewEnabled}
                 bulkMode={bulkMode}
