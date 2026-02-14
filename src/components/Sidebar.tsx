@@ -12,6 +12,7 @@ import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarFilters } from './sidebar/SidebarFilters';
 import { SidebarBulkBar } from './sidebar/SidebarBulkBar';
 import { SidebarGrid } from './sidebar/SidebarGrid';
+import { filterMaterials } from './sidebar/filterMaterials';
 import type { SortMode } from './sidebar/sidebarTypes';
 
 interface SidebarProps {
@@ -266,29 +267,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   };
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = materials.slice();
-    if (onlyFavorites) list = list.filter((m) => !!m.favorite);
-    if (selectedTags.length) {
-      list = list.filter((m) => selectedTags.every((t) => (m.tags ?? []).includes(t)));
-    }
-    if (q) {
-      list = list.filter((m) => {
-        const hay = `${m.name ?? ''} ${(m.tags ?? []).join(' ')}`.toLowerCase();
-        return hay.includes(q);
-      });
-    }
-    if (sort === 'manual') {
-      const idx = new Map(manualOrder.map((id, i) => [id, i]));
-      list.sort((a, b) => (idx.get(a.id) ?? 999999) - (idx.get(b.id) ?? 999999));
-    } else {
-      list.sort((a, b) => {
-        if (sort === 'name') return (a.name || '').localeCompare(b.name || '');
-        if (sort === 'created') return (b.createdAt ?? 0) - (a.createdAt ?? 0);
-        return (b.updatedAt ?? b.createdAt ?? 0) - (a.updatedAt ?? a.createdAt ?? 0);
-      });
-    }
-    return list;
+    return filterMaterials(materials, {
+      query,
+      onlyFavorites,
+      selectedTags,
+      sort,
+      manualOrder,
+    });
   }, [materials, onlyFavorites, query, sort, selectedTags, manualOrder]);
   const favoriteCount = useMemo(() => materials.filter((m) => !!m.favorite).length, [materials]);
   const hasActiveFilters = query.trim().length > 0 || onlyFavorites || selectedTags.length > 0;
