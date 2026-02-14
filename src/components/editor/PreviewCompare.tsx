@@ -11,7 +11,9 @@ type PreviewCompareProps = {
   material: MaterialDraft;
   previewRef: React.RefObject<MaterialPreviewHandle>;
   previewEnabled: boolean;
+  previewAutoEnable: boolean;
   onEnablePreview: () => void;
+  onAlwaysEnablePreview: () => void;
   previewEnv: PreviewEnv;
   previewModel: PreviewModel;
   autoRotate: boolean;
@@ -28,7 +30,9 @@ export function PreviewCompare({
   material,
   previewRef,
   previewEnabled,
+  previewAutoEnable,
   onEnablePreview,
+  onAlwaysEnablePreview,
   previewEnv,
   previewModel,
   autoRotate,
@@ -82,14 +86,28 @@ export function PreviewCompare({
             <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
           )}
           <div className="w-full h-full rounded-xl relative" style={fallbackSwatchStyle}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <button
-                type="button"
-                onClick={onEnablePreview}
-                className="px-4 py-2 rounded-lg bg-black/60 hover:bg-black/70 border border-white/20 text-white text-sm"
-              >
-                Enable 3D Preview
-              </button>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center">
+              <div className="text-xs text-white/80 max-w-[280px] leading-relaxed">
+                3D preview is off for faster startup and lower memory use.
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={onEnablePreview}
+                  className="px-4 py-2 rounded-lg bg-black/60 hover:bg-black/70 border border-white/20 text-white text-sm"
+                >
+                  Enable 3D now
+                </button>
+                {!previewAutoEnable && (
+                  <button
+                    type="button"
+                    onClick={onAlwaysEnablePreview}
+                    className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 text-white text-sm"
+                  >
+                    Always enable on startup
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

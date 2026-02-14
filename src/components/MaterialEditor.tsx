@@ -34,7 +34,11 @@ const MaterialEditor: React.FC = () => {
   const [enableZoom, setEnableZoom] = useState<boolean>(() => window.localStorage.getItem('previewEnableZoom') === 'true');
   const [showGrid, setShowGrid] = useState<boolean>(() => window.localStorage.getItem('previewShowGrid') === 'true');
   const [showBackground, setShowBackground] = useState<boolean>(() => window.localStorage.getItem('previewShowBackground') !== 'false');
-  const [previewEnabled, setPreviewEnabled] = useState<boolean>(() => window.localStorage.getItem('previewEnabled') === 'true');
+  const [previewAutoEnable, setPreviewAutoEnable] = useState<boolean>(() => window.localStorage.getItem('previewAutoEnable') === 'true');
+  const [previewEnabled, setPreviewEnabled] = useState<boolean>(() => {
+    if (window.localStorage.getItem('previewAutoEnable') === 'true') return true;
+    return window.localStorage.getItem('previewEnabled') === 'true';
+  });
   const [compareOn, setCompareOn] = useState(false);
   const [compareA, setCompareA] = useState<MaterialDraft | null>(null);
 
@@ -78,6 +82,9 @@ const MaterialEditor: React.FC = () => {
   useEffect(() => {
     window.localStorage.setItem('previewEnabled', previewEnabled ? 'true' : 'false');
   }, [previewEnabled]);
+  useEffect(() => {
+    window.localStorage.setItem('previewAutoEnable', previewAutoEnable ? 'true' : 'false');
+  }, [previewAutoEnable]);
 
   const copyShareLink = async (url: string, successMessage: string) => {
     try {
@@ -89,6 +96,25 @@ const MaterialEditor: React.FC = () => {
     } catch {
       window.prompt('Copy this link:', url);
     }
+  };
+
+  const enablePreviewNow = () => {
+    setPreviewEnabled(true);
+  };
+
+  const enablePreviewAlways = () => {
+    setPreviewAutoEnable(true);
+    setPreviewEnabled(true);
+  };
+
+  const handlePreviewEnabledToggle = (enabled: boolean) => {
+    setPreviewEnabled(enabled);
+    if (!enabled) setPreviewAutoEnable(false);
+  };
+
+  const handlePreviewAutoEnableToggle = (enabled: boolean) => {
+    setPreviewAutoEnable(enabled);
+    if (enabled) setPreviewEnabled(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +165,9 @@ const MaterialEditor: React.FC = () => {
             material={material}
             previewRef={previewRef}
             previewEnabled={previewEnabled}
-            onEnablePreview={() => setPreviewEnabled(true)}
+            previewAutoEnable={previewAutoEnable}
+            onEnablePreview={enablePreviewNow}
+            onAlwaysEnablePreview={enablePreviewAlways}
             previewEnv={previewEnv}
             previewModel={previewModel}
             autoRotate={autoRotate}
@@ -184,9 +212,17 @@ const MaterialEditor: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={previewEnabled}
-                  onChange={(e) => setPreviewEnabled(e.target.checked)}
+                  onChange={(e) => handlePreviewEnabledToggle(e.target.checked)}
                 />
                 3D
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={previewAutoEnable}
+                  onChange={(e) => handlePreviewAutoEnableToggle(e.target.checked)}
+                />
+                Always on startup
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -213,6 +249,11 @@ const MaterialEditor: React.FC = () => {
                 Background
               </label>
             </div>
+            {!previewEnabled && (
+              <div className="text-[11px] text-white/65 leading-relaxed">
+                3D preview is disabled to keep first load fast. Enable it when you need interactive lighting or snapshots.
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <button
