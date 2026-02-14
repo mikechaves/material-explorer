@@ -69,7 +69,9 @@ Before opening a pull request, run:
 
 ```bash
 npm run build
+npm run check:bundle
 npm run test:ci
+npm run test:e2e
 ```
 
 The repository also runs these checks in GitHub Actions on pull requests and on pushes to `main`.
