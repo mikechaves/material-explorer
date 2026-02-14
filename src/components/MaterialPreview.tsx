@@ -17,7 +17,11 @@ import {
   TorusKnotGeometry,
   Vector2,
 } from 'three';
-import { OrbitControls } from '@react-three/drei/core/OrbitControls';
+
+const OrbitControls = React.lazy(async () => {
+  const module = await import('@react-three/drei/core/OrbitControls');
+  return { default: module.OrbitControls };
+});
 
 interface MaterialPreviewProps {
   className?: string;
@@ -395,6 +399,7 @@ const Scene: React.FC<
   }
 > = ({ environment = 'warehouse', autoRotate, enableZoom, showGrid, ...props }) => {
   const lighting = LIGHTING_PRESETS[environment];
+  const controlsEnabled = !!enableZoom || !autoRotate;
   return (
     <>
       <ambientLight intensity={lighting.ambientIntensity} />
@@ -419,15 +424,18 @@ const Scene: React.FC<
 
       {showGrid && <gridHelper args={[12, 12, '#444444', '#222222']} position={[0, -1.4, 0]} />}
 
-      {/* Camera controls */}
-      <OrbitControls
-        enableZoom={!!enableZoom}
-        enablePan={false}
-        autoRotate={!!autoRotate}
-        autoRotateSpeed={1.25}
-        minPolarAngle={Math.PI / 3}
-        maxPolarAngle={Math.PI / 1.5}
-      />
+      {/* Camera controls are loaded only when interaction is needed. */}
+      {controlsEnabled && (
+        <React.Suspense fallback={null}>
+          <OrbitControls
+            enableZoom={!!enableZoom}
+            enablePan={false}
+            autoRotate={false}
+            minPolarAngle={Math.PI / 3}
+            maxPolarAngle={Math.PI / 1.5}
+          />
+        </React.Suspense>
+      )}
     </>
   );
 };
