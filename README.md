@@ -105,6 +105,16 @@ Local fallback is also scope-aware:
 - default key: `materials`
 - scoped key: `materials:<scope>`
 
+## Optional Observability
+
+To forward web-vitals, unhandled errors, and sync-failure telemetry to your backend, set:
+
+```bash
+VITE_TELEMETRY_URL=https://your-observability.example.com/events
+```
+
+Telemetry is best-effort and never blocks user actions.
+
 ## Usage
 
 ### Creating a Material

@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { MaterialProvider } from './contexts/MaterialContext';
+import { initGlobalTelemetryListeners } from './utils/telemetry';
 
 const MaterialEditor = React.lazy(() => import('./components/MaterialEditor'));
 const Sidebar = React.lazy(() => import('./components/Sidebar'));
@@ -16,6 +17,10 @@ function App() {
     const parsed = raw ? Number.parseInt(raw, 10) : 350;
     return Number.isFinite(parsed) ? parsed : 350;
   });
+
+  useEffect(() => {
+    initGlobalTelemetryListeners();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

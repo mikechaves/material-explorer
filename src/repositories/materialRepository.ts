@@ -1,6 +1,7 @@
 import type { Material } from '../types/material';
 import { loadMaterials, MATERIALS_STORAGE_KEY, saveMaterials } from '../utils/storage';
 import { normalizeMaterial } from '../utils/material';
+import { emitTelemetryEvent } from '../utils/telemetry';
 
 export type MaterialSaveResult = {
   ok: boolean;
@@ -59,7 +60,13 @@ function createLocalMaterialRepository(storageKey: string, scope: string | null)
     source: 'local',
     scope,
     loadAll: () => loadMaterials(storageKey),
-    saveAll: async (materials) => ({ ok: saveMaterials(materials, storageKey), remoteSynced: null }),
+    saveAll: async (materials) => {
+      const ok = saveMaterials(materials, storageKey);
+      if (!ok) {
+        emitTelemetryEvent('materials.save.local_failed', { scope, source: 'local' }, 'error');
+      }
+      return { ok, remoteSynced: null };
+    },
   };
 }
 
@@ -118,7 +125,10 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
     loadAll: () => loadMaterials(storageKey),
     saveAll: async (materials) => {
       const localSaved = saveMaterials(materials, storageKey);
-      if (!localSaved) return { ok: false, remoteSynced: false };
+      if (!localSaved) {
+        emitTelemetryEvent('materials.save.local_failed', { scope, source: 'http+local-fallback' }, 'error');
+        return { ok: false, remoteSynced: false };
+      }
 
       try {
         const response = await fetchWithTimeout(fetchImpl, materialsUrl.toString(), {
@@ -128,11 +138,21 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
         });
         if (!response.ok) {
           console.warn(`Remote material sync failed with status ${response.status}; using local fallback.`);
+          emitTelemetryEvent(
+            'materials.save.remote_failed',
+            { status: response.status, scope, source: 'http+local-fallback' },
+            'warn'
+          );
           return { ok: true, remoteSynced: false };
         }
         return { ok: true, remoteSynced: true };
       } catch (error) {
         console.warn('Remote material sync failed; using local fallback.', error);
+        emitTelemetryEvent(
+          'materials.save.remote_exception',
+          { scope, source: 'http+local-fallback', message: error instanceof Error ? error.message : String(error) },
+          'warn'
+        );
         return { ok: true, remoteSynced: false };
       }
     },
@@ -142,16 +162,32 @@ export function createMaterialRepository(options: CreateMaterialRepositoryOption
           method: 'GET',
           headers: requestHeaders,
         });
-        if (!response.ok) return null;
+        if (!response.ok) {
+          emitTelemetryEvent(
+            'materials.load.remote_failed',
+            { status: response.status, scope, source: 'http+local-fallback' },
+            'warn'
+          );
+          return null;
+        }
         const parsed = (await response.json()) as unknown;
         const normalized = normalizeMaterialList(parsed);
-        if (!normalized) return null;
+        if (!normalized) {
+          emitTelemetryEvent('materials.load.remote_invalid_payload', { scope, source: 'http+local-fallback' }, 'warn');
+          return null;
+        }
         if (!saveMaterials(normalized, storageKey)) {
           console.warn('Fetched remote materials but failed to cache them locally.');
+          emitTelemetryEvent('materials.load.local_cache_failed', { scope, source: 'http+local-fallback' }, 'warn');
         }
         return normalized;
       } catch (error) {
         console.warn('Remote material fetch failed; using local fallback.', error);
+        emitTelemetryEvent(
+          'materials.load.remote_exception',
+          { scope, source: 'http+local-fallback', message: error instanceof Error ? error.message : String(error) },
+          'warn'
+        );
         return null;
       }
     },

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './styles/index.css'; // Import Tailwind styles
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { emitTelemetryEvent } from './utils/telemetry';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(
@@ -11,7 +12,15 @@ root.render(
   </React.StrictMode>
 );
 
-// Keep web-vitals quiet by default (it can spam the console in production).
-// If you want to measure performance locally, uncomment:
-// if (import.meta.env.DEV) reportWebVitals(console.log);
-reportWebVitals();
+reportWebVitals((metric) => {
+  emitTelemetryEvent(
+    'web-vital',
+    {
+      id: metric.id,
+      name: metric.name,
+      value: metric.value,
+      delta: metric.delta,
+    },
+    'info'
+  );
+});
