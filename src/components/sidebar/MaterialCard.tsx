@@ -33,37 +33,49 @@ export function MaterialCard({
 }: MaterialCardProps) {
   const controls = useDragControls();
   const previewFallback = <div className="w-full h-full bg-white/5 animate-pulse" aria-hidden="true" />;
+  const [showPreview, setShowPreview] = React.useState(false);
+  const swatchStyle: React.CSSProperties = {
+    background: `radial-gradient(circle at 25% 20%, rgba(255,255,255,0.28), rgba(255,255,255,0) 45%), linear-gradient(145deg, ${material.color} 0%, #111827 100%)`,
+  };
 
   const inner = (
-    <div className="relative group">
+    <div
+      className="relative group"
+      onPointerEnter={() => setShowPreview(true)}
+      onFocusCapture={() => setShowPreview(true)}
+    >
       <div className="aspect-square rounded-xl overflow-hidden bg-black/30 border border-white/5 hover:border-purple-500/30 transition-all duration-300">
-        <React.Suspense fallback={previewFallback}>
-          <MaterialPreview
-            className="w-full h-full"
-            color={material.color}
-            metalness={material.metalness}
-            roughness={material.roughness}
-            emissive={material.emissive}
-            emissiveIntensity={material.emissiveIntensity}
-            clearcoat={material.clearcoat}
-            clearcoatRoughness={material.clearcoatRoughness}
-            transmission={material.transmission}
-            ior={material.ior}
-            opacity={material.opacity}
-            baseColorMap={material.baseColorMap}
-            normalMap={material.normalMap}
-            normalScale={material.normalScale}
-            roughnessMap={material.roughnessMap}
-            metalnessMap={material.metalnessMap}
-            aoMap={material.aoMap}
-            emissiveMap={material.emissiveMap}
-            alphaMap={material.alphaMap}
-            aoIntensity={material.aoIntensity}
-            alphaTest={material.alphaTest}
-            repeatX={material.repeatX}
-            repeatY={material.repeatY}
-          />
-        </React.Suspense>
+        {showPreview ? (
+          <React.Suspense fallback={previewFallback}>
+            <MaterialPreview
+              className="w-full h-full"
+              color={material.color}
+              metalness={material.metalness}
+              roughness={material.roughness}
+              emissive={material.emissive}
+              emissiveIntensity={material.emissiveIntensity}
+              clearcoat={material.clearcoat}
+              clearcoatRoughness={material.clearcoatRoughness}
+              transmission={material.transmission}
+              ior={material.ior}
+              opacity={material.opacity}
+              baseColorMap={material.baseColorMap}
+              normalMap={material.normalMap}
+              normalScale={material.normalScale}
+              roughnessMap={material.roughnessMap}
+              metalnessMap={material.metalnessMap}
+              aoMap={material.aoMap}
+              emissiveMap={material.emissiveMap}
+              alphaMap={material.alphaMap}
+              aoIntensity={material.aoIntensity}
+              alphaTest={material.alphaTest}
+              repeatX={material.repeatX}
+              repeatY={material.repeatY}
+            />
+          </React.Suspense>
+        ) : (
+          <div className="w-full h-full" style={swatchStyle} aria-hidden="true" />
+        )}
 
         {bulkMode && (
           <button

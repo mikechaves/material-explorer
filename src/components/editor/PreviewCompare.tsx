@@ -32,6 +32,49 @@ export function PreviewCompare({
   showGrid,
   showBackground,
 }: PreviewCompareProps) {
+  const [renderPreview, setRenderPreview] = React.useState(false);
+
+  React.useEffect(() => {
+    let timeoutId: number | undefined;
+    let idleId: number | undefined;
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (idleWindow.requestIdleCallback) {
+      idleId = idleWindow.requestIdleCallback(() => setRenderPreview(true), { timeout: 300 });
+    } else {
+      timeoutId = window.setTimeout(() => setRenderPreview(true), 120);
+    }
+
+    return () => {
+      if (idleId !== undefined && idleWindow.cancelIdleCallback) {
+        idleWindow.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  if (!renderPreview) {
+    return (
+      <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
+        {compareOn && compareA && (
+          <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
+            {previewFallback}
+          </div>
+        )}
+        <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+          {compareOn && compareA && (
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
+          )}
+          {previewFallback}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
       {compareOn && compareA && (

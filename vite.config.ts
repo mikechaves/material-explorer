@@ -34,14 +34,12 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          if (
-            id.includes('/three/') ||
-            id.includes('@react-three/') ||
-            id.includes('/three-stdlib/') ||
-            id.includes('/troika-')
-          ) {
-            return 'vendor-three';
-          }
+          if (id.includes('/three/examples/')) return 'vendor-three-examples';
+          if (id.includes('/three/')) return 'vendor-three-core';
+          if (id.includes('@react-three/fiber')) return 'vendor-r3f';
+          if (id.includes('@react-three/drei')) return 'vendor-drei';
+          if (id.includes('/three-stdlib/')) return 'vendor-stdlib';
+          if (id.includes('/troika-') || id.includes('/maath/')) return 'vendor-3d-utils';
           if (id.includes('/framer-motion/')) return 'vendor-motion';
           if (id.includes('@headlessui/') || id.includes('@radix-ui/')) return 'vendor-ui';
           if (id.includes('/react/') || id.includes('/react-dom/')) return 'vendor-react';

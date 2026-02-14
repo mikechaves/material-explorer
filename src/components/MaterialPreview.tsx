@@ -2,7 +2,7 @@ import React, { useImperativeHandle, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
-import { OrbitControls, Stage, ContactShadows } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei/core/OrbitControls';
 
 interface MaterialPreviewProps {
   className?: string;
@@ -62,6 +62,144 @@ interface SphereProps {
   model?: MaterialPreviewProps['model'];
   animate?: boolean;
 }
+
+type EnvironmentName = NonNullable<MaterialPreviewProps['environment']>;
+
+type LightingPreset = {
+  ambientIntensity: number;
+  keyLightColor: string;
+  keyLightIntensity: number;
+  keyLightPosition: [number, number, number];
+  fillLightColor: string;
+  fillLightIntensity: number;
+  fillLightPosition: [number, number, number];
+  rimLightColor: string;
+  rimLightIntensity: number;
+  rimLightPosition: [number, number, number];
+};
+
+const LIGHTING_PRESETS: Record<EnvironmentName, LightingPreset> = {
+  warehouse: {
+    ambientIntensity: 0.34,
+    keyLightColor: '#ffffff',
+    keyLightIntensity: 1.35,
+    keyLightPosition: [3.8, 3.2, 2.6],
+    fillLightColor: '#8fb6ff',
+    fillLightIntensity: 0.38,
+    fillLightPosition: [-3.5, 2.4, -2],
+    rimLightColor: '#ffe2b5',
+    rimLightIntensity: 0.32,
+    rimLightPosition: [0, 2.2, -4],
+  },
+  studio: {
+    ambientIntensity: 0.42,
+    keyLightColor: '#ffffff',
+    keyLightIntensity: 1.55,
+    keyLightPosition: [2.9, 2.8, 2.8],
+    fillLightColor: '#e8f1ff',
+    fillLightIntensity: 0.55,
+    fillLightPosition: [-2.2, 2, -1.5],
+    rimLightColor: '#d2dcff',
+    rimLightIntensity: 0.45,
+    rimLightPosition: [0, 2.6, -3.5],
+  },
+  city: {
+    ambientIntensity: 0.32,
+    keyLightColor: '#d9e5ff',
+    keyLightIntensity: 1.2,
+    keyLightPosition: [4, 3, 1.6],
+    fillLightColor: '#8fc0ff',
+    fillLightIntensity: 0.33,
+    fillLightPosition: [-3.8, 1.8, -2.5],
+    rimLightColor: '#ffd2b0',
+    rimLightIntensity: 0.32,
+    rimLightPosition: [0, 2.8, -4.2],
+  },
+  sunset: {
+    ambientIntensity: 0.31,
+    keyLightColor: '#ffb98f',
+    keyLightIntensity: 1.55,
+    keyLightPosition: [3.4, 2.6, 2.2],
+    fillLightColor: '#9eb8ff',
+    fillLightIntensity: 0.38,
+    fillLightPosition: [-3.2, 2.1, -1.8],
+    rimLightColor: '#ff8a65',
+    rimLightIntensity: 0.38,
+    rimLightPosition: [0, 2.4, -4],
+  },
+  dawn: {
+    ambientIntensity: 0.34,
+    keyLightColor: '#ffd8b5',
+    keyLightIntensity: 1.4,
+    keyLightPosition: [3.1, 2.8, 2.5],
+    fillLightColor: '#b4c7ff',
+    fillLightIntensity: 0.39,
+    fillLightPosition: [-3, 2.1, -2.2],
+    rimLightColor: '#ffd0f5',
+    rimLightIntensity: 0.3,
+    rimLightPosition: [0, 2.5, -3.8],
+  },
+  night: {
+    ambientIntensity: 0.2,
+    keyLightColor: '#9cb6ff',
+    keyLightIntensity: 1.05,
+    keyLightPosition: [3.5, 2.6, 2.5],
+    fillLightColor: '#4f6bd8',
+    fillLightIntensity: 0.3,
+    fillLightPosition: [-3, 1.8, -2],
+    rimLightColor: '#c2d3ff',
+    rimLightIntensity: 0.42,
+    rimLightPosition: [0, 2.8, -4],
+  },
+  forest: {
+    ambientIntensity: 0.3,
+    keyLightColor: '#d5ffce',
+    keyLightIntensity: 1.15,
+    keyLightPosition: [3.7, 3, 2],
+    fillLightColor: '#9ed0a0',
+    fillLightIntensity: 0.42,
+    fillLightPosition: [-3.4, 2.3, -2.3],
+    rimLightColor: '#f0ffe7',
+    rimLightIntensity: 0.24,
+    rimLightPosition: [0, 2.1, -3.8],
+  },
+  apartment: {
+    ambientIntensity: 0.4,
+    keyLightColor: '#fff3dc',
+    keyLightIntensity: 1.35,
+    keyLightPosition: [2.7, 2.4, 2.8],
+    fillLightColor: '#d6e3ff',
+    fillLightIntensity: 0.35,
+    fillLightPosition: [-2.8, 2.1, -1.8],
+    rimLightColor: '#fff7ea',
+    rimLightIntensity: 0.22,
+    rimLightPosition: [0, 2.2, -3.2],
+  },
+  park: {
+    ambientIntensity: 0.32,
+    keyLightColor: '#f4ffde',
+    keyLightIntensity: 1.22,
+    keyLightPosition: [3.6, 2.8, 2.6],
+    fillLightColor: '#b5e3c4',
+    fillLightIntensity: 0.34,
+    fillLightPosition: [-3.2, 2.1, -2.2],
+    rimLightColor: '#d8fff3',
+    rimLightIntensity: 0.28,
+    rimLightPosition: [0, 2.3, -3.6],
+  },
+  lobby: {
+    ambientIntensity: 0.38,
+    keyLightColor: '#fff1d5',
+    keyLightIntensity: 1.4,
+    keyLightPosition: [3, 2.5, 2.4],
+    fillLightColor: '#dbe7ff',
+    fillLightIntensity: 0.32,
+    fillLightPosition: [-2.7, 2, -1.9],
+    rimLightColor: '#ffe8c2',
+    rimLightIntensity: 0.28,
+    rimLightPosition: [0, 2.4, -3.4],
+  },
+};
 
 function buildGeometry(model: MaterialPreviewProps['model']) {
   let g: THREE.BufferGeometry;
@@ -228,24 +366,37 @@ const Sphere: React.FC<SphereProps> = ({
   );
 };
 
-const Scene: React.FC<SphereProps & { autoRotate?: boolean; enableZoom?: boolean; showGrid?: boolean }> = ({
+const Scene: React.FC<
+  SphereProps & { environment?: MaterialPreviewProps['environment']; autoRotate?: boolean; enableZoom?: boolean; showGrid?: boolean }
+> = ({
+  environment = 'warehouse',
   autoRotate,
   enableZoom,
   showGrid,
   ...props
 }) => {
+  const lighting = LIGHTING_PRESETS[environment];
   return (
     <>
+      <ambientLight intensity={lighting.ambientIntensity} />
+      <directionalLight
+        color={lighting.keyLightColor}
+        intensity={lighting.keyLightIntensity}
+        position={lighting.keyLightPosition}
+      />
+      <pointLight
+        color={lighting.fillLightColor}
+        intensity={lighting.fillLightIntensity}
+        position={lighting.fillLightPosition}
+      />
+      <pointLight
+        color={lighting.rimLightColor}
+        intensity={lighting.rimLightIntensity}
+        position={lighting.rimLightPosition}
+      />
+
       {/* Main sphere */}
       <Sphere {...props} animate={!!autoRotate} />
-
-      {/* Contact shadows for better grounding */}
-      <ContactShadows
-        position={[0, -1.4, 0]}
-        opacity={0.4}
-        scale={10}
-        blur={2}
-      />
 
       {showGrid && <gridHelper args={[12, 12, '#444444', '#222222']} position={[0, -1.4, 0]} />}
 
@@ -388,37 +539,36 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
         >
           {showBackground && <color attach="background" args={['#000000']} />}
           {showBackground && <fog attach="fog" args={['#000000', 10, 20]} />}
-
-          <Stage key={frameNonce} intensity={1} environment={environment} adjustCamera={0.55}>
-            <Scene
-              color={color}
-              metalness={metalness}
-              roughness={roughness}
-              emissive={emissive}
-              emissiveIntensity={emissiveIntensity}
-              clearcoat={clearcoat}
-              clearcoatRoughness={clearcoatRoughness}
-              transmission={transmission}
-              ior={ior}
-              opacity={opacity}
-              baseColorMap={baseColorMap}
-              normalMap={normalMap}
-              normalScale={normalScale}
-              roughnessMap={roughnessMap}
-              metalnessMap={metalnessMap}
-              aoMap={aoMap}
-              emissiveMap={emissiveMap}
-              alphaMap={alphaMap}
-              aoIntensity={aoIntensity}
-              alphaTest={alphaTest}
-              repeatX={repeatX}
-              repeatY={repeatY}
-              model={model}
-              autoRotate={autoRotate}
-              enableZoom={enableZoom}
-              showGrid={showGrid}
-            />
-          </Stage>
+          <Scene
+            key={frameNonce}
+            color={color}
+            metalness={metalness}
+            roughness={roughness}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            clearcoat={clearcoat}
+            clearcoatRoughness={clearcoatRoughness}
+            transmission={transmission}
+            ior={ior}
+            opacity={opacity}
+            baseColorMap={baseColorMap}
+            normalMap={normalMap}
+            normalScale={normalScale}
+            roughnessMap={roughnessMap}
+            metalnessMap={metalnessMap}
+            aoMap={aoMap}
+            emissiveMap={emissiveMap}
+            alphaMap={alphaMap}
+            aoIntensity={aoIntensity}
+            alphaTest={alphaTest}
+            repeatX={repeatX}
+            repeatY={repeatY}
+            model={model}
+            environment={environment}
+            autoRotate={autoRotate}
+            enableZoom={enableZoom}
+            showGrid={showGrid}
+          />
         </Canvas>
       </PreviewErrorBoundary>
       
