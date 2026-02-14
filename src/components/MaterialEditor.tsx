@@ -35,6 +35,7 @@ import {
   resetOpticsSection as applyOpticsSectionReset,
   resetSurfaceSection as applySurfaceSectionReset,
 } from './editor/draftSections';
+import { validateTextureDataUrl, validateTextureUploadFile } from './editor/textureUpload';
 import { emitTelemetryEvent } from '../utils/telemetry';
 
 const HISTORY_LIMIT = 120;
@@ -417,11 +418,74 @@ const MaterialEditor: React.FC = () => {
     });
 
   const uploadMap = async (key: keyof MaterialDraft, file: File) => {
-    const dataUrl = await readFileAsDataUrl(file);
-    setMaterialWithHistory((prev) => {
-      if (prev[key] === dataUrl) return prev;
-      return { ...prev, [key]: dataUrl };
-    });
+    const fileValidationMessage = validateTextureUploadFile(file);
+    if (fileValidationMessage) {
+      notify({ variant: 'warn', title: 'Texture upload blocked', message: fileValidationMessage });
+      emitTelemetryEvent(
+        'texture.upload.rejected',
+        {
+          key,
+          reason: 'file-validation',
+          fileType: file.type || 'unknown',
+          fileSize: file.size,
+          message: fileValidationMessage,
+        },
+        'warn'
+      );
+      return;
+    }
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrlValidationMessage = validateTextureDataUrl(dataUrl);
+      if (dataUrlValidationMessage) {
+        notify({ variant: 'warn', title: 'Texture upload blocked', message: dataUrlValidationMessage });
+        emitTelemetryEvent(
+          'texture.upload.rejected',
+          {
+            key,
+            reason: 'data-url-validation',
+            fileType: file.type || 'unknown',
+            fileSize: file.size,
+            dataUrlLength: dataUrl.length,
+            message: dataUrlValidationMessage,
+          },
+          'warn'
+        );
+        return;
+      }
+
+      setMaterialWithHistory((prev) => {
+        if (prev[key] === dataUrl) return prev;
+        return { ...prev, [key]: dataUrl };
+      });
+      emitTelemetryEvent(
+        'texture.upload.accepted',
+        {
+          key,
+          fileType: file.type || 'unknown',
+          fileSize: file.size,
+          dataUrlLength: dataUrl.length,
+        },
+        'info'
+      );
+    } catch (error) {
+      notify({
+        variant: 'error',
+        title: 'Texture upload failed',
+        message: 'Could not read this file. Try a different image.',
+      });
+      emitTelemetryEvent(
+        'texture.upload.failed',
+        {
+          key,
+          fileType: file.type || 'unknown',
+          fileSize: file.size,
+          message: error instanceof Error ? error.message : String(error),
+        },
+        'error'
+      );
+    }
   };
 
   const applyPreset = (preset: MaterialPreset) => {

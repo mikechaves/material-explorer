@@ -131,6 +131,7 @@ Current telemetry events include:
 - `materials.save.*` and `materials.load.*` sync failure paths
 - `preview.first_enabled`
 - `preview.first_ready`
+- `texture.upload.*` outcomes
 
 In development mode, use the bottom-right `Telemetry` button to inspect recent emitted events locally.
 
