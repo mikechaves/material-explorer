@@ -123,6 +123,30 @@ VITE_TELEMETRY_URL=https://your-observability.example.com/events
 
 Telemetry is best-effort and never blocks user actions.
 
+## Local Mock Backend (Optional)
+
+For local backend/sync iteration, run the built-in mock API:
+
+```bash
+npm run mock:api
+```
+
+Then point the app to it:
+
+```bash
+VITE_MATERIALS_API_URL=http://localhost:8787
+VITE_MATERIALS_USER_SCOPE=local-user
+VITE_TELEMETRY_URL=http://localhost:8787/events
+```
+
+Available routes on the mock server:
+
+- `GET /health`
+- `GET /materials?scope=<scope>`
+- `PUT /materials?scope=<scope>`
+- `POST /events`
+- `GET /events`
+
 ## Usage
 
 ### Creating a Material

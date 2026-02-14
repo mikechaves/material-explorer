@@ -5,6 +5,7 @@
 - Keep current frontend behavior unchanged while introducing server persistence.
 - Preserve import/export/share compatibility with existing local JSON payloads.
 - Add server-side validation so malformed material payloads are rejected consistently.
+- Provide a low-friction local backend harness for integration testing (`npm run mock:api`).
 
 ## API Contract (v1)
 

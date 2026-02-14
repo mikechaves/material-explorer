@@ -48,7 +48,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
-    "postinstall": "node scripts/fix-mediapipe-sourcemaps.js"
+    "postinstall": "node scripts/fix-mediapipe-sourcemaps.js",
+    "mock:api": "node scripts/mock-material-server.mjs"
   },
   "browserslist": {
     "production": [
