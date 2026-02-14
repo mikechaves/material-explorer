@@ -75,11 +75,9 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
 
   const runCommand = (command: CommandPaletteItem | undefined) => {
     if (!command) return;
-    setRecentCommandIds((previous) => {
-      const next = promoteRecentCommandId(previous, command.id);
-      persistRecentCommands(next);
-      return next;
-    });
+    const nextRecentCommandIds = promoteRecentCommandId(recentCommandIds, command.id);
+    persistRecentCommands(nextRecentCommandIds);
+    setRecentCommandIds(nextRecentCommandIds);
     command.run();
     onClose();
   };

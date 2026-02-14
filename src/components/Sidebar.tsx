@@ -4,7 +4,6 @@ import { useToasts } from '../contexts/ToastContext';
 import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
-import { CommandPalette } from './sidebar/CommandPalette';
 import { dispatchAppCommand } from '../types/commands';
 import { buildCommandItems } from './sidebar/commandItems';
 import { parseImportedMaterials, validateImportFileSize } from './sidebar/importMaterials';
@@ -31,6 +30,11 @@ const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
 async function loadGltfExporters() {
   return await import('../utils/gltfExport');
 }
+
+const CommandPalette = React.lazy(async () => {
+  const module = await import('./sidebar/CommandPalette');
+  return { default: module.CommandPalette };
+});
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, setWidth, isMobile = false }) => {
   const { notify } = useToasts();
@@ -537,11 +541,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
           </div>
         )}
       </motion.div>
-      <CommandPalette
-        open={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        commands={commandItems}
-      />
+      {isCommandPaletteOpen && (
+        <React.Suspense fallback={null}>
+          <CommandPalette
+            open={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            commands={commandItems}
+          />
+        </React.Suspense>
+      )}
     </>
   );
 };
