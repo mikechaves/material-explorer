@@ -25,6 +25,13 @@ const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
   { value: 'name', label: 'Name' },
   { value: 'manual', label: 'Manual' },
 ];
+const MAX_IMPORT_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_IMPORT_JSON_CHARS = 12 * 1024 * 1024;
+const MAX_IMPORT_MATERIALS = 600;
+const MAX_TEXTURE_DATA_URL_CHARS = 2_500_000;
+const textureFields: Array<
+  'baseColorMap' | 'normalMap' | 'roughnessMap' | 'metalnessMap' | 'aoMap' | 'emissiveMap' | 'alphaMap'
+> = ['baseColorMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'];
 
 function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(' ');
@@ -168,7 +175,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
 
   const onImportFile = async (file: File) => {
     try {
+      if (file.size > MAX_IMPORT_FILE_BYTES) {
+        window.alert('Import file is too large. Maximum supported size is 8 MB.');
+        return;
+      }
+
       const raw = await file.text();
+      if (raw.length > MAX_IMPORT_JSON_CHARS) {
+        window.alert('Import payload is too large. Try splitting the file into smaller batches.');
+        return;
+      }
       const parsed = JSON.parse(raw) as unknown;
 
       const now = Date.now();
@@ -180,12 +196,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
             ? [parsed.material]
             : [parsed];
 
+      if (incoming.length > MAX_IMPORT_MATERIALS) {
+        window.alert(`Import contains too many materials (${incoming.length}). Maximum supported is ${MAX_IMPORT_MATERIALS}.`);
+        return;
+      }
+
       const normalized = incoming
         .map((m) => normalizeMaterial(m, now))
         .filter((m): m is Material => m !== null);
 
       if (normalized.length === 0) {
         window.alert('No valid materials found in that file.');
+        return;
+      }
+
+      const oversizedTextureMaterial = normalized.find((material) =>
+        textureFields.some((field) => {
+          const value = material[field];
+          return typeof value === 'string' && value.length > MAX_TEXTURE_DATA_URL_CHARS;
+        })
+      );
+      if (oversizedTextureMaterial) {
+        window.alert(
+          'Import includes very large embedded texture data. Use smaller textures or split imports to avoid browser storage limits.'
+        );
         return;
       }
 
