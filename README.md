@@ -70,6 +70,9 @@ This command builds the app for production to the `build` folder. The build is m
 Before opening a pull request, run:
 
 ```bash
+npm run check-format
+npm run lint
+npm run type-check
 npm run build
 npm run check:bundle
 npm run test:ci
@@ -77,6 +80,21 @@ npm run test:e2e
 ```
 
 The repository also runs these checks in GitHub Actions on pull requests and on pushes to `main`.
+
+## Optional API Sync
+
+Material persistence defaults to local storage. To enable backend sync with local fallback, set:
+
+```bash
+VITE_MATERIALS_API_URL=https://your-api.example.com
+```
+
+When set, the app uses:
+
+- `GET /materials` to hydrate the library on startup
+- `PUT /materials` to persist updates
+
+If the API is unavailable, the app continues using local storage.
 
 ## Usage
 

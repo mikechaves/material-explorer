@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Material } from '../types/material';
-import { localMaterialRepository } from '../repositories/materialRepository';
+import { materialRepository } from '../repositories/materialRepository';
 
 interface MaterialContextType {
   materials: Material[];
@@ -22,13 +22,37 @@ const STORAGE_ERROR_MESSAGE =
   'Could not save materials locally. Your browser storage may be full. Export JSON backup before continuing.';
 
 export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [materials, setMaterials] = useState<Material[]>(() => localMaterialRepository.loadAll());
+  const [materials, setMaterials] = useState<Material[]>(() => materialRepository.loadAll());
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const hasLocalMutationsRef = useRef(false);
+  const persistSequenceRef = useRef(0);
+
+  useEffect(() => {
+    if (!materialRepository.loadFromRemote) return;
+
+    let cancelled = false;
+    void materialRepository.loadFromRemote().then((remoteMaterials) => {
+      if (cancelled || !remoteMaterials || hasLocalMutationsRef.current) return;
+      setMaterials(remoteMaterials);
+      setSelectedMaterial((prev) => {
+        if (!prev) return prev;
+        return remoteMaterials.find((material) => material.id === prev.id) ?? null;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const persistMaterials = (updated: Material[]) => {
-    const ok = localMaterialRepository.saveAll(updated);
-    setStorageError(ok ? null : STORAGE_ERROR_MESSAGE);
+    hasLocalMutationsRef.current = true;
+    const persistSequence = ++persistSequenceRef.current;
+    void materialRepository.saveAll(updated).then((ok) => {
+      if (persistSequence !== persistSequenceRef.current) return;
+      setStorageError(ok ? null : STORAGE_ERROR_MESSAGE);
+    });
   };
 
   const addMaterial = (material: Material) => {
