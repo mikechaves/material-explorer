@@ -326,6 +326,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         dispatchAppCommand('save-material');
         return;
       }
+      if (key === 'z') {
+        event.preventDefault();
+        dispatchAppCommand(event.shiftKey ? 'redo-material-change' : 'undo-material-change');
+        return;
+      }
+      if (key === 'y') {
+        event.preventDefault();
+        dispatchAppCommand('redo-material-change');
+        return;
+      }
       if (key === 'p') {
         event.preventDefault();
         dispatchAppCommand('toggle-preview');

@@ -138,6 +138,19 @@ test('can save a material with keyboard shortcut', async ({ page }) => {
     .toBe('Shortcut Material');
 });
 
+test('can undo and redo draft changes with shortcuts', async ({ page }) => {
+  const roughnessValue = page.locator('input#roughness-value');
+  await roughnessValue.fill('0.2');
+  await expect(roughnessValue).toHaveValue('0.2');
+
+  await page.getByText('Live Material Lab').click();
+  await page.keyboard.press('ControlOrMeta+KeyZ');
+  await expect(roughnessValue).toHaveValue('0.5');
+
+  await page.keyboard.press('ControlOrMeta+Shift+KeyZ');
+  await expect(roughnessValue).toHaveValue('0.2');
+});
+
 test('can toggle compare mode after capturing reference', async ({ page }) => {
   const compareButton = page.getByRole('button', { name: 'Compare', exact: true });
   await expect(compareButton).toBeDisabled();

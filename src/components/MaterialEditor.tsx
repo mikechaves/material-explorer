@@ -14,6 +14,13 @@ import { OnboardingCard } from './editor/OnboardingCard';
 import { QuickPresetsCard } from './editor/QuickPresetsCard';
 import { PreviewControlsCard } from './editor/PreviewControlsCard';
 
+const HISTORY_LIMIT = 120;
+
+function cloneDraft(draft: MaterialDraft): MaterialDraft {
+  if (typeof structuredClone === 'function') return structuredClone(draft);
+  return JSON.parse(JSON.stringify(draft)) as MaterialDraft;
+}
+
 const MaterialEditor: React.FC = () => {
   const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle>(null);
@@ -25,6 +32,8 @@ const MaterialEditor: React.FC = () => {
   );
 
   const [material, setMaterial] = useState<MaterialDraft>(emptyDraft);
+  const [undoStack, setUndoStack] = useState<MaterialDraft[]>([]);
+  const [redoStack, setRedoStack] = useState<MaterialDraft[]>([]);
   const [previewModel, setPreviewModel] = useState<PreviewModel>(() => {
     const v = window.localStorage.getItem('previewModel');
     if (v === 'sphere' || v === 'box' || v === 'torusKnot' || v === 'icosahedron') return v;
@@ -51,9 +60,60 @@ const MaterialEditor: React.FC = () => {
     () => window.localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true'
   );
 
+  const setMaterialWithHistory = React.useCallback((nextState: React.SetStateAction<MaterialDraft>) => {
+    setMaterial((prev) => {
+      const next =
+        typeof nextState === 'function'
+          ? (nextState as (prevState: MaterialDraft) => MaterialDraft)(prev)
+          : nextState;
+      if (next === prev) return prev;
+      setUndoStack((stack) => {
+        const nextStack = [...stack, cloneDraft(prev)];
+        if (nextStack.length > HISTORY_LIMIT) nextStack.shift();
+        return nextStack;
+      });
+      setRedoStack([]);
+      return next;
+    });
+  }, []);
+
+  const undoMaterialChange = React.useCallback(() => {
+    setUndoStack((stack) => {
+      const previous = stack[stack.length - 1];
+      if (!previous) return stack;
+      setMaterial((current) => {
+        setRedoStack((future) => {
+          const nextFuture = [...future, cloneDraft(current)];
+          if (nextFuture.length > HISTORY_LIMIT) nextFuture.shift();
+          return nextFuture;
+        });
+        return cloneDraft(previous);
+      });
+      return stack.slice(0, -1);
+    });
+  }, []);
+
+  const redoMaterialChange = React.useCallback(() => {
+    setRedoStack((stack) => {
+      const next = stack[stack.length - 1];
+      if (!next) return stack;
+      setMaterial((current) => {
+        setUndoStack((past) => {
+          const nextPast = [...past, cloneDraft(current)];
+          if (nextPast.length > HISTORY_LIMIT) nextPast.shift();
+          return nextPast;
+        });
+        return cloneDraft(next);
+      });
+      return stack.slice(0, -1);
+    });
+  }, []);
+
   useEffect(() => {
-    if (selectedMaterial) setMaterial(selectedMaterial);
-    else setMaterial(emptyDraft);
+    if (selectedMaterial) setMaterial(cloneDraft(selectedMaterial));
+    else setMaterial(cloneDraft(emptyDraft));
+    setUndoStack([]);
+    setRedoStack([]);
   }, [selectedMaterial, emptyDraft]);
 
   // Load from share URL (?m=...)
@@ -64,7 +124,9 @@ const MaterialEditor: React.FC = () => {
     const payload = decodeSharePayload(m);
     if (!payload) return;
     startNewMaterial();
-    setMaterial(coerceMaterialDraft(payload.material, emptyDraft));
+    setMaterial(cloneDraft(coerceMaterialDraft(payload.material, emptyDraft)));
+    setUndoStack([]);
+    setRedoStack([]);
     // keep URL clean after applying
     url.searchParams.delete('m');
     window.history.replaceState({}, '', url.toString());
@@ -128,6 +190,7 @@ const MaterialEditor: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    const field = name as keyof MaterialDraft;
     const newValue = (() => {
       if (name === 'name') return value;
       if (name === 'color') return value;
@@ -144,10 +207,13 @@ const MaterialEditor: React.FC = () => {
     })();
 
     if (newValue === null) return;
-    setMaterial(prev => ({
-      ...prev,
-      [name]: newValue
-    }));
+    setMaterialWithHistory((prev) => {
+      if (prev[field] === newValue) return prev;
+      return {
+        ...prev,
+        [field]: newValue,
+      };
+    });
   };
 
   const readFileAsDataUrl = (file: File) =>
@@ -160,11 +226,14 @@ const MaterialEditor: React.FC = () => {
 
   const uploadMap = async (key: keyof MaterialDraft, file: File) => {
     const dataUrl = await readFileAsDataUrl(file);
-    setMaterial((prev) => ({ ...prev, [key]: dataUrl }));
+    setMaterialWithHistory((prev) => {
+      if (prev[key] === dataUrl) return prev;
+      return { ...prev, [key]: dataUrl };
+    });
   };
 
   const applyPreset = (preset: MaterialPreset) => {
-    setMaterial((prev) => ({
+    setMaterialWithHistory((prev) => ({
       ...prev,
       ...preset.values,
       name: prev.name?.trim() ? prev.name : preset.label,
@@ -238,6 +307,14 @@ const MaterialEditor: React.FC = () => {
         setCompareOn(true);
         return;
       }
+      if (action === 'undo-material-change') {
+        undoMaterialChange();
+        return;
+      }
+      if (action === 'redo-material-change') {
+        redoMaterialChange();
+        return;
+      }
       if (action === 'focus-material-name') {
         nameInputRef.current?.focus();
         nameInputRef.current?.select();
@@ -251,7 +328,10 @@ const MaterialEditor: React.FC = () => {
 
     window.addEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
     return () => window.removeEventListener(APP_COMMAND_EVENT, onCommand as EventListener);
-  }, [compareA, material, saveMaterial]);
+  }, [compareA, material, redoMaterialChange, saveMaterial, undoMaterialChange]);
+
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
 
   return (
     <div className="w-full h-full overflow-y-auto">
@@ -375,7 +455,12 @@ const MaterialEditor: React.FC = () => {
                   id="material-favorite"
                   type="checkbox"
                   checked={!!material.favorite}
-                  onChange={(e) => setMaterial((prev) => ({ ...prev, favorite: e.target.checked }))}
+                  onChange={(e) =>
+                    setMaterialWithHistory((prev) => {
+                      if (prev.favorite === e.target.checked) return prev;
+                      return { ...prev, favorite: e.target.checked };
+                    })
+                  }
                   className={EDITOR_CHECKBOX_CLASS}
                 />
               </div>
@@ -391,7 +476,10 @@ const MaterialEditor: React.FC = () => {
                       .split(',')
                       .map((t) => t.trim())
                       .filter(Boolean);
-                    setMaterial((prev) => ({ ...prev, tags }));
+                    setMaterialWithHistory((prev) => {
+                      if ((prev.tags ?? []).join('|') === tags.join('|')) return prev;
+                      return { ...prev, tags };
+                    });
                   }}
                   placeholder="e.g. glass, carpaint, fabric"
                   className="ui-input px-3 py-2 text-sm"
@@ -487,7 +575,38 @@ const MaterialEditor: React.FC = () => {
               />
             </div>
 
-            <TextureControls material={material} onChange={handleChange} onUploadMap={uploadMap} setMaterial={setMaterial} />
+            <TextureControls
+              material={material}
+              onChange={handleChange}
+              onUploadMap={uploadMap}
+              setMaterial={setMaterialWithHistory}
+            />
+
+            <div className="section-shell px-3 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs ui-muted">Draft history</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                    onClick={undoMaterialChange}
+                    disabled={!canUndo}
+                    title="Undo (Ctrl/Cmd+Z)"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-btn px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                    onClick={redoMaterialChange}
+                    disabled={!canRedo}
+                    title="Redo (Ctrl/Cmd+Shift+Z)"
+                  >
+                    Redo
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <motion.button
               className="ui-btn ui-btn-primary w-full py-2.5 text-sm"

@@ -79,6 +79,22 @@ export function buildCommandItems({
       run: () => dispatchAppCommand('save-material'),
     },
     {
+      id: 'undo-material-change',
+      title: 'Undo Material Change',
+      description: 'Revert the latest draft edit.',
+      shortcut: 'Ctrl/Cmd+Z',
+      keywords: ['undo', 'history', 'draft'],
+      run: () => dispatchAppCommand('undo-material-change'),
+    },
+    {
+      id: 'redo-material-change',
+      title: 'Redo Material Change',
+      description: 'Reapply the last undone draft edit.',
+      shortcut: 'Ctrl/Cmd+Shift+Z / Ctrl/Cmd+Y',
+      keywords: ['redo', 'history', 'draft'],
+      run: () => dispatchAppCommand('redo-material-change'),
+    },
+    {
       id: 'toggle-preview',
       title: 'Toggle 3D Preview',
       description: 'Enable or disable interactive 3D preview.',
