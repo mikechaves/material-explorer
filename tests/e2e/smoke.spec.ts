@@ -172,6 +172,15 @@ test('shows unsaved state and can revert draft changes', async ({ page }) => {
   await expect(page.getByText('All changes saved', { exact: true })).toBeVisible();
 });
 
+test('can reset just the surface section', async ({ page }) => {
+  const roughnessValue = page.locator('input#roughness-value');
+  await roughnessValue.fill('0.2');
+  await expect(roughnessValue).toHaveValue('0.2');
+
+  await page.getByRole('button', { name: 'Reset Surface' }).click();
+  await expect(roughnessValue).toHaveValue('0.5');
+});
+
 test('command palette shows recently used commands', async ({ page }) => {
   await page.getByRole('button', { name: 'Commands' }).click();
   const dialog = page.getByRole('dialog', { name: 'Command palette' });

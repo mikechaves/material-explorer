@@ -5,14 +5,25 @@ import { Control } from './EditorFields';
 type MaterialOpticsCardProps = {
   material: MaterialDraft;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isDirty: boolean;
+  onReset: () => void;
 };
 
-export function MaterialOpticsCard({ material, onChange }: MaterialOpticsCardProps) {
+export function MaterialOpticsCard({ material, onChange, isDirty, onReset }: MaterialOpticsCardProps) {
   return (
     <div className="section-shell px-3 py-3 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <label className="ui-label">Emissive</label>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="ui-btn px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+            onClick={onReset}
+            disabled={!isDirty}
+            aria-label="Reset Optics"
+          >
+            Reset Optics
+          </button>
           <input
             type="color"
             name="emissive"

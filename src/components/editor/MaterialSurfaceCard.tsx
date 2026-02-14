@@ -6,12 +6,25 @@ import { Control } from './EditorFields';
 type MaterialSurfaceCardProps = {
   material: MaterialDraft;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isDirty: boolean;
+  onReset: () => void;
 };
 
-export function MaterialSurfaceCard({ material, onChange }: MaterialSurfaceCardProps) {
+export function MaterialSurfaceCard({ material, onChange, isDirty, onReset }: MaterialSurfaceCardProps) {
   return (
     <div className="section-shell px-3 py-3 space-y-4">
-      <label className="ui-label">Material Color</label>
+      <div className="flex items-center justify-between gap-3">
+        <label className="ui-label">Material Color</label>
+        <button
+          type="button"
+          className="ui-btn px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+          onClick={onReset}
+          disabled={!isDirty}
+          aria-label="Reset Surface"
+        >
+          Reset Surface
+        </button>
+      </div>
       <div className="flex items-center gap-4">
         <motion.div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-100/20">
           <input

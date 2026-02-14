@@ -80,6 +80,26 @@ function areDraftsEqual(a: MaterialDraft, b: MaterialDraft) {
   });
 }
 
+function isSurfaceSectionDirty(current: MaterialDraft, baseline: MaterialDraft) {
+  return (
+    current.color !== baseline.color ||
+    current.metalness !== baseline.metalness ||
+    current.roughness !== baseline.roughness
+  );
+}
+
+function isOpticsSectionDirty(current: MaterialDraft, baseline: MaterialDraft) {
+  return (
+    current.emissive !== baseline.emissive ||
+    current.emissiveIntensity !== baseline.emissiveIntensity ||
+    current.clearcoat !== baseline.clearcoat ||
+    current.clearcoatRoughness !== baseline.clearcoatRoughness ||
+    current.transmission !== baseline.transmission ||
+    current.ior !== baseline.ior ||
+    current.opacity !== baseline.opacity
+  );
+}
+
 const MaterialEditor: React.FC = () => {
   const { materials, addMaterial, addMaterials, updateMaterial, selectedMaterial, startNewMaterial } = useMaterials();
   const previewRef = useRef<MaterialPreviewHandle>(null);
@@ -434,12 +454,36 @@ const MaterialEditor: React.FC = () => {
   const isDirty = React.useMemo(() => !areDraftsEqual(material, baselineDraft), [baselineDraft, material]);
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
+  const surfaceDirty = React.useMemo(() => isSurfaceSectionDirty(material, baselineDraft), [baselineDraft, material]);
+  const opticsDirty = React.useMemo(() => isOpticsSectionDirty(material, baselineDraft), [baselineDraft, material]);
 
   const resetDraftChanges = React.useCallback(() => {
     setMaterial(cloneDraft(baselineDraft));
     setUndoStack([]);
     setRedoStack([]);
   }, [baselineDraft]);
+
+  const resetSurfaceSection = React.useCallback(() => {
+    setMaterialWithHistory((prev) => ({
+      ...prev,
+      color: baselineDraft.color,
+      metalness: baselineDraft.metalness,
+      roughness: baselineDraft.roughness,
+    }));
+  }, [baselineDraft, setMaterialWithHistory]);
+
+  const resetOpticsSection = React.useCallback(() => {
+    setMaterialWithHistory((prev) => ({
+      ...prev,
+      emissive: baselineDraft.emissive,
+      emissiveIntensity: baselineDraft.emissiveIntensity,
+      clearcoat: baselineDraft.clearcoat,
+      clearcoatRoughness: baselineDraft.clearcoatRoughness,
+      transmission: baselineDraft.transmission,
+      ior: baselineDraft.ior,
+      opacity: baselineDraft.opacity,
+    }));
+  }, [baselineDraft, setMaterialWithHistory]);
 
   return (
     <div className="w-full h-full overflow-y-auto">
@@ -560,9 +604,19 @@ const MaterialEditor: React.FC = () => {
               onTagsInputChange={handleTagsInputChange}
             />
 
-            <MaterialSurfaceCard material={material} onChange={handleChange} />
+            <MaterialSurfaceCard
+              material={material}
+              onChange={handleChange}
+              isDirty={surfaceDirty}
+              onReset={resetSurfaceSection}
+            />
 
-            <MaterialOpticsCard material={material} onChange={handleChange} />
+            <MaterialOpticsCard
+              material={material}
+              onChange={handleChange}
+              isDirty={opticsDirty}
+              onReset={resetOpticsSection}
+            />
 
             <TextureControls
               material={material}
