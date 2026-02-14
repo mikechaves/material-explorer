@@ -1,14 +1,17 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMaterials } from '../contexts/MaterialContext';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { Material } from '../types/material';
 import { createMaterialFromDraft, downloadBlob, downloadJson } from '../utils/material';
-import { Listbox, Transition } from '@headlessui/react';
-import { MaterialCard } from './sidebar/MaterialCard';
 import { CommandPalette } from './sidebar/CommandPalette';
 import { dispatchAppCommand } from '../types/commands';
 import { buildCommandItems } from './sidebar/commandItems';
 import { parseImportedMaterials, validateImportFileSize } from './sidebar/importMaterials';
+import { SidebarHeader } from './sidebar/SidebarHeader';
+import { SidebarFilters } from './sidebar/SidebarFilters';
+import { SidebarBulkBar } from './sidebar/SidebarBulkBar';
+import { SidebarGrid } from './sidebar/SidebarGrid';
+import type { SortMode } from './sidebar/sidebarTypes';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -19,18 +22,6 @@ interface SidebarProps {
 }
 
 const [minWidth, maxWidth] = [200, 500];
-type SortMode = 'updated' | 'created' | 'name' | 'manual';
-
-const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
-  { value: 'updated', label: 'Updated' },
-  { value: 'created', label: 'Created' },
-  { value: 'name', label: 'Name' },
-  { value: 'manual', label: 'Manual' },
-];
-
-function classNames(...xs: Array<string | false | null | undefined>) {
-  return xs.filter(Boolean).join(' ');
-}
 
 const logoUrl = `${import.meta.env.BASE_URL}logo.png`;
 
@@ -370,87 +361,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
         transition={{ type: "spring", bounce: 0, duration: 0.3 }}
       >
       <div className="p-4 w-full overflow-hidden">
-        <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-start mb-5`}>
-          <div className={`flex items-center ${isCollapsed ? 'flex-col' : 'gap-3'}`}>
-            <motion.button 
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="p-1.5 rounded-xl bg-slate-900/65 hover:bg-slate-800/75 border border-slate-100/15 transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <img 
-                alt="Material Explorer" 
-                width="48" 
-                height="48" 
-                src={logoUrl}
-                className="rounded-lg shadow-lg"
-              />
-            </motion.button>
-
-            {!isCollapsed && (
-              <div className="leading-tight">
-                <div className="text-sm font-semibold tracking-wide text-slate-100">Material Explorer</div>
-                <div className="text-xs ui-muted">{materials.length} materials • {favoriteCount} favorites</div>
-              </div>
-            )}
-          </div>
-
-          {!isCollapsed && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <motion.button
-                className="ui-btn px-3 py-1.5 text-xs font-semibold"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => startNewMaterial()}
-              >
-                New
-              </motion.button>
-              <motion.button
-                className="ui-btn px-3 py-1.5 text-xs font-semibold"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Import
-              </motion.button>
-              <motion.button
-                className="ui-btn px-3 py-1.5 text-xs font-semibold"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={exportAll}
-              >
-                Export JSON
-              </motion.button>
-              <motion.button
-                className="ui-btn px-3 py-1.5 text-xs font-semibold"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => void exportAllGlb()}
-              >
-                Export GLB
-              </motion.button>
-              <motion.button
-                className="ui-btn px-3 py-1.5 text-xs font-semibold"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setIsCommandPaletteOpen(true)}
-              >
-                Commands
-              </motion.button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void onImportFile(file);
-                }}
-              />
-            </div>
-          )}
-        </div>
+        <SidebarHeader
+          isCollapsed={isCollapsed}
+          materialsCount={materials.length}
+          favoriteCount={favoriteCount}
+          logoUrl={logoUrl}
+          fileInputRef={fileInputRef}
+          onToggleCollapsed={() => setIsCollapsed((prev) => !prev)}
+          onStartNew={startNewMaterial}
+          onOpenImport={() => fileInputRef.current?.click()}
+          onExportJson={exportAll}
+          onExportGlb={() => {
+            void exportAllGlb();
+          }}
+          onOpenCommands={() => setIsCommandPaletteOpen(true)}
+          onImportFile={(file) => {
+            void onImportFile(file);
+          }}
+        />
 
         {!isCollapsed && (
           <>
@@ -475,223 +403,66 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-2 mb-4">
-              <input
-                ref={searchInputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search name or tags…"
-                className="ui-input flex-1 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setOnlyFavorites((v) => !v)}
-                className="ui-chip px-3 py-2 text-sm"
-                data-active={onlyFavorites}
-                title="Toggle favorites"
-                aria-label={onlyFavorites ? 'Show all materials' : 'Show only favorites'}
-                aria-pressed={onlyFavorites}
-              >
-                ★
-              </button>
-              <button
-                type="button"
-                onClick={() => setBulkMode((v) => !v)}
-                className="ui-chip px-3 py-2 text-sm"
-                data-active={bulkMode}
-                title="Bulk select"
-                aria-label={bulkMode ? 'Disable bulk selection' : 'Enable bulk selection'}
-                aria-pressed={bulkMode}
-              >
-                ✓
-              </button>
-              <Listbox value={sort} onChange={setSort}>
-                <div className="relative">
-                  <Listbox.Button
-                    className="ui-input px-3 py-2 text-sm text-left"
-                  >
-                    {sort === 'updated' ? 'Updated' : sort === 'created' ? 'Created' : sort === 'name' ? 'Name' : 'Manual'}
-                  </Listbox.Button>
-                  <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                    <Listbox.Options
-                      className="absolute z-50 mt-2 w-40 max-h-60 overflow-auto rounded-xl glass-panel p-1.5 text-sm text-white"
-                    >
-                      {SORT_OPTIONS.map((opt) => (
-                        <Listbox.Option
-                          key={opt.value}
-                          value={opt.value}
-                          className={({ active, selected }) =>
-                            classNames(
-                              'cursor-pointer select-none rounded-lg px-3 py-2 transition-colors',
-                              active && 'bg-white/10',
-                              selected && 'bg-cyan-400/20 text-cyan-100'
-                            )
-                          }
-                        >
-                          {opt.label}
-                        </Listbox.Option>
-                      ))}
-                    </Listbox.Options>
-                  </Transition>
-                </div>
-              </Listbox>
-            </div>
 
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {allTags.map((t) => {
-                  const active = selectedTags.includes(t);
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() =>
-                        setSelectedTags((prev) => (active ? prev.filter((x) => x !== t) : [...prev, t]))
-                      }
-                      className="ui-chip px-2.5 py-1 text-xs"
-                      data-active={active}
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
-                {selectedTags.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTags([])}
-                    className="ui-chip px-2.5 py-1 text-xs"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            )}
+            <SidebarFilters
+              searchInputRef={searchInputRef}
+              query={query}
+              onQueryChange={setQuery}
+              onlyFavorites={onlyFavorites}
+              onToggleFavorites={() => setOnlyFavorites((value) => !value)}
+              bulkMode={bulkMode}
+              onToggleBulkMode={() => setBulkMode((value) => !value)}
+              sort={sort}
+              onSortChange={setSort}
+              allTags={allTags}
+              selectedTags={selectedTags}
+              onToggleTag={(tag) =>
+                setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag]))
+              }
+              onClearTags={() => setSelectedTags([])}
+            />
 
             {bulkMode && (
-              <div className="mb-4 p-3 rounded-xl section-shell">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs text-slate-200/80">
-                    Selected: <span className="font-semibold text-white">{selectedIds.length}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    <button
-                      type="button"
-                      disabled={selectedIds.length === 0}
-                      onClick={bulkDelete}
-                      className="ui-btn ui-btn-danger px-3 py-1 text-xs disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      type="button"
-                      disabled={selectedIds.length === 0}
-                      onClick={bulkExportJson}
-                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
-                    >
-                      Export JSON
-                    </button>
-                    <button
-                      type="button"
-                      disabled={selectedIds.length === 0}
-                      onClick={() => void bulkExportGlb()}
-                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
-                    >
-                      Export GLB
-                    </button>
-                    <button
-                      type="button"
-                      disabled={selectedIds.length === 0}
-                      onClick={() => bulkSetFavorite(true)}
-                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
-                    >
-                      Favorite
-                    </button>
-                    <button
-                      type="button"
-                      disabled={selectedIds.length === 0}
-                      onClick={() => bulkSetFavorite(false)}
-                      className="ui-btn px-3 py-1 text-xs disabled:opacity-50"
-                    >
-                      Unfavorite
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <SidebarBulkBar
+                selectedCount={selectedIds.length}
+                onDelete={bulkDelete}
+                onExportJson={bulkExportJson}
+                onExportGlb={() => {
+                  void bulkExportGlb();
+                }}
+                onFavorite={() => bulkSetFavorite(true)}
+                onUnfavorite={() => bulkSetFavorite(false)}
+              />
             )}
-          {filtered.length === 0 ? (
-            <div className="section-shell px-4 py-5 text-sm text-slate-200/85">
-              <div className="font-semibold text-slate-100">No materials found</div>
-              <div className="mt-1 text-xs ui-muted">Try changing filters or create a new material from scratch.</div>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery('');
-                    setOnlyFavorites(false);
-                    setSelectedTags([]);
-                  }}
-                  className="ui-btn mt-3 px-3 py-1.5 text-xs font-semibold"
-                >
-                  Reset filters
-                </button>
-              )}
-            </div>
-          ) : sort === 'manual' ? (
-            <Reorder.Group
-              axis="y"
-              values={manualOrder}
-              onReorder={(v) => {
-                setManualOrder(v);
-                window.localStorage.setItem('materialsOrder', JSON.stringify(v));
+
+            <SidebarGrid
+              sort={sort}
+              filtered={filtered}
+              manualOrder={manualOrder}
+              onManualOrderChange={(nextOrder) => {
+                setManualOrder(nextOrder);
+                window.localStorage.setItem('materialsOrder', JSON.stringify(nextOrder));
               }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
-              {filtered.map((material) => (
-                <MaterialCard
-                  key={material.id}
-                  material={material}
-                  bulkMode={bulkMode}
-                  selected={selectedIds.includes(material.id)}
-                  onToggleSelected={() =>
-                    setSelectedIds((prev) =>
-                      prev.includes(material.id) ? prev.filter((x) => x !== material.id) : [...prev, material.id]
-                    )
-                  }
-                  onEdit={() => selectMaterial(material.id)}
-                  onToggleFavorite={() => toggleFavorite(material)}
-                  onDuplicate={() => duplicateOne(material)}
-                  onExportJson={() => exportOne(material)}
-                  onExportGlb={() => void exportOneGlb(material)}
-                  onDelete={() => deleteMaterial(material.id)}
-                  reorderable
-                />
-              ))}
-            </Reorder.Group>
-          ) : (
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <AnimatePresence>
-                {filtered.map((material) => (
-                  <MaterialCard
-                    key={material.id}
-                    material={material}
-                    bulkMode={bulkMode}
-                    selected={selectedIds.includes(material.id)}
-                    onToggleSelected={() =>
-                      setSelectedIds((prev) =>
-                        prev.includes(material.id) ? prev.filter((x) => x !== material.id) : [...prev, material.id]
-                      )
-                    }
-                    onEdit={() => selectMaterial(material.id)}
-                    onToggleFavorite={() => toggleFavorite(material)}
-                    onDuplicate={() => duplicateOne(material)}
-                    onExportJson={() => exportOne(material)}
-                    onExportGlb={() => void exportOneGlb(material)}
-                    onDelete={() => deleteMaterial(material.id)}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          )}
+              bulkMode={bulkMode}
+              selectedIds={selectedIds}
+              hasActiveFilters={hasActiveFilters}
+              onResetFilters={() => {
+                setQuery('');
+                setOnlyFavorites(false);
+                setSelectedTags([]);
+              }}
+              onToggleSelected={(id) =>
+                setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]))
+              }
+              onEdit={selectMaterial}
+              onToggleFavorite={toggleFavorite}
+              onDuplicate={duplicateOne}
+              onExportJson={exportOne}
+              onExportGlb={(material) => {
+                void exportOneGlb(material);
+              }}
+              onDelete={deleteMaterial}
+            />
           </>
         )}
       </div>
