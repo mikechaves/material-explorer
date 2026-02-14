@@ -250,6 +250,55 @@ test('can bulk favorite selected materials', async ({ page }) => {
     .toBe(1);
 });
 
+test('bulk delete uses confirmation dialog before removing materials', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(
+    (payload) => {
+      window.localStorage.setItem('materials', JSON.stringify(payload));
+    },
+    [makeSeedMaterial('seed-1', 'Seed One'), makeSeedMaterial('seed-2', 'Seed Two')]
+  );
+  await page.reload();
+
+  await page.getByRole('button', { name: 'Enable bulk selection' }).click();
+  await page.evaluate(() => {
+    const button = document.querySelector('button[aria-label="Select material"]') as HTMLButtonElement | null;
+    button?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  });
+
+  const bulkDeleteButton = page.getByRole('button', { name: 'Delete', exact: true }).first();
+  await expect(bulkDeleteButton).toBeEnabled();
+  await bulkDeleteButton.click();
+
+  const confirmDialog = page.getByRole('dialog', { name: 'Delete 1 material?' });
+  await expect(confirmDialog).toBeVisible();
+  await expect(confirmDialog.getByText('This action cannot be undone.')).toBeVisible();
+  await confirmDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  await expect(confirmDialog).not.toBeVisible();
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
+      return materials.length;
+    })
+    .toBe(2);
+
+  await bulkDeleteButton.click();
+  await expect(confirmDialog).toBeVisible();
+  await confirmDialog.getByRole('button', { name: 'Delete', exact: true }).click();
+
+  await expect
+    .poll(async () => {
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
+      return materials.length;
+    })
+    .toBe(1);
+});
+
 test('can export materials as JSON', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(
