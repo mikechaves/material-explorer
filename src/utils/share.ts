@@ -52,10 +52,9 @@ export function decodeSharePayload(encoded: string): SharePayloadV1 | SharePaylo
     const json = b64DecodeUnicode(encoded);
     const parsed = JSON.parse(json) as unknown;
     if (!isRecord(parsed) || parsed.v !== 1 || !('material' in parsed)) return null;
-    const { baseColorMap, normalMap, ...material } = coerceMaterialDraft(parsed.material);
+    const { baseColorMap: _baseColorMap, normalMap: _normalMap, ...material } = coerceMaterialDraft(parsed.material);
     return { v: 1, material };
   } catch {
     return null;
   }
 }
-

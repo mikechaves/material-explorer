@@ -26,7 +26,12 @@ export function MaterialOpticsCard({ material, onChange }: MaterialOpticsCardPro
       </div>
 
       <Control name="clearcoat" value={material.clearcoat} label="Clearcoat" onChange={onChange} />
-      <Control name="clearcoatRoughness" value={material.clearcoatRoughness} label="Clearcoat Roughness" onChange={onChange} />
+      <Control
+        name="clearcoatRoughness"
+        value={material.clearcoatRoughness}
+        label="Clearcoat Roughness"
+        onChange={onChange}
+      />
       <Control name="transmission" value={material.transmission} label="Transmission" onChange={onChange} />
       <Control name="ior" value={material.ior} label="IOR" min={1} max={2.5} step={0.01} onChange={onChange} />
       <Control name="opacity" value={material.opacity} label="Opacity" onChange={onChange} />

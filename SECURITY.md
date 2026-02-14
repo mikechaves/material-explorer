@@ -19,4 +19,3 @@ If private reporting is unavailable, open an issue with minimal details and requ
 - Initial acknowledgement: within 7 days
 - Triage and severity assessment: within 14 days
 - Fix timeline: based on severity and exploitability
-

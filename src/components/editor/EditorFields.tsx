@@ -18,11 +18,7 @@ export function Dropdown<T extends { value: string; label: string }>({
   return (
     <Listbox value={value} onChange={onChange}>
       <div className="relative flex-1">
-        <Listbox.Button
-          className="ui-input px-3 py-2 text-sm text-left"
-        >
-          {selected?.label}
-        </Listbox.Button>
+        <Listbox.Button className="ui-input px-3 py-2 text-sm text-left">{selected?.label}</Listbox.Button>
         <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
           <Listbox.Options
             className="absolute z-50 mt-2 w-full max-h-60 overflow-auto rounded-xl
@@ -73,7 +69,9 @@ export const Control = ({
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center gap-2">
-        <label className="ui-label" htmlFor={rangeId}>{label}</label>
+        <label className="ui-label" htmlFor={rangeId}>
+          {label}
+        </label>
         <div className="flex items-center gap-2">
           <input
             id={rangeId}
@@ -129,7 +127,17 @@ export const Control = ({
 };
 
 export type PreviewModel = 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
-export type PreviewEnv = 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
+export type PreviewEnv =
+  | 'warehouse'
+  | 'studio'
+  | 'city'
+  | 'sunset'
+  | 'dawn'
+  | 'night'
+  | 'forest'
+  | 'apartment'
+  | 'park'
+  | 'lobby';
 
 export const PREVIEW_MODEL_OPTIONS: Array<{ value: PreviewModel; label: string }> = [
   { value: 'sphere', label: 'Sphere' },

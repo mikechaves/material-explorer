@@ -34,5 +34,3 @@ export type MaterialDraft = Omit<Material, 'id' | 'createdAt' | 'updatedAt'> & {
   createdAt?: number;
   updatedAt?: number;
 };
-
-

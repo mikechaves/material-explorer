@@ -13,9 +13,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-export type ImportMaterialsResult =
-  | { ok: true; materials: Material[] }
-  | { ok: false; message: string };
+export type ImportMaterialsResult = { ok: true; materials: Material[] } | { ok: false; message: string };
 
 export function validateImportFileSize(file: File): string | null {
   if (file.size > MAX_IMPORT_FILE_BYTES) {
@@ -24,7 +22,11 @@ export function validateImportFileSize(file: File): string | null {
   return null;
 }
 
-export function parseImportedMaterials(raw: string, existingMaterials: Material[], now: number = Date.now()): ImportMaterialsResult {
+export function parseImportedMaterials(
+  raw: string,
+  existingMaterials: Material[],
+  now: number = Date.now()
+): ImportMaterialsResult {
   if (raw.length > MAX_IMPORT_JSON_CHARS) {
     return { ok: false, message: 'Import payload is too large. Try splitting the file into smaller batches.' };
   }

@@ -85,7 +85,12 @@ export function SidebarFilters({
             <Listbox.Button className="ui-input px-3 py-2 text-sm text-left">
               {sort === 'updated' ? 'Updated' : sort === 'created' ? 'Created' : sort === 'name' ? 'Name' : 'Manual'}
             </Listbox.Button>
-            <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <Transition
+              as={Fragment}
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
               <Listbox.Options className="absolute z-50 mt-2 w-40 max-h-60 overflow-auto rounded-xl glass-panel p-1.5 text-sm text-white">
                 {SORT_OPTIONS.map((option) => (
                   <Listbox.Option

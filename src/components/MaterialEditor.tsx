@@ -3,13 +3,24 @@ import { motion } from 'framer-motion';
 import { useMaterials } from '../contexts/MaterialContext';
 import type { MaterialPreviewHandle } from './MaterialPreview';
 import type { MaterialDraft } from '../types/material';
-import { createMaterialFromDraft, clamp01, coerceMaterialDraft, DEFAULT_MATERIAL_DRAFT, downloadBlob } from '../utils/material';
+import {
+  createMaterialFromDraft,
+  clamp01,
+  coerceMaterialDraft,
+  DEFAULT_MATERIAL_DRAFT,
+  downloadBlob,
+} from '../utils/material';
 import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
 import { type PreviewModel, type PreviewEnv } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
 import { APP_COMMAND_EVENT, type AppCommandEventDetail } from '../types/commands';
-import { ONBOARDING_SEEN_KEY, MATERIAL_PRESETS, EDITOR_CHECKBOX_CLASS, type MaterialPreset } from './editor/materialPresets';
+import {
+  ONBOARDING_SEEN_KEY,
+  MATERIAL_PRESETS,
+  EDITOR_CHECKBOX_CLASS,
+  type MaterialPreset,
+} from './editor/materialPresets';
 import { OnboardingCard } from './editor/OnboardingCard';
 import { QuickPresetsCard } from './editor/QuickPresetsCard';
 import { PreviewControlsCard } from './editor/PreviewControlsCard';
@@ -74,10 +85,7 @@ const MaterialEditor: React.FC = () => {
   const previewRef = useRef<MaterialPreviewHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const emptyDraft: MaterialDraft = React.useMemo(
-    () => ({ ...DEFAULT_MATERIAL_DRAFT }),
-    []
-  );
+  const emptyDraft: MaterialDraft = React.useMemo(() => ({ ...DEFAULT_MATERIAL_DRAFT }), []);
 
   const [material, setMaterial] = useState<MaterialDraft>(emptyDraft);
   const [undoStack, setUndoStack] = useState<MaterialDraft[]>([]);
@@ -89,15 +97,34 @@ const MaterialEditor: React.FC = () => {
   });
   const [previewEnv, setPreviewEnv] = useState<PreviewEnv>(() => {
     const v = window.localStorage.getItem('previewEnv');
-    if (v === 'warehouse' || v === 'studio' || v === 'city' || v === 'sunset' || v === 'dawn' || v === 'night' || v === 'forest' || v === 'apartment' || v === 'park' || v === 'lobby')
+    if (
+      v === 'warehouse' ||
+      v === 'studio' ||
+      v === 'city' ||
+      v === 'sunset' ||
+      v === 'dawn' ||
+      v === 'night' ||
+      v === 'forest' ||
+      v === 'apartment' ||
+      v === 'park' ||
+      v === 'lobby'
+    )
       return v;
     return 'warehouse';
   });
-  const [autoRotate, setAutoRotate] = useState<boolean>(() => window.localStorage.getItem('previewAutoRotate') !== 'false');
-  const [enableZoom, setEnableZoom] = useState<boolean>(() => window.localStorage.getItem('previewEnableZoom') === 'true');
+  const [autoRotate, setAutoRotate] = useState<boolean>(
+    () => window.localStorage.getItem('previewAutoRotate') !== 'false'
+  );
+  const [enableZoom, setEnableZoom] = useState<boolean>(
+    () => window.localStorage.getItem('previewEnableZoom') === 'true'
+  );
   const [showGrid, setShowGrid] = useState<boolean>(() => window.localStorage.getItem('previewShowGrid') === 'true');
-  const [showBackground, setShowBackground] = useState<boolean>(() => window.localStorage.getItem('previewShowBackground') !== 'false');
-  const [previewAutoEnable, setPreviewAutoEnable] = useState<boolean>(() => window.localStorage.getItem('previewAutoEnable') === 'true');
+  const [showBackground, setShowBackground] = useState<boolean>(
+    () => window.localStorage.getItem('previewShowBackground') !== 'false'
+  );
+  const [previewAutoEnable, setPreviewAutoEnable] = useState<boolean>(
+    () => window.localStorage.getItem('previewAutoEnable') === 'true'
+  );
   const [previewEnabled, setPreviewEnabled] = useState<boolean>(() => {
     if (window.localStorage.getItem('previewAutoEnable') === 'true') return true;
     return window.localStorage.getItem('previewEnabled') === 'true';
@@ -111,9 +138,7 @@ const MaterialEditor: React.FC = () => {
   const setMaterialWithHistory = React.useCallback((nextState: React.SetStateAction<MaterialDraft>) => {
     setMaterial((prev) => {
       const next =
-        typeof nextState === 'function'
-          ? (nextState as (prevState: MaterialDraft) => MaterialDraft)(prev)
-          : nextState;
+        typeof nextState === 'function' ? (nextState as (prevState: MaterialDraft) => MaterialDraft)(prev) : nextState;
       if (next === prev) return prev;
       setUndoStack((stack) => {
         const nextStack = [...stack, cloneDraft(prev)];
@@ -313,7 +338,7 @@ const MaterialEditor: React.FC = () => {
     }));
   };
 
-  const saveMaterial = () => {
+  const saveMaterial = React.useCallback(() => {
     const now = Date.now();
     const full = createMaterialFromDraft({
       ...material,
@@ -323,7 +348,7 @@ const MaterialEditor: React.FC = () => {
 
     if (material.id) updateMaterial(full);
     else addMaterial(full);
-  };
+  }, [addMaterial, material, updateMaterial]);
 
   const dismissOnboarding = () => {
     setShowOnboarding(false);
@@ -490,7 +515,16 @@ const MaterialEditor: React.FC = () => {
               onToggleCompare={() => setCompareOn((value) => !value)}
               onShareLink={() => {
                 void (async () => {
-                  const { baseColorMap, normalMap, roughnessMap, metalnessMap, aoMap, emissiveMap, alphaMap, ...rest } = material;
+                  const {
+                    baseColorMap: _baseColorMap,
+                    normalMap: _normalMap,
+                    roughnessMap: _roughnessMap,
+                    metalnessMap: _metalnessMap,
+                    aoMap: _aoMap,
+                    emissiveMap: _emissiveMap,
+                    alphaMap: _alphaMap,
+                    ...rest
+                  } = material;
                   const payload = encodeSharePayloadV2({ v: 2, includeTextures: false, material: rest });
                   const url = new URL(window.location.href);
                   url.searchParams.set('m', payload);

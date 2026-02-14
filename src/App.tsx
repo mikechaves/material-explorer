@@ -33,8 +33,14 @@ function App() {
   return (
     <MaterialProvider>
       <div className="app-shell relative w-screen h-screen overflow-hidden">
-        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-blue-300/20 blur-3xl" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-blue-300/20 blur-3xl"
+          aria-hidden="true"
+        />
         <Suspense
           fallback={
             <div className="fixed top-0 left-0 h-full z-20" style={{ width: isMobile ? 'min(85vw, 360px)' : 64 }} />
@@ -60,9 +66,9 @@ function App() {
         )}
         <main
           id="maincontent"
-          style={{ 
+          style={{
             marginLeft: isMobile ? 0 : isSidebarCollapsed ? '64px' : `${sidebarWidth}px`,
-            width: isMobile ? '100%' : isSidebarCollapsed ? 'calc(100% - 64px)' : `calc(100% - ${sidebarWidth}px)`
+            width: isMobile ? '100%' : isSidebarCollapsed ? 'calc(100% - 64px)' : `calc(100% - ${sidebarWidth}px)`,
           }}
           className="h-full transition-all duration-300 ease-in-out overflow-hidden"
         >

@@ -56,7 +56,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       persistMaterials(updated);
       return updated;
     });
-    setSelectedMaterial((prev) => (prev ? byId.get(prev.id) ?? prev : prev));
+    setSelectedMaterial((prev) => (prev ? (byId.get(prev.id) ?? prev) : prev));
   };
 
   const updateMaterial = (materialToUpdate: Material) => {

@@ -84,7 +84,9 @@ export function MaterialCard({
             type="button"
             onClick={onToggleSelected}
             className={`absolute top-2 right-2 w-7 h-7 rounded-md border flex items-center justify-center ${
-              selected ? 'bg-cyan-400/55 border-cyan-200/70 text-slate-950' : 'bg-slate-950/55 border-slate-100/20 text-slate-100'
+              selected
+                ? 'bg-cyan-400/55 border-cyan-200/70 text-slate-950'
+                : 'bg-slate-950/55 border-slate-100/20 text-slate-100'
             }`}
             aria-label="Select material"
           >
@@ -170,19 +172,26 @@ export function MaterialCard({
             <div className="inline-flex max-w-full px-2 py-0.5 rounded-full bg-slate-950/55 text-[11px] text-white/90 truncate">
               {material.name || 'Untitled'}
             </div>
-            {material.favorite && <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[11px] text-amber-200">★</div>}
+            {material.favorite && (
+              <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[11px] text-amber-200">★</div>
+            )}
           </div>
         </div>
 
         {!!material.tags?.length && (
           <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex flex-wrap gap-1">
             {material.tags.slice(0, 3).map((tag) => (
-              <div key={tag} className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-100/85 truncate">
+              <div
+                key={tag}
+                className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-100/85 truncate"
+              >
                 {tag}
               </div>
             ))}
             {material.tags.length > 3 && (
-              <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-200/70">+{material.tags.length - 3}</div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-950/55 text-[10px] text-slate-200/70">
+                +{material.tags.length - 3}
+              </div>
             )}
           </div>
         )}
@@ -192,14 +201,26 @@ export function MaterialCard({
 
   if (reorderable) {
     return (
-      <Reorder.Item value={material.id} dragListener={false} dragControls={controls} className="relative" whileDrag={{ scale: 1.02 }}>
+      <Reorder.Item
+        value={material.id}
+        dragListener={false}
+        dragControls={controls}
+        className="relative"
+        whileDrag={{ scale: 1.02 }}
+      >
         {inner}
       </Reorder.Item>
     );
   }
 
   return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="relative">
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className="relative"
+    >
       {inner}
     </motion.div>
   );

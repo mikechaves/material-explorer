@@ -43,7 +43,17 @@ interface MaterialPreviewProps {
   alphaTest?: number;
   repeatX?: number;
   repeatY?: number;
-  environment?: 'warehouse' | 'studio' | 'city' | 'sunset' | 'dawn' | 'night' | 'forest' | 'apartment' | 'park' | 'lobby';
+  environment?:
+    | 'warehouse'
+    | 'studio'
+    | 'city'
+    | 'sunset'
+    | 'dawn'
+    | 'night'
+    | 'forest'
+    | 'apartment'
+    | 'park'
+    | 'lobby';
   model?: 'sphere' | 'box' | 'torusKnot' | 'icosahedron';
   autoRotate?: boolean;
   enableZoom?: boolean;
@@ -248,12 +258,7 @@ function applyTextureParams(tex: Texture, repeatX: number, repeatY: number) {
   tex.needsUpdate = true;
 }
 
-function useLoadedTexture(
-  url: string | undefined,
-  colorSpace: ColorSpace,
-  repeatX: number,
-  repeatY: number
-) {
+function useLoadedTexture(url: string | undefined, colorSpace: ColorSpace, repeatX: number, repeatY: number) {
   const [tex, setTex] = useState<Texture | null>(null);
   React.useEffect(() => {
     let disposed = false;
@@ -382,14 +387,13 @@ const Sphere: React.FC<SphereProps> = ({
 };
 
 const Scene: React.FC<
-  SphereProps & { environment?: MaterialPreviewProps['environment']; autoRotate?: boolean; enableZoom?: boolean; showGrid?: boolean }
-> = ({
-  environment = 'warehouse',
-  autoRotate,
-  enableZoom,
-  showGrid,
-  ...props
-}) => {
+  SphereProps & {
+    environment?: MaterialPreviewProps['environment'];
+    autoRotate?: boolean;
+    enableZoom?: boolean;
+    showGrid?: boolean;
+  }
+> = ({ environment = 'warehouse', autoRotate, enableZoom, showGrid, ...props }) => {
   const lighting = LIGHTING_PRESETS[environment];
   return (
     <>
@@ -433,7 +437,10 @@ export type MaterialPreviewHandle = {
   resetView: () => void;
 };
 
-class PreviewErrorBoundary extends React.Component<{ fallback: React.ReactNode; children: React.ReactNode }, { hasError: boolean }> {
+class PreviewErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
   state = { hasError: false };
 
   static getDerivedStateFromError() {
@@ -541,7 +548,11 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
       transition={{ duration: 0.5 }}
       className={`relative w-full h-full ${className} rounded-2xl overflow-hidden`}
     >
-      <PreviewErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-b from-slate-900/60 to-slate-950/90" aria-hidden="true" />}>
+      <PreviewErrorBoundary
+        fallback={
+          <div className="w-full h-full bg-gradient-to-b from-slate-900/60 to-slate-950/90" aria-hidden="true" />
+        }
+      >
         <Canvas
           frameloop={autoRotate || captureBufferEnabled ? 'always' : 'demand'}
           dpr={[1, 2]}
@@ -586,7 +597,7 @@ const MaterialPreview = React.forwardRef<MaterialPreviewHandle, MaterialPreviewP
           />
         </Canvas>
       </PreviewErrorBoundary>
-      
+
       {/* Optional overlay for better visual integration */}
       <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-cyan-100/5" />
     </motion.div>

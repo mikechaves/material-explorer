@@ -17,16 +17,8 @@ function main() {
   if (!fs.existsSync(pkgDir)) return;
 
   // tasks-vision 0.10.17 references these filenames, but ships *.mjs.map / *.cjs.map instead.
-  safeCopy(
-    path.join(pkgDir, 'vision_bundle.mjs.map'),
-    path.join(pkgDir, 'vision_bundle_mjs.js.map')
-  );
-  safeCopy(
-    path.join(pkgDir, 'vision_bundle.cjs.map'),
-    path.join(pkgDir, 'vision_bundle_cjs.js.map')
-  );
+  safeCopy(path.join(pkgDir, 'vision_bundle.mjs.map'), path.join(pkgDir, 'vision_bundle_mjs.js.map'));
+  safeCopy(path.join(pkgDir, 'vision_bundle.cjs.map'), path.join(pkgDir, 'vision_bundle_cjs.js.map'));
 }
 
 main();
-
-

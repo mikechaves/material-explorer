@@ -23,7 +23,10 @@ export function MaterialSurfaceCard({ material, onChange }: MaterialSurfaceCardP
             className="absolute inset-0 w-full h-full cursor-pointer border-0"
           />
         </motion.div>
-        <div className="flex-1 h-12 rounded-xl border border-slate-100/20" style={{ backgroundColor: material.color }} />
+        <div
+          className="flex-1 h-12 rounded-xl border border-slate-100/20"
+          style={{ backgroundColor: material.color }}
+        />
       </div>
       <Control name="metalness" value={material.metalness} label="Metalness" onChange={onChange} />
       <Control name="roughness" value={material.roughness} label="Roughness" onChange={onChange} />

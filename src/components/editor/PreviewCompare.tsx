@@ -78,13 +78,17 @@ export function PreviewCompare({
       <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
         {compareOn && compareA && (
           <div className={frameClass}>
-            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+              A
+            </div>
             <div className="w-full h-full rounded-2xl" style={fallbackSwatchStyle} aria-hidden="true" />
           </div>
         )}
         <div className={frameClass}>
           {compareOn && compareA && (
-            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+              B
+            </div>
           )}
           <div className="w-full h-full rounded-2xl relative" style={fallbackSwatchStyle}>
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center bg-slate-950/40 backdrop-blur-[2px]">
@@ -92,19 +96,11 @@ export function PreviewCompare({
                 3D preview is off for faster startup and lower memory use.
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={onEnablePreview}
-                  className="ui-btn ui-btn-primary px-4 py-2 text-sm"
-                >
+                <button type="button" onClick={onEnablePreview} className="ui-btn ui-btn-primary px-4 py-2 text-sm">
                   Enable 3D now
                 </button>
                 {!previewAutoEnable && (
-                  <button
-                    type="button"
-                    onClick={onAlwaysEnablePreview}
-                    className="ui-btn px-4 py-2 text-sm"
-                  >
+                  <button type="button" onClick={onAlwaysEnablePreview} className="ui-btn px-4 py-2 text-sm">
                     Always enable on startup
                   </button>
                 )}
@@ -121,13 +117,17 @@ export function PreviewCompare({
       <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
         {compareOn && compareA && (
           <div className={frameClass}>
-            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+              A
+            </div>
             {previewFallback}
           </div>
         )}
         <div className={frameClass}>
           {compareOn && compareA && (
-            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">
+              B
+            </div>
           )}
           {previewFallback}
         </div>

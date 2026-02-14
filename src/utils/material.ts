@@ -45,8 +45,11 @@ export function coerceMaterialDraft(input: unknown, base: MaterialDraft = DEFAUL
   const src = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
   const fallback = { ...DEFAULT_MATERIAL_DRAFT, ...base };
   const tags = Array.isArray(src.tags)
-    ? (src.tags.filter((t) => typeof t === 'string').map((t) => t.trim()).filter(Boolean) as string[])
-    : fallback.tags ?? [];
+    ? (src.tags
+        .filter((t) => typeof t === 'string')
+        .map((t) => t.trim())
+        .filter(Boolean) as string[])
+    : (fallback.tags ?? []);
 
   const draft: MaterialDraft = {
     ...fallback,
@@ -76,10 +79,8 @@ export function coerceMaterialDraft(input: unknown, base: MaterialDraft = DEFAUL
     alphaTest: Math.max(0, Math.min(1, asFiniteNumber(src.alphaTest, fallback.alphaTest ?? 0))),
     repeatX: Math.max(0.01, Math.min(20, asFiniteNumber(src.repeatX, fallback.repeatX ?? 1))),
     repeatY: Math.max(0.01, Math.min(20, asFiniteNumber(src.repeatY, fallback.repeatY ?? 1))),
-    createdAt:
-      typeof src.createdAt === 'number' && Number.isFinite(src.createdAt) ? src.createdAt : fallback.createdAt,
-    updatedAt:
-      typeof src.updatedAt === 'number' && Number.isFinite(src.updatedAt) ? src.updatedAt : fallback.updatedAt,
+    createdAt: typeof src.createdAt === 'number' && Number.isFinite(src.createdAt) ? src.createdAt : fallback.createdAt,
+    updatedAt: typeof src.updatedAt === 'number' && Number.isFinite(src.updatedAt) ? src.updatedAt : fallback.updatedAt,
   };
 
   return draft;
@@ -94,8 +95,12 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
 
   const name = typeof m.name === 'string' && m.name.trim() ? m.name.trim() : 'Untitled';
   const favorite = typeof m.favorite === 'boolean' ? m.favorite : false;
-  const tags =
-    Array.isArray(m.tags) ? (m.tags.filter((t) => typeof t === 'string').map((t) => t.trim()).filter(Boolean) as string[]) : [];
+  const tags = Array.isArray(m.tags)
+    ? (m.tags
+        .filter((t) => typeof t === 'string')
+        .map((t) => t.trim())
+        .filter(Boolean) as string[])
+    : [];
   const color = isHexColor(m.color) ? (m.color as string) : '#FFFFFF';
 
   const metalness = clamp01(typeof m.metalness === 'number' ? m.metalness : Number(m.metalness));
@@ -131,8 +136,7 @@ export function normalizeMaterial(input: unknown, now: number = Date.now()): Mat
   const repeatX = Number.isFinite(repeatXRaw) ? Math.max(0.01, Math.min(20, repeatXRaw)) : 1;
   const repeatY = Number.isFinite(repeatYRaw) ? Math.max(0.01, Math.min(20, repeatYRaw)) : 1;
 
-  const createdAt =
-    typeof m.createdAt === 'number' && Number.isFinite(m.createdAt) ? (m.createdAt as number) : now;
+  const createdAt = typeof m.createdAt === 'number' && Number.isFinite(m.createdAt) ? (m.createdAt as number) : now;
   const updatedAt =
     typeof m.updatedAt === 'number' && Number.isFinite(m.updatedAt) ? (m.updatedAt as number) : undefined;
 
@@ -256,4 +260,3 @@ export function downloadBlob(filename: string, blob: Blob) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-

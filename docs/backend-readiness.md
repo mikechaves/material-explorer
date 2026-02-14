@@ -1,6 +1,7 @@
 # Backend Readiness Plan
 
 ## Goals
+
 - Keep current frontend behavior unchanged while introducing server persistence.
 - Preserve import/export/share compatibility with existing local JSON payloads.
 - Add server-side validation so malformed material payloads are rejected consistently.
@@ -8,8 +9,10 @@
 ## API Contract (v1)
 
 ### `GET /api/v1/materials`
+
 - Returns all materials for the authenticated user, sorted by `updatedAt desc`.
 - Response:
+
 ```json
 {
   "materials": [
@@ -48,31 +51,38 @@
 ```
 
 ### `POST /api/v1/materials`
+
 - Creates one material.
 - Request body: material draft (same shape as current `MaterialDraft`).
 - Response: created material with canonical server values.
 
 ### `PATCH /api/v1/materials/:id`
+
 - Updates one material.
 - Request body: partial patch of editable fields.
 - Response: updated material.
 
 ### `DELETE /api/v1/materials/:id`
+
 - Deletes one material.
 - Response: `204 No Content`.
 
 ### `POST /api/v1/materials/bulk`
+
 - Supports current frontend bulk actions efficiently.
 - Request:
+
 ```json
 {
   "updates": [{ "id": "uuid", "favorite": true }],
   "deletes": ["uuid-1", "uuid-2"]
 }
 ```
+
 - Response: `{ "updated": [...], "deletedIds": [...] }`.
 
 ## Validation Rules
+
 - `name`: required, trimmed, max 120 chars.
 - `color`, `emissive`: `#RRGGBB`.
 - `metalness`, `roughness`, `emissiveIntensity`, `clearcoat`, `clearcoatRoughness`, `transmission`, `opacity`, `alphaTest`: `0..1`.
@@ -83,6 +93,7 @@
 - texture fields: either omitted/null or valid `data:` URL (current mode) or object storage URL (future mode).
 
 ## Data Model (SQL-friendly)
+
 - `users` table.
 - `materials` table:
   - `id uuid pk`
@@ -97,12 +108,14 @@
   - GIN on `tags`.
 
 ## Frontend Migration Path
+
 1. Add repository abstraction in frontend (`localStorage` vs `http`) behind one interface.
 2. Keep `localStorage` as fallback if API is unavailable.
 3. Migrate bulk actions to `POST /materials/bulk`.
 4. Keep import/export JSON format unchanged for backward compatibility.
 
 ## Security & Ops Baseline
+
 - Auth required on all `/api/v1/*` endpoints.
 - Per-user row scoping enforced in DB query layer.
 - Request body size limits (especially for data URL textures).

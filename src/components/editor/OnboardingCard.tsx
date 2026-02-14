@@ -9,11 +9,7 @@ type OnboardingCardProps = {
 
 export function OnboardingCard({ onAddStarterKit, onStartBlank, onDismiss }: OnboardingCardProps) {
   return (
-    <motion.div
-      className="section-shell px-4 py-3"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <motion.div className="section-shell px-4 py-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <div className="text-sm font-semibold text-slate-100">Welcome to Material Explorer</div>
       <div className="mt-1 text-xs ui-muted">
         Start fast with a polished starter kit or jump straight into a blank material.

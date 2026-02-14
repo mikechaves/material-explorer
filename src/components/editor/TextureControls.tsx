@@ -50,10 +50,26 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
         </div>
         <div className="flex items-center gap-2">
           <div className="w-44">
-            <Control name="repeatX" value={material.repeatX ?? 1} label="U" min={0.01} max={20} step={0.01} onChange={onChange} />
+            <Control
+              name="repeatX"
+              value={material.repeatX ?? 1}
+              label="U"
+              min={0.01}
+              max={20}
+              step={0.01}
+              onChange={onChange}
+            />
           </div>
           <div className="w-44">
-            <Control name="repeatY" value={material.repeatY ?? 1} label="V" min={0.01} max={20} step={0.01} onChange={onChange} />
+            <Control
+              name="repeatY"
+              value={material.repeatY ?? 1}
+              label="V"
+              min={0.01}
+              max={20}
+              step={0.01}
+              onChange={onChange}
+            />
           </div>
         </div>
       </div>
@@ -149,7 +165,15 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
                 Remove
               </button>
               <div className="w-44">
-                <Control name="aoIntensity" value={material.aoIntensity ?? 1} label="Strength" min={0} max={2} step={0.01} onChange={onChange} />
+                <Control
+                  name="aoIntensity"
+                  value={material.aoIntensity ?? 1}
+                  label="Strength"
+                  min={0}
+                  max={2}
+                  step={0.01}
+                  onChange={onChange}
+                />
               </div>
             </>
           )}
@@ -186,7 +210,15 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
                 Remove
               </button>
               <div className="w-44">
-                <Control name="alphaTest" value={material.alphaTest ?? 0} label="Cutoff" min={0} max={1} step={0.01} onChange={onChange} />
+                <Control
+                  name="alphaTest"
+                  value={material.alphaTest ?? 0}
+                  label="Cutoff"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={onChange}
+                />
               </div>
             </>
           )}

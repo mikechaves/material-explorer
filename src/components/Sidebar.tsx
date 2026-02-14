@@ -72,11 +72,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     }
   });
 
-  const setSidebarWidthValue = React.useCallback((nextWidth: number) => {
-    const clamped = Math.min(Math.max(nextWidth, minWidth), maxWidth);
-    setWidth(clamped);
-    window.localStorage.setItem('sidebarWidth', clamped.toString());
-  }, [setWidth]);
+  const setSidebarWidthValue = React.useCallback(
+    (nextWidth: number) => {
+      const clamped = Math.min(Math.max(nextWidth, minWidth), maxWidth);
+      setWidth(clamped);
+      window.localStorage.setItem('sidebarWidth', clamped.toString());
+    },
+    [setWidth]
+  );
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -100,11 +103,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
     };
   }, [setSidebarWidthValue]);
 
-  const exportAll = () => {
+  const exportAll = useCallback(() => {
     downloadJson('materials.json', { version: 1, exportedAt: Date.now(), materials });
-  };
+  }, [materials]);
 
-  const exportAllGlb = async () => {
+  const exportAllGlb = useCallback(async () => {
     try {
       const { exportLibraryAsGlb } = await loadGltfExporters();
       const result = await exportLibraryAsGlb(materials, { filename: 'materials-library.glb' });
@@ -114,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       console.error(e);
       window.alert('Failed to export library GLB.');
     }
-  };
+  }, [materials]);
 
   const exportOne = (material: Material) => {
     downloadJson(`${material.name || 'material'}.json`, { version: 1, exportedAt: Date.now(), material });
@@ -312,8 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName;
       const isTypingTarget =
-        !!target &&
-        (target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+        !!target && (target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
       if (isTypingTarget && key !== 's') return;
 
@@ -365,13 +367,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
   return (
     <>
       {isMobile && !isCollapsed && (
-        <div
-          className="fixed inset-0 bg-black/55 z-10"
-          onClick={() => setIsCollapsed(true)}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 bg-black/55 z-10" onClick={() => setIsCollapsed(true)} aria-hidden="true" />
       )}
-      <motion.div 
+      <motion.div
         ref={sidebarRef}
         className="fixed top-0 left-0 h-full text-white z-20 flex glass-panel"
         animate={
@@ -379,159 +377,157 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, width, s
             ? { x: isCollapsed ? '-100%' : 0, width: 'min(85vw, 360px)' }
             : { x: 0, width: isCollapsed ? 64 : width }
         }
-        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+        transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
       >
-      <div className="p-4 w-full overflow-hidden">
-        <SidebarHeader
-          isCollapsed={isCollapsed}
-          materialsCount={materials.length}
-          favoriteCount={favoriteCount}
-          logoUrl={logoUrl}
-          fileInputRef={fileInputRef}
-          onToggleCollapsed={() => setIsCollapsed((prev) => !prev)}
-          onStartNew={startNewMaterial}
-          onOpenImport={() => fileInputRef.current?.click()}
-          onExportJson={exportAll}
-          onExportGlb={() => {
-            void exportAllGlb();
-          }}
-          onOpenCommands={() => setIsCommandPaletteOpen(true)}
-          onImportFile={(file) => {
-            void onImportFile(file);
-          }}
-        />
-
-        {!isCollapsed && (
-          <>
-            {storageError && (
-              <div className="mb-4 rounded-xl border border-rose-300/45 bg-rose-500/10 px-3 py-2">
-                <div className="text-xs text-rose-100/95">{storageError}</div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={exportAll}
-                    className="ui-btn px-2.5 py-1 text-xs font-semibold"
-                  >
-                    Export Backup JSON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearStorageError}
-                    className="ui-btn px-2.5 py-1 text-xs"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <SidebarFilters
-              searchInputRef={searchInputRef}
-              query={query}
-              onQueryChange={setQuery}
-              cardPreviewEnabled={cardPreviewEnabled}
-              onToggleCardPreview={() => setCardPreviewEnabled((value) => !value)}
-              onlyFavorites={onlyFavorites}
-              onToggleFavorites={() => setOnlyFavorites((value) => !value)}
-              bulkMode={bulkMode}
-              onToggleBulkMode={() => setBulkMode((value) => !value)}
-              sort={sort}
-              onSortChange={setSort}
-              allTags={allTags}
-              selectedTags={selectedTags}
-              onToggleTag={(tag) =>
-                setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag]))
-              }
-              onClearTags={() => setSelectedTags([])}
-            />
-
-            {bulkMode && (
-              <SidebarBulkBar
-                selectedCount={selectedIds.length}
-                onDelete={bulkDelete}
-                onExportJson={bulkExportJson}
-                onExportGlb={() => {
-                  void bulkExportGlb();
-                }}
-                onFavorite={() => bulkSetFavorite(true)}
-                onUnfavorite={() => bulkSetFavorite(false)}
-              />
-            )}
-
-            <SidebarGrid
-              sort={sort}
-              filtered={filtered}
-              manualOrder={manualOrder}
-              onManualOrderChange={(nextOrder) => {
-                setManualOrder(nextOrder);
-                window.localStorage.setItem('materialsOrder', JSON.stringify(nextOrder));
-              }}
-              cardPreviewEnabled={cardPreviewEnabled}
-              bulkMode={bulkMode}
-              selectedIds={selectedIds}
-              hasActiveFilters={hasActiveFilters}
-              onResetFilters={() => {
-                setQuery('');
-                setOnlyFavorites(false);
-                setSelectedTags([]);
-              }}
-              onToggleSelected={(id) =>
-                setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]))
-              }
-              onEdit={selectMaterial}
-              onToggleFavorite={toggleFavorite}
-              onDuplicate={duplicateOne}
-              onExportJson={exportOne}
-              onExportGlb={(material) => {
-                void exportOneGlb(material);
-              }}
-              onDelete={deleteMaterial}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Resize Handle */}
-      {!isMobile && !isCollapsed && (
-        <div
-          className="w-1 cursor-ew-resize bg-transparent hover:bg-cyan-300/25 
-                     transition-colors duration-200 relative"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize sidebar"
-          aria-valuemin={minWidth}
-          aria-valuemax={maxWidth}
-          aria-valuenow={width}
-          tabIndex={0}
-          onMouseDown={() => {
-            isDragged.current = true;
-            setIsDragging(true);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowLeft') {
-              e.preventDefault();
-              setSidebarWidthValue(width - 16);
-            } else if (e.key === 'ArrowRight') {
-              e.preventDefault();
-              setSidebarWidthValue(width + 16);
-            } else if (e.key === 'Home') {
-              e.preventDefault();
-              setSidebarWidthValue(minWidth);
-            } else if (e.key === 'End') {
-              e.preventDefault();
-              setSidebarWidthValue(maxWidth);
-            }
-          }}
-        >
-          <motion.div
-            className="absolute inset-y-0 -right-0.5 w-1 bg-cyan-300/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isDragging ? 1 : 0 }}
+        <div className="p-4 w-full overflow-hidden">
+          <SidebarHeader
+            isCollapsed={isCollapsed}
+            materialsCount={materials.length}
+            favoriteCount={favoriteCount}
+            logoUrl={logoUrl}
+            fileInputRef={fileInputRef}
+            onToggleCollapsed={() => setIsCollapsed((prev) => !prev)}
+            onStartNew={startNewMaterial}
+            onOpenImport={() => fileInputRef.current?.click()}
+            onExportJson={exportAll}
+            onExportGlb={() => {
+              void exportAllGlb();
+            }}
+            onOpenCommands={() => setIsCommandPaletteOpen(true)}
+            onImportFile={(file) => {
+              void onImportFile(file);
+            }}
           />
+
+          {!isCollapsed && (
+            <>
+              {storageError && (
+                <div className="mb-4 rounded-xl border border-rose-300/45 bg-rose-500/10 px-3 py-2">
+                  <div className="text-xs text-rose-100/95">{storageError}</div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={exportAll} className="ui-btn px-2.5 py-1 text-xs font-semibold">
+                      Export Backup JSON
+                    </button>
+                    <button type="button" onClick={clearStorageError} className="ui-btn px-2.5 py-1 text-xs">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <SidebarFilters
+                searchInputRef={searchInputRef}
+                query={query}
+                onQueryChange={setQuery}
+                cardPreviewEnabled={cardPreviewEnabled}
+                onToggleCardPreview={() => setCardPreviewEnabled((value) => !value)}
+                onlyFavorites={onlyFavorites}
+                onToggleFavorites={() => setOnlyFavorites((value) => !value)}
+                bulkMode={bulkMode}
+                onToggleBulkMode={() => setBulkMode((value) => !value)}
+                sort={sort}
+                onSortChange={setSort}
+                allTags={allTags}
+                selectedTags={selectedTags}
+                onToggleTag={(tag) =>
+                  setSelectedTags((prev) =>
+                    prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag]
+                  )
+                }
+                onClearTags={() => setSelectedTags([])}
+              />
+
+              {bulkMode && (
+                <SidebarBulkBar
+                  selectedCount={selectedIds.length}
+                  onDelete={bulkDelete}
+                  onExportJson={bulkExportJson}
+                  onExportGlb={() => {
+                    void bulkExportGlb();
+                  }}
+                  onFavorite={() => bulkSetFavorite(true)}
+                  onUnfavorite={() => bulkSetFavorite(false)}
+                />
+              )}
+
+              <SidebarGrid
+                sort={sort}
+                filtered={filtered}
+                manualOrder={manualOrder}
+                onManualOrderChange={(nextOrder) => {
+                  setManualOrder(nextOrder);
+                  window.localStorage.setItem('materialsOrder', JSON.stringify(nextOrder));
+                }}
+                cardPreviewEnabled={cardPreviewEnabled}
+                bulkMode={bulkMode}
+                selectedIds={selectedIds}
+                hasActiveFilters={hasActiveFilters}
+                onResetFilters={() => {
+                  setQuery('');
+                  setOnlyFavorites(false);
+                  setSelectedTags([]);
+                }}
+                onToggleSelected={(id) =>
+                  setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]))
+                }
+                onEdit={selectMaterial}
+                onToggleFavorite={toggleFavorite}
+                onDuplicate={duplicateOne}
+                onExportJson={exportOne}
+                onExportGlb={(material) => {
+                  void exportOneGlb(material);
+                }}
+                onDelete={deleteMaterial}
+              />
+            </>
+          )}
         </div>
-      )}
+
+        {/* Resize Handle */}
+        {!isMobile && !isCollapsed && (
+          <div
+            className="w-1 cursor-ew-resize bg-transparent hover:bg-cyan-300/25 
+                     transition-colors duration-200 relative"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+            aria-valuemin={minWidth}
+            aria-valuemax={maxWidth}
+            aria-valuenow={width}
+            tabIndex={0}
+            onMouseDown={() => {
+              isDragged.current = true;
+              setIsDragging(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                setSidebarWidthValue(width - 16);
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setSidebarWidthValue(width + 16);
+              } else if (e.key === 'Home') {
+                e.preventDefault();
+                setSidebarWidthValue(minWidth);
+              } else if (e.key === 'End') {
+                e.preventDefault();
+                setSidebarWidthValue(maxWidth);
+              }
+            }}
+          >
+            <motion.div
+              className="absolute inset-y-0 -right-0.5 w-1 bg-cyan-300/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isDragging ? 1 : 0 }}
+            />
+          </div>
+        )}
       </motion.div>
-      <CommandPalette open={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} commands={commandItems} />
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={commandItems}
+      />
     </>
   );
 };

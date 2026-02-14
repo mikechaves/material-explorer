@@ -1,5 +1,11 @@
 import React from 'react';
-import { Dropdown, type PreviewEnv, type PreviewModel, PREVIEW_ENV_OPTIONS, PREVIEW_MODEL_OPTIONS } from './EditorFields';
+import {
+  Dropdown,
+  type PreviewEnv,
+  type PreviewModel,
+  PREVIEW_ENV_OPTIONS,
+  PREVIEW_MODEL_OPTIONS,
+} from './EditorFields';
 
 type PreviewControlsCardProps = {
   previewModel: PreviewModel;

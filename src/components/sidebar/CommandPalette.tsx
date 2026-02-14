@@ -63,7 +63,10 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
     [commandById, recentCommandIds]
   );
 
-  const recentCommandIdSet = React.useMemo(() => new Set(recentCommands.map((command) => command.id)), [recentCommands]);
+  const recentCommandIdSet = React.useMemo(
+    () => new Set(recentCommands.map((command) => command.id)),
+    [recentCommands]
+  );
 
   const visibleCommands = React.useMemo(() => {
     if (normalizedQuery) return filteredCommands;
@@ -99,7 +102,10 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   const runCommand = (command: CommandPaletteItem | undefined) => {
     if (!command) return;
     setRecentCommandIds((previous) => {
-      const next = [command.id, ...previous.filter((commandId) => commandId !== command.id)].slice(0, RECENT_COMMAND_LIMIT);
+      const next = [command.id, ...previous.filter((commandId) => commandId !== command.id)].slice(
+        0,
+        RECENT_COMMAND_LIMIT
+      );
       persistRecentCommands(next);
       return next;
     });

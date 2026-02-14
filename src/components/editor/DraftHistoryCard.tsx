@@ -9,14 +9,7 @@ type DraftHistoryCardProps = {
   onRedo: () => void;
 };
 
-export function DraftHistoryCard({
-  isDirty,
-  canUndo,
-  canRedo,
-  onRevert,
-  onUndo,
-  onRedo,
-}: DraftHistoryCardProps) {
+export function DraftHistoryCard({ isDirty, canUndo, canRedo, onRevert, onUndo, onRedo }: DraftHistoryCardProps) {
   return (
     <div className="section-shell px-3 py-3">
       <div className="flex items-center justify-between gap-2">

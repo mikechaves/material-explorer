@@ -23,11 +23,13 @@ Welcome to Material Explorer! This application allows you to interactively creat
 To run Material Explorer locally, follow these steps:
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/mikechaves/material-explorer.git
    ```
 
 2. Navigate to the project directory:
+
    ```bash
    cd material-explorer
    ```
@@ -79,17 +81,21 @@ The repository also runs these checks in GitHub Actions on pull requests and on 
 ## Usage
 
 ### Creating a Material
+
 - Use the editor controls to set PBR parameters and textures.
 - Click **Save Material** to add it to your library.
 
 ### Editing a Material
+
 - Click **Edit** on a card in the sidebar to load it into the editor.
 - Adjust properties and click **Update Material**.
 
 ### Deleting a Material
+
 - Click **Delete** on a card in the sidebar to remove it from your collection.
 
 ### Sharing & exporting
+
 - **Share link**: copies a URL that encodes the material settings.
   - “Share link” excludes textures.
   - “Share + tex” attempts to include textures, but will refuse if the URL is too large.
@@ -97,6 +103,7 @@ The repository also runs these checks in GitHub Actions on pull requests and on 
 - **Export GLB**: exports preview geometry with the material applied (portable glTF 2.0 binary).
 
 ### Notes / limitations
+
 - **LocalStorage quota**: textures are stored as data URLs inside saved material JSON; large images can exceed browser storage limits.
 - **GLB exports are previews**: GLB contains preview geometry (sphere/grid), not an imported user mesh.
 

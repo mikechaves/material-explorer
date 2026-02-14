@@ -42,14 +42,18 @@ test('can create a material', async ({ page }) => {
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials.length;
     })
     .toBe(1);
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials[0]?.name;
     })
     .toBe('Smoke Material');
@@ -77,17 +81,17 @@ test('can import materials from JSON', async ({ page }) => {
     ],
   };
 
-  await page
-    .locator('input[type="file"][accept="application/json,.json"]')
-    .setInputFiles({
-      name: 'materials.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(payload), 'utf8'),
-    });
+  await page.locator('input[type="file"][accept="application/json,.json"]').setInputFiles({
+    name: 'materials.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(payload), 'utf8'),
+  });
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials.some((m) => m.name === 'Imported Smoke');
     })
     .toBe(true);
@@ -100,13 +104,11 @@ test('rejects import files with too many materials', async ({ page }) => {
   };
   const dialogPromise = page.waitForEvent('dialog');
 
-  await page
-    .locator('input[type="file"][accept="application/json,.json"]')
-    .setInputFiles({
-      name: 'too-many-materials.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(tooManyMaterialsPayload), 'utf8'),
-    });
+  await page.locator('input[type="file"][accept="application/json,.json"]').setInputFiles({
+    name: 'too-many-materials.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(tooManyMaterialsPayload), 'utf8'),
+  });
 
   const dialog = await dialogPromise;
   expect(dialog.message()).toContain('too many materials');
@@ -114,7 +116,9 @@ test('rejects import files with too many materials', async ({ page }) => {
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials.length;
     })
     .toBe(0);
@@ -126,14 +130,18 @@ test('can save a material with keyboard shortcut', async ({ page }) => {
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials.length;
     })
     .toBe(1);
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as StoredMaterial[]
+      );
       return materials[0]?.name;
     })
     .toBe('Shortcut Material');
@@ -207,14 +215,17 @@ test('can toggle compare mode after capturing reference', async ({ page }) => {
 
 test('can bulk favorite selected materials', async ({ page }) => {
   await page.goto('/');
-  await page.evaluate((payload) => {
-    window.localStorage.setItem('materials', JSON.stringify(payload));
-  }, [makeSeedMaterial('seed-1', 'Seed One'), makeSeedMaterial('seed-2', 'Seed Two')]);
+  await page.evaluate(
+    (payload) => {
+      window.localStorage.setItem('materials', JSON.stringify(payload));
+    },
+    [makeSeedMaterial('seed-1', 'Seed One'), makeSeedMaterial('seed-2', 'Seed Two')]
+  );
   await page.reload();
 
   await page.getByRole('button', { name: 'Enable bulk selection' }).click();
   await page.evaluate(() => {
-    const button = document.querySelector('button[aria-label=\"Select material\"]') as HTMLButtonElement | null;
+    const button = document.querySelector('button[aria-label="Select material"]') as HTMLButtonElement | null;
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   });
   await expect(page.locator('text=Selected:').first()).toContainText('1');
@@ -224,7 +235,9 @@ test('can bulk favorite selected materials', async ({ page }) => {
 
   await expect
     .poll(async () => {
-      const materials = await page.evaluate(() => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as Array<{ favorite?: boolean }>);
+      const materials = await page.evaluate(
+        () => JSON.parse(window.localStorage.getItem('materials') ?? '[]') as Array<{ favorite?: boolean }>
+      );
       return materials.filter((material) => material.favorite).length;
     })
     .toBe(1);
@@ -232,9 +245,12 @@ test('can bulk favorite selected materials', async ({ page }) => {
 
 test('can export materials as JSON', async ({ page }) => {
   await page.goto('/');
-  await page.evaluate((payload) => {
-    window.localStorage.setItem('materials', JSON.stringify(payload));
-  }, [makeSeedMaterial('seed-1', 'Seed Export')]);
+  await page.evaluate(
+    (payload) => {
+      window.localStorage.setItem('materials', JSON.stringify(payload));
+    },
+    [makeSeedMaterial('seed-1', 'Seed Export')]
+  );
   await page.reload();
 
   const [download] = await Promise.all([
