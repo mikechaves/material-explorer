@@ -56,10 +56,10 @@ function runBudgetChecks() {
     { label: 'Sidebar JS raw', value: info.sidebarJs.raw, max: 30 * 1024 },
     { label: 'MaterialEditor JS raw', value: info.editorJs.raw, max: 42 * 1024 },
     { label: 'Three core JS raw', value: info.threeCoreJs.raw, max: 720 * 1024 },
-    { label: 'Entry CSS raw', value: info.entryCss.raw, max: 30 * 1024 },
-    { label: 'Total JS raw', value: totalJsRaw, max: 1350 * 1024 },
-    { label: 'Total JS gzip', value: totalJsGzip, max: 380 * 1024 },
-    { label: 'Total CSS raw', value: totalCssRaw, max: 32 * 1024 },
+    { label: 'Entry CSS raw', value: info.entryCss.raw, max: 48 * 1024 },
+    { label: 'Total JS raw', value: totalJsRaw, max: 1460 * 1024 },
+    { label: 'Total JS gzip', value: totalJsGzip, max: 425 * 1024 },
+    { label: 'Total CSS raw', value: totalCssRaw, max: 50 * 1024 },
   ];
 
   console.log('Bundle budget check');

@@ -6,7 +6,7 @@ type SidebarHeaderProps = {
   materialsCount: number;
   favoriteCount: number;
   logoUrl: string;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onToggleCollapsed: () => void;
   onStartNew: () => void;
   onOpenImport: () => void;

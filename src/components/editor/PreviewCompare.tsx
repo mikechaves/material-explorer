@@ -9,7 +9,7 @@ type PreviewCompareProps = {
   compareOn: boolean;
   compareA: MaterialDraft | null;
   material: MaterialDraft;
-  previewRef: React.RefObject<MaterialPreviewHandle>;
+  previewRef: React.RefObject<MaterialPreviewHandle | null>;
   previewEnabled: boolean;
   previewAutoEnable: boolean;
   onEnablePreview: () => void;
