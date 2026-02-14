@@ -57,6 +57,17 @@ npm run build
 
 This command builds the app for production to the `build` folder. The build is minified and the filenames include hashes for cache management.
 
+## Quality Gates
+
+Before opening a pull request, run:
+
+```bash
+npm run build
+npm run test:ci
+```
+
+The repository also runs these checks in GitHub Actions on pull requests and on pushes to `main`.
+
 ## Usage
 
 ### Creating a Material
