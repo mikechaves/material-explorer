@@ -34,6 +34,7 @@ const MaterialEditor: React.FC = () => {
   const [enableZoom, setEnableZoom] = useState<boolean>(() => window.localStorage.getItem('previewEnableZoom') === 'true');
   const [showGrid, setShowGrid] = useState<boolean>(() => window.localStorage.getItem('previewShowGrid') === 'true');
   const [showBackground, setShowBackground] = useState<boolean>(() => window.localStorage.getItem('previewShowBackground') !== 'false');
+  const [previewEnabled, setPreviewEnabled] = useState<boolean>(() => window.localStorage.getItem('previewEnabled') === 'true');
   const [compareOn, setCompareOn] = useState(false);
   const [compareA, setCompareA] = useState<MaterialDraft | null>(null);
 
@@ -74,6 +75,9 @@ const MaterialEditor: React.FC = () => {
   useEffect(() => {
     window.localStorage.setItem('previewShowBackground', showBackground ? 'true' : 'false');
   }, [showBackground]);
+  useEffect(() => {
+    window.localStorage.setItem('previewEnabled', previewEnabled ? 'true' : 'false');
+  }, [previewEnabled]);
 
   const copyShareLink = async (url: string, successMessage: string) => {
     try {
@@ -134,6 +138,8 @@ const MaterialEditor: React.FC = () => {
             compareA={compareA}
             material={material}
             previewRef={previewRef}
+            previewEnabled={previewEnabled}
+            onEnablePreview={() => setPreviewEnabled(true)}
             previewEnv={previewEnv}
             previewModel={previewModel}
             autoRotate={autoRotate}
@@ -177,6 +183,14 @@ const MaterialEditor: React.FC = () => {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  checked={previewEnabled}
+                  onChange={(e) => setPreviewEnabled(e.target.checked)}
+                />
+                3D
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
                   checked={enableZoom}
                   onChange={(e) => setEnableZoom(e.target.checked)}
                 />
@@ -204,6 +218,7 @@ const MaterialEditor: React.FC = () => {
               <button
                 type="button"
                 className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                disabled={!previewEnabled}
                 onClick={() => previewRef.current?.resetView()}
               >
                 Reset view
@@ -211,6 +226,7 @@ const MaterialEditor: React.FC = () => {
               <button
                 type="button"
                 className="flex-1 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-white/90"
+                disabled={!previewEnabled}
                 onClick={async () => {
                   const blob = await previewRef.current?.snapshotPng();
                   if (!blob) return;

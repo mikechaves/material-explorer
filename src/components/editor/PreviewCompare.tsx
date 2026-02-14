@@ -10,6 +10,8 @@ type PreviewCompareProps = {
   compareA: MaterialDraft | null;
   material: MaterialDraft;
   previewRef: React.RefObject<MaterialPreviewHandle>;
+  previewEnabled: boolean;
+  onEnablePreview: () => void;
   previewEnv: PreviewEnv;
   previewModel: PreviewModel;
   autoRotate: boolean;
@@ -25,6 +27,8 @@ export function PreviewCompare({
   compareA,
   material,
   previewRef,
+  previewEnabled,
+  onEnablePreview,
   previewEnv,
   previewModel,
   autoRotate,
@@ -32,9 +36,17 @@ export function PreviewCompare({
   showGrid,
   showBackground,
 }: PreviewCompareProps) {
+  const fallbackSwatchStyle: React.CSSProperties = {
+    background: `radial-gradient(circle at 25% 20%, rgba(255,255,255,0.28), rgba(255,255,255,0) 45%), linear-gradient(145deg, ${material.color} 0%, #111827 100%)`,
+  };
   const [renderPreview, setRenderPreview] = React.useState(false);
 
   React.useEffect(() => {
+    if (!previewEnabled) {
+      setRenderPreview(false);
+      return;
+    }
+
     let timeoutId: number | undefined;
     let idleId: number | undefined;
     const idleWindow = window as Window & {
@@ -54,7 +66,36 @@ export function PreviewCompare({
       }
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [previewEnabled]);
+
+  if (!previewEnabled) {
+    return (
+      <div className={compareOn && compareA ? 'flex flex-col sm:flex-row gap-4' : ''}>
+        {compareOn && compareA && (
+          <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">A</div>
+            <div className="w-full h-full rounded-xl" style={fallbackSwatchStyle} aria-hidden="true" />
+          </div>
+        )}
+        <div className="w-full sm:w-[360px] md:w-[400px] aspect-square relative">
+          {compareOn && compareA && (
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-black/50 text-xs text-white/80">B</div>
+          )}
+          <div className="w-full h-full rounded-xl relative" style={fallbackSwatchStyle}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button
+                type="button"
+                onClick={onEnablePreview}
+                className="px-4 py-2 rounded-lg bg-black/60 hover:bg-black/70 border border-white/20 text-white text-sm"
+              >
+                Enable 3D Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!renderPreview) {
     return (
