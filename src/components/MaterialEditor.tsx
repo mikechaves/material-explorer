@@ -27,6 +27,12 @@ import { MaterialIdentityCard } from './editor/MaterialIdentityCard';
 import { MaterialSurfaceCard } from './editor/MaterialSurfaceCard';
 import { MaterialOpticsCard } from './editor/MaterialOpticsCard';
 import { DraftHistoryCard } from './editor/DraftHistoryCard';
+import {
+  isOpticsSectionDirty,
+  isSurfaceSectionDirty,
+  resetOpticsSection as applyOpticsSectionReset,
+  resetSurfaceSection as applySurfaceSectionReset,
+} from './editor/draftSections';
 
 const HISTORY_LIMIT = 120;
 const DRAFT_COMPARE_KEYS: Array<keyof MaterialDraft> = [
@@ -77,26 +83,6 @@ function areDraftsEqual(a: MaterialDraft, b: MaterialDraft) {
     if (key === 'tags') return areStringArraysEqual(a.tags, b.tags);
     return a[key] === b[key];
   });
-}
-
-function isSurfaceSectionDirty(current: MaterialDraft, baseline: MaterialDraft) {
-  return (
-    current.color !== baseline.color ||
-    current.metalness !== baseline.metalness ||
-    current.roughness !== baseline.roughness
-  );
-}
-
-function isOpticsSectionDirty(current: MaterialDraft, baseline: MaterialDraft) {
-  return (
-    current.emissive !== baseline.emissive ||
-    current.emissiveIntensity !== baseline.emissiveIntensity ||
-    current.clearcoat !== baseline.clearcoat ||
-    current.clearcoatRoughness !== baseline.clearcoatRoughness ||
-    current.transmission !== baseline.transmission ||
-    current.ior !== baseline.ior ||
-    current.opacity !== baseline.opacity
-  );
 }
 
 async function loadShareUtils() {
@@ -480,25 +466,11 @@ const MaterialEditor: React.FC = () => {
   }, [baselineDraft]);
 
   const resetSurfaceSection = React.useCallback(() => {
-    setMaterialWithHistory((prev) => ({
-      ...prev,
-      color: baselineDraft.color,
-      metalness: baselineDraft.metalness,
-      roughness: baselineDraft.roughness,
-    }));
+    setMaterialWithHistory((prev) => applySurfaceSectionReset(prev, baselineDraft));
   }, [baselineDraft, setMaterialWithHistory]);
 
   const resetOpticsSection = React.useCallback(() => {
-    setMaterialWithHistory((prev) => ({
-      ...prev,
-      emissive: baselineDraft.emissive,
-      emissiveIntensity: baselineDraft.emissiveIntensity,
-      clearcoat: baselineDraft.clearcoat,
-      clearcoatRoughness: baselineDraft.clearcoatRoughness,
-      transmission: baselineDraft.transmission,
-      ior: baselineDraft.ior,
-      opacity: baselineDraft.opacity,
-    }));
+    setMaterialWithHistory((prev) => applyOpticsSectionReset(prev, baselineDraft));
   }, [baselineDraft, setMaterialWithHistory]);
 
   return (

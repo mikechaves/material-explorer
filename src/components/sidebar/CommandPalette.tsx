@@ -1,5 +1,12 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  deriveVisibleCommands,
+  parseRecentCommandIds,
+  promoteRecentCommandId,
+  RECENT_COMMANDS_KEY,
+  serializeRecentCommandIds,
+} from './recentCommands';
 
 export type CommandPaletteItem = {
   id: string;
@@ -16,23 +23,15 @@ type CommandPaletteProps = {
   commands: CommandPaletteItem[];
 };
 
-const RECENT_COMMANDS_KEY = 'materialExplorerRecentCommands';
-const RECENT_COMMAND_LIMIT = 6;
-
-function loadRecentCommands(): string[] {
-  try {
-    const raw = window.localStorage.getItem(RECENT_COMMANDS_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === 'string').slice(0, RECENT_COMMAND_LIMIT);
-  } catch {
-    return [];
-  }
+function loadRecentCommands() {
+  if (typeof window === 'undefined') return [];
+  return parseRecentCommandIds(window.localStorage.getItem(RECENT_COMMANDS_KEY));
 }
 
 function persistRecentCommands(commandIds: string[]) {
+  if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(commandIds.slice(0, RECENT_COMMAND_LIMIT)));
+    window.localStorage.setItem(RECENT_COMMANDS_KEY, serializeRecentCommandIds(commandIds));
   } catch {
     // Ignore storage write errors for non-critical command history.
   }
@@ -44,34 +43,10 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   const [recentCommandIds, setRecentCommandIds] = React.useState<string[]>(() => loadRecentCommands());
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const commandById = React.useMemo(() => new Map(commands.map((command) => [command.id, command])), [commands]);
-
-  const filteredCommands = React.useMemo(() => {
-    if (!normalizedQuery) return commands;
-    return commands.filter((command) => {
-      const haystack = [command.title, command.description ?? '', ...(command.keywords ?? [])].join(' ').toLowerCase();
-      return haystack.includes(normalizedQuery);
-    });
-  }, [commands, normalizedQuery]);
-
-  const recentCommands = React.useMemo(
-    () =>
-      recentCommandIds
-        .map((commandId) => commandById.get(commandId))
-        .filter((command): command is CommandPaletteItem => !!command),
-    [commandById, recentCommandIds]
+  const { normalizedQuery, visibleCommands, recentCommandIdSet, prunedRecentCommandIds } = React.useMemo(
+    () => deriveVisibleCommands(commands, recentCommandIds, query),
+    [commands, recentCommandIds, query]
   );
-
-  const recentCommandIdSet = React.useMemo(
-    () => new Set(recentCommands.map((command) => command.id)),
-    [recentCommands]
-  );
-
-  const visibleCommands = React.useMemo(() => {
-    if (normalizedQuery) return filteredCommands;
-    return [...recentCommands, ...commands.filter((command) => !recentCommandIdSet.has(command.id))];
-  }, [commands, filteredCommands, normalizedQuery, recentCommands, recentCommandIdSet]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -92,20 +67,16 @@ export function CommandPalette({ open, onClose, commands }: CommandPaletteProps)
   }, [activeIndex, visibleCommands.length]);
 
   React.useEffect(() => {
-    setRecentCommandIds((previous) => {
-      const next = previous.filter((commandId) => commandById.has(commandId));
-      if (next.length !== previous.length) persistRecentCommands(next);
-      return next;
-    });
-  }, [commandById]);
+    if (prunedRecentCommandIds.length !== recentCommandIds.length) {
+      setRecentCommandIds(prunedRecentCommandIds);
+      persistRecentCommands(prunedRecentCommandIds);
+    }
+  }, [prunedRecentCommandIds, recentCommandIds.length]);
 
   const runCommand = (command: CommandPaletteItem | undefined) => {
     if (!command) return;
     setRecentCommandIds((previous) => {
-      const next = [command.id, ...previous.filter((commandId) => commandId !== command.id)].slice(
-        0,
-        RECENT_COMMAND_LIMIT
-      );
+      const next = promoteRecentCommandId(previous, command.id);
       persistRecentCommands(next);
       return next;
     });
