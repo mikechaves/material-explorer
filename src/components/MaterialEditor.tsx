@@ -10,7 +10,6 @@ import {
   DEFAULT_MATERIAL_DRAFT,
   downloadBlob,
 } from '../utils/material';
-import { decodeSharePayload, encodeSharePayloadV2 } from '../utils/share';
 import { type PreviewModel, type PreviewEnv } from './editor/EditorFields';
 import { PreviewCompare } from './editor/PreviewCompare';
 import { TextureControls } from './editor/TextureControls';
@@ -98,6 +97,10 @@ function isOpticsSectionDirty(current: MaterialDraft, baseline: MaterialDraft) {
     current.ior !== baseline.ior ||
     current.opacity !== baseline.opacity
   );
+}
+
+async function loadShareUtils() {
+  return await import('../utils/share');
 }
 
 const MaterialEditor: React.FC = () => {
@@ -214,15 +217,28 @@ const MaterialEditor: React.FC = () => {
     const url = new URL(window.location.href);
     const m = url.searchParams.get('m');
     if (!m) return;
-    const payload = decodeSharePayload(m);
-    if (!payload) return;
-    startNewMaterial();
-    setMaterial(cloneDraft(coerceMaterialDraft(payload.material, emptyDraft)));
-    setUndoStack([]);
-    setRedoStack([]);
-    // keep URL clean after applying
-    url.searchParams.delete('m');
-    window.history.replaceState({}, '', url.toString());
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { decodeSharePayload } = await loadShareUtils();
+        const payload = decodeSharePayload(m);
+        if (!payload || cancelled) return;
+        startNewMaterial();
+        setMaterial(cloneDraft(coerceMaterialDraft(payload.material, emptyDraft)));
+        setUndoStack([]);
+        setRedoStack([]);
+        // keep URL clean after applying
+        url.searchParams.delete('m');
+        window.history.replaceState({}, '', url.toString());
+      } catch (error) {
+        console.error('Failed to decode share payload.', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [startNewMaterial, emptyDraft]);
 
   useEffect(() => {
@@ -559,6 +575,7 @@ const MaterialEditor: React.FC = () => {
               onToggleCompare={() => setCompareOn((value) => !value)}
               onShareLink={() => {
                 void (async () => {
+                  const { encodeSharePayloadV2 } = await loadShareUtils();
                   const {
                     baseColorMap: _baseColorMap,
                     normalMap: _normalMap,
@@ -577,6 +594,7 @@ const MaterialEditor: React.FC = () => {
               }}
               onShareWithTextures={() => {
                 void (async () => {
+                  const { encodeSharePayloadV2 } = await loadShareUtils();
                   const payload = encodeSharePayloadV2({ v: 2, includeTextures: true, material });
                   const url = new URL(window.location.href);
                   url.searchParams.set('m', payload);
