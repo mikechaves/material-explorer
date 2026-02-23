@@ -9,7 +9,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "autoprefixer": "^10.4.24",
-    "framer-motion": "^12.34.0",
+    "framer-motion": "^12.34.3",
     "lz-string": "^1.5.0",
     "postcss": "^8.4.37",
     "postcss-flexbugs-fixes": "^5.0.2",
