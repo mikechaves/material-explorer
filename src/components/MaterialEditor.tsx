@@ -890,17 +890,38 @@ const MaterialEditor: React.FC = () => {
 
             <div className="section-shell px-3 py-3 space-y-2">
               <div className="text-xs font-semibold text-slate-100">Power Tools</div>
+              <div className="text-[11px] ui-muted">Tiny helpers for faster solo iteration.</div>
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" className="ui-btn py-2 text-xs" onClick={duplicateCurrentMaterial}>
+                <button
+                  type="button"
+                  className="ui-btn py-2 text-xs"
+                  title="Create a new saved material from the current draft."
+                  onClick={duplicateCurrentMaterial}
+                >
                   Duplicate
                 </button>
-                <button type="button" className="ui-btn py-2 text-xs" onClick={randomizeMaterial}>
+                <button
+                  type="button"
+                  className="ui-btn py-2 text-xs"
+                  title="Generate random values for quick idea exploration."
+                  onClick={randomizeMaterial}
+                >
                   Randomize
                 </button>
-                <button type="button" className="ui-btn py-2 text-xs" onClick={clearAllTextures}>
+                <button
+                  type="button"
+                  className="ui-btn py-2 text-xs"
+                  title="Remove all texture maps while keeping scalar values."
+                  onClick={clearAllTextures}
+                >
                   Clear Textures
                 </button>
-                <button type="button" className="ui-btn py-2 text-xs" onClick={exportCurrentDraftJson}>
+                <button
+                  type="button"
+                  className="ui-btn py-2 text-xs"
+                  title="Download the current draft as a JSON file."
+                  onClick={exportCurrentDraftJson}
+                >
                   Export Draft JSON
                 </button>
               </div>
@@ -917,6 +938,7 @@ const MaterialEditor: React.FC = () => {
               <button
                 type="button"
                 className="ui-btn w-full py-2 text-xs"
+                title="Replace the current draft using a previously exported JSON file."
                 onClick={() => importDraftInputRef.current?.click()}
               >
                 Import Draft JSON
