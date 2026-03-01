@@ -43,6 +43,7 @@ import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from
 import { emitTelemetryEvent } from '../utils/telemetry';
 
 const HISTORY_LIMIT = 120;
+const DRAFT_AUTOSAVE_KEY = 'materialEditorDraftAutosaveV1';
 const DRAFT_COMPARE_KEYS: Array<keyof MaterialDraft> = [
   'id',
   'name',
@@ -103,6 +104,7 @@ const MaterialEditor: React.FC = () => {
   const { showCopyDialog } = useDialogs();
   const previewRef = useRef<MaterialPreviewHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const importDraftInputRef = useRef<HTMLInputElement>(null);
 
   const emptyDraft: MaterialDraft = React.useMemo(() => ({ ...DEFAULT_MATERIAL_DRAFT }), []);
 
@@ -273,6 +275,30 @@ const MaterialEditor: React.FC = () => {
       cancelled = true;
     };
   }, [startNewMaterial, emptyDraft, notify]);
+
+  useEffect(() => {
+    if (selectedMaterial) return;
+    const raw = getLocalStorageItem(DRAFT_AUTOSAVE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      const restored = coerceMaterialDraft(parsed, emptyDraft);
+      if (areDraftsEqual(restored, emptyDraft)) return;
+      setMaterial(restored);
+      notify({ variant: 'info', title: 'Draft restored', message: 'Recovered your last unsaved material draft.' });
+    } catch {
+      // ignore malformed autosave payloads
+    }
+  }, [emptyDraft, notify, selectedMaterial]);
+
+  useEffect(() => {
+    if (selectedMaterial) return;
+    try {
+      setLocalStorageItem(DRAFT_AUTOSAVE_KEY, JSON.stringify(material));
+    } catch {
+      // ignore autosave write errors
+    }
+  }, [material, selectedMaterial]);
 
   useEffect(() => {
     setLocalStorageItem('previewModel', previewModel);
@@ -513,6 +539,79 @@ const MaterialEditor: React.FC = () => {
     if (material.id) updateMaterial(full);
     else addMaterial(full);
   }, [addMaterial, material, updateMaterial]);
+
+  const duplicateCurrentMaterial = React.useCallback(() => {
+    const now = Date.now();
+    const duplicate = createMaterialFromDraft({
+      ...material,
+      id: undefined,
+      name: `${sanitizeMaterialName(material.name)} Copy`,
+      createdAt: now,
+      updatedAt: now,
+    });
+    addMaterial(duplicate);
+    setMaterial(coerceMaterialDraft(duplicate, emptyDraft));
+    notify({ variant: 'success', title: 'Material duplicated' });
+  }, [addMaterial, emptyDraft, material, notify]);
+
+  const randomizeMaterial = React.useCallback(() => {
+    const randomHex = () =>
+      `#${Math.floor(Math.random() * 0xffffff)
+        .toString(16)
+        .padStart(6, '0')
+        .toUpperCase()}`;
+    setMaterialWithHistory((prev) => ({
+      ...prev,
+      color: randomHex(),
+      emissive: randomHex(),
+      metalness: Number(Math.random().toFixed(2)),
+      roughness: Number(Math.random().toFixed(2)),
+      emissiveIntensity: Number(Math.random().toFixed(2)),
+      clearcoat: Number(Math.random().toFixed(2)),
+      clearcoatRoughness: Number(Math.random().toFixed(2)),
+      transmission: Number(Math.random().toFixed(2)),
+      ior: Number((1 + Math.random() * 1.5).toFixed(2)),
+      opacity: Number((0.25 + Math.random() * 0.75).toFixed(2)),
+      updatedAt: Date.now(),
+    }));
+    notify({ variant: 'info', title: 'Randomized material draft' });
+  }, [notify, setMaterialWithHistory]);
+
+  const clearAllTextures = React.useCallback(() => {
+    setMaterialWithHistory((prev) => ({
+      ...prev,
+      baseColorMap: undefined,
+      normalMap: undefined,
+      roughnessMap: undefined,
+      metalnessMap: undefined,
+      aoMap: undefined,
+      emissiveMap: undefined,
+      alphaMap: undefined,
+      updatedAt: Date.now(),
+    }));
+    notify({ variant: 'info', title: 'Cleared all texture maps' });
+  }, [notify, setMaterialWithHistory]);
+
+  const exportCurrentDraftJson = React.useCallback(() => {
+    const blob = new Blob([JSON.stringify(material, null, 2)], { type: 'application/json' });
+    downloadBlob(buildDownloadFilename(material.name, 'json', 'material-draft'), blob);
+    notify({ variant: 'success', title: 'Draft JSON exported' });
+  }, [material, notify]);
+
+  const importDraftFromJson = React.useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const restored = coerceMaterialDraft(parsed, emptyDraft);
+        setMaterialWithHistory(restored);
+        notify({ variant: 'success', title: 'Draft JSON imported' });
+      } catch {
+        notify({ variant: 'error', title: 'Import failed', message: 'Could not parse this JSON file.' });
+      }
+    },
+    [emptyDraft, notify, setMaterialWithHistory]
+  );
 
   const dismissOnboarding = () => {
     setShowOnboarding(false);
@@ -788,6 +887,42 @@ const MaterialEditor: React.FC = () => {
               onUndo={undoMaterialChange}
               onRedo={redoMaterialChange}
             />
+
+            <div className="section-shell px-3 py-3 space-y-2">
+              <div className="text-xs font-semibold text-slate-100">Power Tools</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" className="ui-btn py-2 text-xs" onClick={duplicateCurrentMaterial}>
+                  Duplicate
+                </button>
+                <button type="button" className="ui-btn py-2 text-xs" onClick={randomizeMaterial}>
+                  Randomize
+                </button>
+                <button type="button" className="ui-btn py-2 text-xs" onClick={clearAllTextures}>
+                  Clear Textures
+                </button>
+                <button type="button" className="ui-btn py-2 text-xs" onClick={exportCurrentDraftJson}>
+                  Export Draft JSON
+                </button>
+              </div>
+              <input
+                ref={importDraftInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void importDraftFromJson(file);
+                  event.currentTarget.value = '';
+                }}
+              />
+              <button
+                type="button"
+                className="ui-btn w-full py-2 text-xs"
+                onClick={() => importDraftInputRef.current?.click()}
+              >
+                Import Draft JSON
+              </button>
+            </div>
 
             <motion.button
               className="ui-btn ui-btn-primary w-full py-2.5 text-sm"
