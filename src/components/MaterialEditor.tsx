@@ -907,7 +907,6 @@ const MaterialEditor: React.FC = () => {
               <input
                 ref={importDraftInputRef}
                 type="file"
-                accept="application/json,.json"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
