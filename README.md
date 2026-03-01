@@ -2,7 +2,18 @@
 
 Welcome to Material Explorer! This application allows you to interactively create, customize, and visualize materials in 3D. Leveraging the power of React Three Fiber, it offers real-time feedback on changes to material properties such as color, metalness, and roughness. The app is designed to be responsive and user-friendly, ensuring a seamless experience across various devices and screen sizes.
 
-## What's New in `2.0.0-beta`
+## Project Links
+
+- **Live app (GitHub Pages):** https://mikechaves.github.io/material-explorer
+- **Repository:** https://github.com/mikechaves/material-explorer
+
+## What's New in `2.0.0-beta.1`
+
+- Added rapid-iteration editor tools: **draft autosave/restore**, **duplicate material**, **randomize material**, **clear textures**, and **draft JSON import/export**.
+- Added concise **Power Tools tooltips** for better in-editor discoverability.
+- Kept CI and quality gates green while reducing maintenance noise for this personal project.
+
+### Earlier highlights (`2.0.0-beta`)
 
 - Upgraded core stack: **React 19**, **Vite 7**, **TypeScript 5.9**, **Tailwind CSS 4**, **ESLint 9**.
 - Improved editor workflow: command palette, onboarding starter kit, draft unsaved state, undo/redo history, and section reset controls.
@@ -15,6 +26,7 @@ Welcome to Material Explorer! This application allows you to interactively creat
 - **Live 3D preview**: model picker, HDRI/environment picker, zoom/grid/background toggles, reset view, PNG snapshot, A/B compare
 - **Library UX**: favorites, tags, search/sort, tag filter chips, bulk actions, manual drag-to-reorder
 - **In-app feedback**: non-blocking toast notifications for import/export/share outcomes
+- **Power Tools**: duplicate, randomize, clear textures, draft JSON import/export, autosave/restore
 - **Import/Export**:
   - JSON presets (single + whole library)
   - GLB export per material and GLB export of the library (grid of preview spheres)
