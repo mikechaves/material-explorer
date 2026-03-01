@@ -9,7 +9,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'dependencies'
-      - 'security'
+      - 'automerge-candidate'
     commit-message:
       prefix: 'deps'
 
@@ -21,6 +21,6 @@ updates:
       time: '09:30'
     labels:
       - 'dependencies'
-      - 'security'
+      - 'automerge-candidate'
     commit-message:
       prefix: 'ci'
