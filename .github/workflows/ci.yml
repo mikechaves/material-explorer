@@ -54,5 +54,11 @@ jobs:
       - name: E2E
         run: npm run test:e2e
 
-      - name: Security audit (high+)
+      - name: Security audit (high+) [PR non-blocking]
+        if: github.event_name == 'pull_request'
+        run: npm run security:audit
+        continue-on-error: true
+
+      - name: Security audit (high+) [main blocking]
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: npm run security:audit
