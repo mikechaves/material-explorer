@@ -35,7 +35,7 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
+
       - name: Comment for major updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         uses: peter-evans/create-or-update-comment@v4
