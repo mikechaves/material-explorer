@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [2.0.0-beta.1] - 2026-05-22
 
-### Maintenance
+### Added
 
 - Added rapid-iteration editor tooling for draft autosave/restore, material duplication, randomization, texture clearing, and draft JSON import/export.
 - Added concise Power Tools tooltips for better in-editor discoverability.
+
+### Maintenance
+
 - Updated dependency lockfile and direct dependency minimums to resolve current npm audit advisories.
 
 ## [2.0.0-beta] - 2026-02-14
