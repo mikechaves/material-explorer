@@ -1,6 +1,6 @@
 {
   "name": "material-explorer",
-  "version": "2.0.0-beta",
+  "version": "2.0.0-beta.1",
   "homepage": "https://mikechaves.github.io/material-explorer",
   "private": true,
   "dependencies": {
@@ -11,7 +11,7 @@
     "autoprefixer": "^10.4.24",
     "framer-motion": "^12.34.0",
     "lz-string": "^1.5.0",
-    "postcss": "^8.4.37",
+    "postcss": "^8.5.15",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-normalize": "^10.0.1",
     "postcss-preset-env": "^9.5.2",
@@ -20,7 +20,7 @@
     "react-resizable": "^3.0.5",
     "tailwindcss": "^4.1.18",
     "three": "^0.182.0",
-    "uuid": "^13.0.0",
+    "uuid": "^13.0.2",
     "web-vitals": "^2.1.4"
   },
   "overrides": {
@@ -28,7 +28,7 @@
     "glob": "^10.5.0",
     "qs": "^6.14.1",
     "jsonpath": "^1.2.1",
-    "brace-expansion": "^1.1.12"
+    "brace-expansion": "^1.1.14"
   },
   "scripts": {
     "start": "vite",
@@ -81,7 +81,7 @@
     "postcss-cli": "^11.0.1",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^7.3.3",
     "vitest": "^4.0.18"
   }
 }
