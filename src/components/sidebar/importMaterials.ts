@@ -1,13 +1,15 @@
 import type { Material } from '../../types/material';
 import { createMaterialFromDraft, normalizeMaterial } from '../../utils/material';
+import {
+  analyzeMaterialLibraryStorage,
+  formatEncodedSize,
+  MAX_TEXTURE_DATA_URL_CHARS,
+  TEXTURE_FIELDS,
+} from '../../utils/materialStorageBudget';
 
 const MAX_IMPORT_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_IMPORT_JSON_CHARS = 12 * 1024 * 1024;
 const MAX_IMPORT_MATERIALS = 600;
-const MAX_TEXTURE_DATA_URL_CHARS = 2_500_000;
-const textureFields: Array<
-  'baseColorMap' | 'normalMap' | 'roughnessMap' | 'metalnessMap' | 'aoMap' | 'emissiveMap' | 'alphaMap'
-> = ['baseColorMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -62,7 +64,7 @@ export function parseImportedMaterials(
   }
 
   const oversizedTextureMaterial = normalized.find((material) =>
-    textureFields.some((field) => {
+    TEXTURE_FIELDS.some((field) => {
       const value = material[field];
       return typeof value === 'string' && value.length > MAX_TEXTURE_DATA_URL_CHARS;
     })
@@ -84,6 +86,16 @@ export function parseImportedMaterials(
     existingIds.add(created.id);
     return created;
   });
+
+  const storageReport = analyzeMaterialLibraryStorage([...existingMaterials, ...imported]);
+  if (storageReport.level === 'block') {
+    return {
+      ok: false,
+      message: `Import would make the local library about ${formatEncodedSize(
+        storageReport.serializedChars
+      )}. Split the file or remove embedded textures before importing.`,
+    };
+  }
 
   return { ok: true, materials: imported };
 }

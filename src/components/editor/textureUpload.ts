@@ -1,5 +1,6 @@
+import { MAX_TEXTURE_DATA_URL_CHARS } from '../../utils/materialStorageBudget';
+
 const MAX_TEXTURE_FILE_BYTES = 4 * 1024 * 1024; // 4 MB
-const MAX_TEXTURE_DATA_URL_CHARS = 2_500_000;
 
 export function validateTextureUploadFile(file: File): string | null {
   const type = file.type?.trim();

@@ -94,7 +94,7 @@ function App() {
                       ? 'calc(100% - 64px)'
                       : `calc(100% - ${sidebarWidth}px)`,
                 }}
-                className="h-full transition-all duration-300 ease-in-out overflow-hidden"
+                className="h-full box-border pt-14 md:pt-0 transition-all duration-300 ease-in-out overflow-hidden"
               >
                 <Suspense fallback={<div className="h-full w-full bg-black" />}>
                   <MaterialEditor />

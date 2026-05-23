@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseImportedMaterials, validateImportFileSize } from './importMaterials';
 import type { Material } from '../../types/material';
+import { LOCAL_LIBRARY_STORAGE_BLOCK_CHARS } from '../../utils/materialStorageBudget';
 
 function makeMaterial(id: string, name: string): Material {
   const now = Date.now();
@@ -70,6 +71,24 @@ describe('importMaterials', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.message).toContain('very large embedded texture');
+  });
+
+  it('rejects imports that would exceed the local library storage budget', () => {
+    const existing = [
+      {
+        ...makeMaterial('m-existing-large', 'Existing Large'),
+        baseColorMap: `data:image/png;base64,${'a'.repeat(LOCAL_LIBRARY_STORAGE_BLOCK_CHARS)}`,
+      },
+    ];
+    const payload = {
+      version: 1,
+      materials: [makeMaterial('m-storage-budget', 'One More Material')],
+    };
+
+    const result = parseImportedMaterials(JSON.stringify(payload), existing);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.message).toContain('local library');
   });
 
   it('validates file size limits', () => {

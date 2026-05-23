@@ -41,6 +41,11 @@ import {
 import { validateTextureDataUrl, validateTextureUploadFile } from './editor/textureUpload';
 import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../utils/localStorage';
 import { emitTelemetryEvent } from '../utils/telemetry';
+import {
+  analyzeMaterialLibraryStorage,
+  formatEncodedSize,
+  summarizeMaterialTextures,
+} from '../utils/materialStorageBudget';
 
 const HISTORY_LIMIT = 120;
 const DRAFT_AUTOSAVE_KEY = 'materialEditorDraftAutosaveV1';
@@ -535,10 +540,53 @@ const MaterialEditor: React.FC = () => {
       updatedAt: now,
       ...(material.id ? {} : { createdAt: now }),
     });
+    const existingIndex = materials.findIndex((entry) => entry.id === full.id);
+    const projectedMaterials =
+      existingIndex >= 0 ? materials.map((entry) => (entry.id === full.id ? full : entry)) : [...materials, full];
+    const storageReport = analyzeMaterialLibraryStorage(projectedMaterials);
 
-    if (material.id) updateMaterial(full);
+    if (storageReport.level === 'block') {
+      notify({
+        variant: 'warn',
+        title: 'Storage limit warning',
+        message: `This library would use about ${formatEncodedSize(
+          storageReport.serializedChars
+        )} locally. Remove texture maps or export JSON before saving more embedded textures.`,
+      });
+      emitTelemetryEvent(
+        'materials.save.projected_storage_blocked',
+        {
+          materialCount: projectedMaterials.length,
+          serializedChars: storageReport.serializedChars,
+          textureChars: storageReport.textureChars,
+        },
+        'warn'
+      );
+      return;
+    }
+
+    if (storageReport.level === 'warn') {
+      notify({
+        variant: 'warn',
+        title: 'Storage getting full',
+        message: `This library is about ${formatEncodedSize(
+          storageReport.serializedChars
+        )} locally. Export JSON backups or clear unused textures soon.`,
+      });
+      emitTelemetryEvent(
+        'materials.save.projected_storage_warned',
+        {
+          materialCount: projectedMaterials.length,
+          serializedChars: storageReport.serializedChars,
+          textureChars: storageReport.textureChars,
+        },
+        'warn'
+      );
+    }
+
+    if (existingIndex >= 0) updateMaterial(full);
     else addMaterial(full);
-  }, [addMaterial, material, updateMaterial]);
+  }, [addMaterial, material, materials, notify, updateMaterial]);
 
   const duplicateCurrentMaterial = React.useCallback(() => {
     const now = Date.now();
@@ -700,6 +748,7 @@ const MaterialEditor: React.FC = () => {
   const canRedo = redoStack.length > 0;
   const surfaceDirty = React.useMemo(() => isSurfaceSectionDirty(material, baselineDraft), [baselineDraft, material]);
   const opticsDirty = React.useMemo(() => isOpticsSectionDirty(material, baselineDraft), [baselineDraft, material]);
+  const textureStorageSummary = React.useMemo(() => summarizeMaterialTextures(material), [material]);
 
   const resetDraftChanges = React.useCallback(() => {
     setMaterial(cloneDraft(baselineDraft));
@@ -877,6 +926,7 @@ const MaterialEditor: React.FC = () => {
               onChange={handleChange}
               onUploadMap={uploadMap}
               setMaterial={setMaterialWithHistory}
+              textureStorageSummary={textureStorageSummary}
             />
 
             <DraftHistoryCard

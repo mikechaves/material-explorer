@@ -370,6 +370,23 @@ test('rejects oversized texture uploads with clear feedback', async ({ page }) =
   await expect(page.getByText('Texture file is too large. Maximum supported size is 4 MB.')).toBeVisible();
 });
 
+test('shows embedded texture storage after upload', async ({ page }) => {
+  const onePixelPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axk6FoAAAAASUVORK5CYII=',
+    'base64'
+  );
+  const textureInput = page.locator('input[type="file"][accept="image/*"]').first();
+
+  await expect(page.getByTestId('texture-storage-summary')).toContainText('No embedded textures');
+  await textureInput.setInputFiles({
+    name: 'one-pixel.png',
+    mimeType: 'image/png',
+    buffer: onePixelPng,
+  });
+
+  await expect(page.getByTestId('texture-storage-summary')).toContainText('embedded across 1 map');
+});
+
 test('can export materials as JSON', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(
