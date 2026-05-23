@@ -1,12 +1,15 @@
 import React from 'react';
 import type { MaterialDraft } from '../../types/material';
 import { Control } from './EditorFields';
+import type { TextureStorageSummary } from '../../utils/materialStorageBudget';
+import { formatEncodedSize } from '../../utils/materialStorageBudget';
 
 type TextureControlsProps = {
   material: MaterialDraft;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onUploadMap: (key: keyof MaterialDraft, file: File) => Promise<void>;
   setMaterial: React.Dispatch<React.SetStateAction<MaterialDraft>>;
+  textureStorageSummary: TextureStorageSummary;
 };
 
 function uploadFromInput(
@@ -33,7 +36,20 @@ function UploadButton({ onChange }: { onChange: (event: React.ChangeEvent<HTMLIn
 const rowClass = 'section-shell px-3 py-3 flex items-start justify-between gap-3';
 const actionClass = 'ui-btn px-3 py-1.5 text-xs font-semibold';
 
-export function TextureControls({ material, onChange, onUploadMap, setMaterial }: TextureControlsProps) {
+export function TextureControls({
+  material,
+  onChange,
+  onUploadMap,
+  setMaterial,
+  textureStorageSummary,
+}: TextureControlsProps) {
+  const textureSummaryText =
+    textureStorageSummary.textureCount === 0
+      ? 'No embedded textures in this draft.'
+      : `${formatEncodedSize(textureStorageSummary.textureChars)} embedded across ${
+          textureStorageSummary.textureCount
+        } ${textureStorageSummary.textureCount === 1 ? 'map' : 'maps'}.`;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -42,6 +58,9 @@ export function TextureControls({ material, onChange, onUploadMap, setMaterial }
           <div className="text-xs ui-muted">Maps, tiling, and advanced material detail.</div>
           <div className="mt-1 text-[11px] text-slate-300/75">
             Upload images only. Recommended max size: 4 MB per map.
+          </div>
+          <div className="mt-1 text-[11px] text-slate-300/75" data-testid="texture-storage-summary">
+            Draft storage: {textureSummaryText} Embedded textures count against browser storage.
           </div>
         </div>
       </div>
