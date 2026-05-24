@@ -6,6 +6,7 @@ Welcome to Material Explorer! This application allows you to interactively creat
 
 - **Live app (GitHub Pages):** https://mikechaves.github.io/material-explorer
 - **Repository:** https://github.com/mikechaves/material-explorer
+- **Docs & backlog:** [docs/README.md](./docs/README.md)
 
 ## What's New in `2.0.0-beta.1`
 
