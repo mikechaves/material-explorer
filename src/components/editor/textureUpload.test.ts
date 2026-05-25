@@ -1,8 +1,34 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { prepareTextureUpload, validateTextureDataUrl, validateTextureUploadFile } from './textureUpload';
 
+const fileReaderInputs: Blob[] = [];
+
+class MockFileReader {
+  result: string | ArrayBuffer | null = null;
+  error: Error | null = null;
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+
+  readAsDataURL(blob: Blob) {
+    fileReaderInputs.push(blob);
+    blob
+      .arrayBuffer()
+      .then((buffer) => {
+        this.result = `data:${blob.type || 'application/octet-stream'};base64,${Buffer.from(buffer).toString(
+          'base64'
+        )}`;
+        this.onload?.();
+      })
+      .catch((error: Error) => {
+        this.error = error;
+        this.onerror?.();
+      });
+  }
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  fileReaderInputs.length = 0;
 });
 
 describe('textureUpload', () => {
@@ -33,6 +59,7 @@ describe('textureUpload', () => {
 
   it('downscales and compresses large valid image files before embedding', async () => {
     const close = vi.fn();
+    vi.stubGlobal('FileReader', MockFileReader);
     vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 4096, height: 2048, close }));
     vi.stubGlobal('document', {
       createElement: vi.fn(() => ({
@@ -56,10 +83,13 @@ describe('textureUpload', () => {
     expect(result.height).toBe(1024);
     expect(result.outputType).toBe('image/jpeg');
     expect(result.dataUrl).toContain('data:image/jpeg;base64,');
+    expect(fileReaderInputs).toHaveLength(1);
+    expect(fileReaderInputs[0]?.size).toBe('compressed-texture'.length);
     expect(close).toHaveBeenCalled();
   });
 
   it('rejects images that still exceed the data URL budget after optimization fails', async () => {
+    vi.stubGlobal('FileReader', MockFileReader);
     vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('decode failed')));
     const file = new File([new Uint8Array(4 * 1024 * 1024)], 'broken-texture.png', { type: 'image/png' });
 

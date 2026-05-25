@@ -46,18 +46,13 @@ export function validateTextureDataUrl(dataUrl: string): string | null {
 }
 
 export async function prepareTextureUpload(file: File): Promise<PreparedTextureUpload> {
-  const originalDataUrl = await blobToDataUrl(file);
-  const originalCandidate: TextureCandidate = {
-    dataUrl: originalDataUrl,
-    compressed: false,
-    originalBytes: file.size,
-    outputBytes: file.size,
-    originalType: file.type || 'application/octet-stream',
-    outputType: file.type || 'application/octet-stream',
-    priority: 2,
-  };
+  const optimizedCandidate = await optimizeTextureFile(file).catch(() => null);
+  if (optimizedCandidate && validateTextureDataUrl(optimizedCandidate.dataUrl) === null) {
+    const { priority: _priority, ...result } = optimizedCandidate;
+    return result;
+  }
 
-  const optimizedCandidate = await optimizeTextureFile(file, originalDataUrl).catch(() => null);
+  const originalCandidate = await createOriginalTextureCandidate(file);
   const candidates = [optimizedCandidate, originalCandidate]
     .filter((candidate): candidate is TextureCandidate => candidate !== null)
     .sort((a, b) => a.priority - b.priority || a.dataUrl.length - b.dataUrl.length);
@@ -69,11 +64,24 @@ export async function prepareTextureUpload(file: File): Promise<PreparedTextureU
   }
 
   throw new Error(
-    validateTextureDataUrl(candidates[0]?.dataUrl ?? originalDataUrl) ?? 'Texture could not be prepared.'
+    validateTextureDataUrl(candidates[0]?.dataUrl ?? originalCandidate.dataUrl) ?? 'Texture could not be prepared.'
   );
 }
 
-async function optimizeTextureFile(file: File, originalDataUrl: string): Promise<TextureCandidate | null> {
+async function createOriginalTextureCandidate(file: File): Promise<TextureCandidate> {
+  const dataUrl = await blobToDataUrl(file);
+  return {
+    dataUrl,
+    compressed: false,
+    originalBytes: file.size,
+    outputBytes: file.size,
+    originalType: file.type || 'application/octet-stream',
+    outputType: file.type || 'application/octet-stream',
+    priority: 2,
+  };
+}
+
+async function optimizeTextureFile(file: File): Promise<TextureCandidate | null> {
   if (typeof document === 'undefined') return null;
 
   const bitmap = await loadTextureBitmap(file);
@@ -97,7 +105,7 @@ async function optimizeTextureFile(file: File, originalDataUrl: string): Promise
 
     const dataUrl = await blobToDataUrl(blob);
     const dimensionsChanged = target.width !== bitmap.width || target.height !== bitmap.height;
-    const isSmaller = dataUrl.length < originalDataUrl.length;
+    const isSmaller = blob.size < file.size;
     if (!dimensionsChanged && !isSmaller) return null;
 
     return {
@@ -160,27 +168,14 @@ async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: n
 }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
-  const buffer = await blob.arrayBuffer();
-  const base64 = arrayBufferToBase64(buffer);
-  return `data:${blob.type || 'application/octet-stream'};base64,${base64}`;
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const maybeBuffer = (
-    globalThis as typeof globalThis & {
-      Buffer?: { from: (input: ArrayBuffer) => { toString: (encoding: 'base64') => string } };
-    }
-  ).Buffer;
-  if (maybeBuffer) return maybeBuffer.from(buffer).toString('base64');
-
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  let binary = '';
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    const chunk = bytes.subarray(offset, offset + chunkSize);
-    for (let index = 0; index < chunk.length; index += 1) {
-      binary += String.fromCharCode(chunk[index]);
-    }
+  if (typeof FileReader === 'undefined') {
+    throw new Error('FileReader is unavailable');
   }
-  return btoa(binary);
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'));
+    reader.readAsDataURL(blob);
+  });
 }
