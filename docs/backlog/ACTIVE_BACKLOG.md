@@ -25,8 +25,9 @@ Rules:
 
 - Material Explorer is a local-first PBR material editor with optional HTTP sync, import/export,
   command palette workflows, draft history, guardrails, and a tested GitHub Pages deployment.
-- Recent work hardened dependency security, texture storage budget feedback, JSON import limits,
-  mobile layout spacing, bundle budgets, Playwright coverage, and audit gates.
+- Recent work hardened dependency security, texture storage budget feedback, texture upload
+  compression/downscaling, JSON import limits, mobile layout spacing, bundle budgets, Playwright
+  coverage, and audit gates.
 - Texture maps still live as embedded data URLs inside saved material JSON; this is reliable enough
   for small libraries, but not a complete asset-storage strategy.
 - Backend sync exists as a frontend adapter and mock API contract, not as a production persistence
@@ -41,14 +42,13 @@ Rules:
 
 ## Active Workboard
 
-| Priority | Area                | Item                                                                | Status | Validation / Exit Criteria                                                                                                                                         |
-| -------- | ------------------- | ------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P1       | Texture Reliability | Add client-side texture compression and downscaling before storage. | TODO   | Oversized-but-valid images can be reduced before save/import; original rejection paths remain covered; e2e proves storage summary updates after compressed upload. |
-| P1       | Preview Performance | Deepen 3D preview/runtime code-splitting.                           | TODO   | `vendor-three-core` or total JS budget drops with no preview regressions; bundle budget script and Playwright preview smoke stay green.                            |
-| P1       | Observability       | Document telemetry ingestion contract and backend endpoint example. | TODO   | `VITE_TELEMETRY_URL` payload shapes, event names, privacy expectations, and a mock/server example are documented and covered by focused tests where practical.     |
-| P1       | Backend Readiness   | Turn optional API sync into a verified backend contract harness.    | TODO   | Mock API contract tests cover load/save failures, scope/auth headers, malformed payloads, and local fallback behavior from a consumer perspective.                 |
-| P2       | Maintainability     | Continue splitting `MaterialEditor` and `Sidebar` into modules.     | TODO   | A focused extraction reduces file complexity without changing behavior; associated unit/e2e coverage follows the extracted boundaries.                             |
-| P2       | Accessibility & QA  | Add focused manual QA notes for texture-heavy and mobile workflows. | TODO   | Docs capture keyboard, screen-reader, reduced-motion, and mobile checks for texture upload, save warning, import rejection, and sidebar drawer flows.              |
+| Priority | Area                | Item                                                                | Status | Validation / Exit Criteria                                                                                                                                     |
+| -------- | ------------------- | ------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1       | Preview Performance | Deepen 3D preview/runtime code-splitting.                           | TODO   | `vendor-three-core` or total JS budget drops with no preview regressions; bundle budget script and Playwright preview smoke stay green.                        |
+| P1       | Observability       | Document telemetry ingestion contract and backend endpoint example. | TODO   | `VITE_TELEMETRY_URL` payload shapes, event names, privacy expectations, and a mock/server example are documented and covered by focused tests where practical. |
+| P1       | Backend Readiness   | Turn optional API sync into a verified backend contract harness.    | TODO   | Mock API contract tests cover load/save failures, scope/auth headers, malformed payloads, and local fallback behavior from a consumer perspective.             |
+| P2       | Maintainability     | Continue splitting `MaterialEditor` and `Sidebar` into modules.     | TODO   | A focused extraction reduces file complexity without changing behavior; associated unit/e2e coverage follows the extracted boundaries.                         |
+| P2       | Accessibility & QA  | Add focused manual QA notes for texture-heavy and mobile workflows. | TODO   | Docs capture keyboard, screen-reader, reduced-motion, and mobile checks for texture upload, save warning, import rejection, and sidebar drawer flows.          |
 
 ## Deferred
 

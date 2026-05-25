@@ -57,7 +57,7 @@ export function TextureControls({
           <div className="text-sm font-semibold text-slate-100">Textures</div>
           <div className="text-xs ui-muted">Maps, tiling, and advanced material detail.</div>
           <div className="mt-1 text-[11px] text-slate-300/75">
-            Upload images only. Recommended max size: 4 MB per map.
+            Upload images only. Large maps are optimized before embedding; max source size is 16 MB.
           </div>
           <div className="mt-1 text-[11px] text-slate-300/75" data-testid="texture-storage-summary">
             Draft storage: {textureSummaryText} Embedded textures count against browser storage.
