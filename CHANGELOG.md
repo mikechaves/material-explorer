@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added client-side texture optimization so oversized valid texture uploads are downscaled and compressed before being embedded in saved material JSON.
+
 ## [2.0.0-beta.1] - 2026-05-22
 
 ### Added

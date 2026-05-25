@@ -38,7 +38,7 @@ import {
   resetOpticsSection as applyOpticsSectionReset,
   resetSurfaceSection as applySurfaceSectionReset,
 } from './editor/draftSections';
-import { validateTextureDataUrl, validateTextureUploadFile } from './editor/textureUpload';
+import { prepareTextureUpload, validateTextureUploadFile } from './editor/textureUpload';
 import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../utils/localStorage';
 import { emitTelemetryEvent } from '../utils/telemetry';
 import {
@@ -445,14 +445,6 @@ const MaterialEditor: React.FC = () => {
     [setMaterialWithHistory]
   );
 
-  const readFileAsDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-
   const uploadMap = async (key: keyof MaterialDraft, file: File) => {
     const fileValidationMessage = validateTextureUploadFile(file);
     if (fileValidationMessage) {
@@ -472,23 +464,21 @@ const MaterialEditor: React.FC = () => {
     }
 
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      const dataUrlValidationMessage = validateTextureDataUrl(dataUrl);
-      if (dataUrlValidationMessage) {
-        notify({ variant: 'warn', title: 'Texture upload blocked', message: dataUrlValidationMessage });
-        emitTelemetryEvent(
-          'texture.upload.rejected',
-          {
-            key,
-            reason: 'data-url-validation',
-            fileType: file.type || 'unknown',
-            fileSize: file.size,
-            dataUrlLength: dataUrl.length,
-            message: dataUrlValidationMessage,
-          },
-          'warn'
-        );
-        return;
+      const preparedTexture = await prepareTextureUpload(file);
+      const dataUrl = preparedTexture.dataUrl;
+      if (preparedTexture.compressed) {
+        const dimensions =
+          preparedTexture.originalWidth &&
+          preparedTexture.originalHeight &&
+          preparedTexture.width &&
+          preparedTexture.height
+            ? ` Downscaled from ${preparedTexture.originalWidth}x${preparedTexture.originalHeight} to ${preparedTexture.width}x${preparedTexture.height}.`
+            : '';
+        notify({
+          variant: 'info',
+          title: 'Texture optimized',
+          message: `Prepared embedded texture at ${formatEncodedSize(dataUrl.length)}.${dimensions}`,
+        });
       }
 
       setMaterialWithHistory((prev) => {
@@ -502,14 +492,40 @@ const MaterialEditor: React.FC = () => {
           fileType: file.type || 'unknown',
           fileSize: file.size,
           dataUrlLength: dataUrl.length,
+          compressed: preparedTexture.compressed,
+          outputType: preparedTexture.outputType,
+          outputBytes: preparedTexture.outputBytes,
+          originalWidth: preparedTexture.originalWidth,
+          originalHeight: preparedTexture.originalHeight,
+          width: preparedTexture.width,
+          height: preparedTexture.height,
         },
         'info'
       );
     } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : 'Could not read this file. Try a different image.';
+
+      if (message.includes('too large') || message.includes('storage')) {
+        notify({ variant: 'warn', title: 'Texture upload blocked', message });
+        emitTelemetryEvent(
+          'texture.upload.rejected',
+          {
+            key,
+            reason: 'data-url-validation',
+            fileType: file.type || 'unknown',
+            fileSize: file.size,
+            message,
+          },
+          'warn'
+        );
+        return;
+      }
+
       notify({
         variant: 'error',
         title: 'Texture upload failed',
-        message: 'Could not read this file. Try a different image.',
+        message,
       });
       emitTelemetryEvent(
         'texture.upload.failed',
